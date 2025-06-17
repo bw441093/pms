@@ -3,6 +3,7 @@ import { Router, Request, Response } from 'express';
 import authRouter from './auth';
 import userRouter from './personsRouter';
 import authenticate from '../middleware/authentication';
+import exportExcelRouter from  './excelExport'
 
 const router = Router();
 
@@ -11,5 +12,6 @@ router.use('/health', (req: Request, res: Response) => {
 });
 router.use('/auth', authRouter);
 router.use('/users', authenticate(), userRouter);
+router.use('/export', exportExcelRouter);
 
 export default router;
