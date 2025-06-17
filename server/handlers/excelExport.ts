@@ -1,15 +1,13 @@
 import { Request, Response } from 'express';
 import ExcelJS from 'exceljs';
 
-import { db } from '../db/db';
-import { PersonsTable } from '../db/schema';
-import { Person } from '../types';
 import { logger } from '../logger';
+import { find } from 'server/db/persons';
 
 export const exportExcal = async (_: Request, res: Response) => {
   logger.info('Trying to export excal..')
   try {
-    const persons: Person[] = await db.select().from(PersonsTable);
+    const persons = await find();
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Persons Sheet');
 
