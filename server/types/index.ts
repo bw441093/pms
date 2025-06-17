@@ -1,5 +1,18 @@
-import { Person } from './person';
+import { 
+  Id, Status, PostMove, UpdateMove, Login,
+  OTP, UpdateRoles, PostPerson, Person
+} from './person';
+import { Role } from './role'
 
 export {
-  Person
+  Id,
+  Status,
+  PostMove,
+  UpdateMove,
+  Login,
+  OTP,
+  UpdateRoles,
+  PostPerson,
+  Person,
+  Role
 }
