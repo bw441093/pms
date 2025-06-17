@@ -9,4 +9,6 @@ const pool = new Pool({
   ssl: 	{ rejectUnauthorized: false }  
 });
 
+export const connectDB = async () => await pool.connect()
+
 export const db: NodePgDatabase<typeof schema> = drizzle(pool);
