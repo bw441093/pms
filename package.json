@@ -1,0 +1,41 @@
+{
+	"name": "pms",
+	"version": "1.0.0",
+	"main": "index.js",
+	"scripts": {
+		"start": "node lib/index.js",
+		"build-server": "tsc",
+		"build": "npm run build-server",
+		"dev": "nodemon -w server server/index.ts",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"type": "commonjs",
+	"author": "",
+	"license": "ISC",
+	"description": "",
+	"dependencies": {
+		"cors": "^2.8.5",
+		"dayjs": "^1.11.13",
+		"dotenv": "^16.5.0",
+		"drizzle-orm": "^0.44.2",
+		"express": "^5.1.0",
+		"jsonwebtoken": "^9.0.2",
+		"otplib": "^12.0.1",
+		"pg": "^8.16.0",
+		"winston": "^3.17.0",
+		"zod": "^3.25.64",
+		"zod-validation-error": "^3.5.0"
+	},
+	"devDependencies": {
+		"@types/cors": "^2.8.19",
+		"@types/express": "^5.0.3",
+		"@types/jsonwebtoken": "^9.0.10",
+		"@types/node": "^24.0.1",
+		"@types/pg": "^8.15.4",
+		"@types/winston": "^2.4.4",
+		"drizzle-kit": "^0.31.1",
+		"drizzle-zod": "^0.8.2",
+		"nodemon": "^3.1.10",
+		"typescript": "^5.8.3"
+	}
+}
