@@ -58,7 +58,7 @@ export async function updatMoveStatus(
 	originator: string,
 	status: boolean
 ) {
-	const response = await apiClient.put(`/users/${userId}/move`, {
+	const response = await apiClient.patch(`/users/${userId}/move`, {
 		status,
 		originator,
 	});

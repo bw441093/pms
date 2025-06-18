@@ -145,6 +145,9 @@ const PersonCard = ({
 						</Button>
 						<Button
 							variant="contained"
+							color={
+								person.transaction?.status === 'pending' ? 'error' : 'primary'
+							}
 							onClick={(e) => handleButtonClick('Move', e)}
 							sx={{ flexGrow: 1, borderRadius: 0 }}
 						>
