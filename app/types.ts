@@ -2,7 +2,10 @@ export type Person = {
 	id: string;
 	name: string;
 	site: string;
-	manager: string;
+	manager: {
+		id: string;
+		name: string;
+	};
 	alertStatus: string;
 	reportStatus: string;
 	location: string;

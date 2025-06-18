@@ -5,7 +5,27 @@ import { PersonsTable, PersonsToRoles, RolesTable } from './schema';
 import type { Person } from '../types/person';
 
 export const find = async (): Promise<Person[]> => {
-	const user = await db.query.PersonsTable.findMany();
+	const user = await db.query.PersonsTable.findMany({
+		with: {
+			transaction: {
+				columns: {
+					userId: false,
+				},
+			},
+			personRoles: {
+				columns: { userId: false, roleId: false },
+				with: {
+					role: true,
+				},
+			},
+			manager: {
+				columns: {
+					id: true,
+					name: true,
+				},
+			},
+		},
+	});
 
 	return user;
 };
@@ -23,6 +43,12 @@ export const findPersonById = async (id: string) => {
 				columns: { userId: false, roleId: false },
 				with: {
 					role: true,
+				},
+			},
+			manager: {
+				columns: {
+					id: true,
+					name: true,
 				},
 			},
 		},
@@ -55,6 +81,12 @@ export const findDirectReports = async (id: string) => {
 					userId: false,
 				},
 			},
+			manager: {
+				columns: {
+					id: true,
+					name: true,
+				},
+			},
 		},
 	});
 
@@ -68,6 +100,12 @@ export const findSiteMembers = async (sites: string[] = []) => {
 			transaction: {
 				columns: {
 					userId: false,
+				},
+			},
+			manager: {
+				columns: {
+					id: true,
+					name: true,
 				},
 			},
 		},
@@ -118,6 +156,19 @@ export const updatePersonSite = async (id: string, site: string) => {
 	const user = await db
 		.update(PersonsTable)
 		.set({ site })
+		.where(eq(PersonsTable.id, id))
+		.returning({ id: PersonsTable.id });
+
+	return user;
+};
+
+export const updatePersonAlertStatus = async (
+	id: string,
+	alertStatus: 'pending' | 'good' | 'bad'
+) => {
+	const user = await db
+		.update(PersonsTable)
+		.set({ alertStatus })
 		.where(eq(PersonsTable.id, id))
 		.returning({ id: PersonsTable.id });
 

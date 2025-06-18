@@ -6,7 +6,13 @@ import {
 	addNewPerson,
 	deletePerson,
 } from '../mockApi';
-import { getPeopleData } from '../clients/personsClient';
+import {
+	getPeopleData,
+	updateAlertStatus,
+	updatMoveStatus,
+	postMoveStatus,
+	updateReportStatus,
+} from '../clients/personsClient';
 
 export function usePeopleData(userId: string) {
 	return useQuery({
@@ -77,6 +83,76 @@ export function useDeletePerson() {
 		mutationFn: (personId: string) => deletePerson(personId),
 		onSuccess: () => {
 			// Invalidate all people queries to ensure fresh data
+			queryClient.invalidateQueries({ queryKey: ['people'] });
+		},
+	});
+}
+
+// New mutation hooks for backend API calls
+export function useUpdateAlertStatus() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({ userId, status }: { userId: string; status: string }) =>
+			updateAlertStatus(userId, status),
+		onSuccess: () => {
+			// Invalidate people queries to refresh data after alert status change
+			queryClient.invalidateQueries({ queryKey: ['people'] });
+		},
+	});
+}
+
+export function useUpdateMoveStatus() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			userId,
+			originator,
+			status,
+		}: {
+			userId: string;
+			originator: string;
+			status: boolean;
+		}) => updatMoveStatus(userId, originator, status),
+		onSuccess: () => {
+			// Invalidate people queries to refresh data after move status change
+			queryClient.invalidateQueries({ queryKey: ['people'] });
+		},
+	});
+}
+
+export function usePostMoveStatus() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			userId,
+			origin,
+			target,
+		}: {
+			userId: string;
+			origin: string;
+			target: string;
+		}) => postMoveStatus(userId, origin, target),
+		onSuccess: () => {
+			// Invalidate people queries to refresh data after move
+			queryClient.invalidateQueries({ queryKey: ['people'] });
+		},
+	});
+}
+
+export function useUpdateReportStatus() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			userId,
+			status,
+			location,
+		}: {
+			userId: string;
+			status: string;
+			location: string;
+		}) => updateReportStatus(userId, status, location),
+		onSuccess: () => {
+			// Invalidate people queries to refresh data after status update
 			queryClient.invalidateQueries({ queryKey: ['people'] });
 		},
 	});

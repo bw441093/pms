@@ -3,7 +3,7 @@ import { Button, Stack, TextField, Typography } from '@mui/material';
 import { Check, Close } from '@mui/icons-material';
 
 import type { Person } from '../../../../types';
-import { updateAlertStatus, updateReportStatus } from '~/clients/personsClient';
+import { useUpdateReportStatus } from '~/hooks/useQueries';
 
 const ReportAction = ({
 	person,
@@ -16,14 +16,21 @@ const ReportAction = ({
 
 	const [locationReport, setLocationReport] = useState(location);
 	const [reportStatusReport, setReportStatusReport] = useState(reportStatus);
+	const updateReportStatusMutation = useUpdateReportStatus();
 
 	const handleButtonClick = (event: SyntheticEvent) => {
 		event.stopPropagation();
 		const status = reportStatusReport;
 		const location = site !== 'other' ? site : locationReport;
 
-		updateReportStatus(id, status, location);
-		onClose();
+		updateReportStatusMutation.mutate(
+			{ userId: id, status, location },
+			{
+				onSuccess: () => {
+					onClose();
+				},
+			}
+		);
 	};
 
 	const handleChange = (e: ChangeEvent<HTMLInputElement>, setter: Function) => {
@@ -59,7 +66,11 @@ const ReportAction = ({
 				<Button variant="outlined" onClick={onClose}>
 					Cancel
 				</Button>
-				<Button variant="contained" onClick={handleButtonClick}>
+				<Button
+					variant="contained"
+					onClick={handleButtonClick}
+					disabled={updateReportStatusMutation.isPending}
+				>
 					Submit
 				</Button>
 			</Stack>

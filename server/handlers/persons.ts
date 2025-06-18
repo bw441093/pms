@@ -15,6 +15,7 @@ import {
 	updatePersonManager,
 	updatePersonSite,
 	updatePersonStatusLocation,
+	updatePersonAlertStatus,
 } from '../db/persons';
 import { createRole, deleteRoles } from '../db/roles';
 import {
@@ -28,6 +29,7 @@ import type {
 	PostMove,
 	PostPerson,
 	Status,
+	Alert,
 	UpdateMove,
 	UpdateRoles,
 } from '../types';
@@ -245,5 +247,20 @@ export const deleteMoveHandler = async (req: Request, res: Response) => {
 	} catch (err) {
 		logger.error(`Error deleting transaction, error: ${err}`);
 		res.status(500).send('Error deleting transaction');
+	}
+};
+
+export const updateAlertHandler = async (req: Request, res: Response) => {
+	try {
+		const { id } = req.params as Id;
+		const { status } = req.body as Alert;
+		logger.info(`Update alert status for user: ${id}`, { status });
+		await updatePersonAlertStatus(id, status);
+
+		logger.info(`Done updating alert status for user: ${id}`);
+		res.status(200).send();
+	} catch (err) {
+		logger.error(`Error updating alert status, error: ${err}`);
+		res.status(500).send('Error updating alert status');
 	}
 };

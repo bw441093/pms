@@ -1,19 +1,21 @@
-import { InferSelectModel } from 'drizzle-orm';
+import type { InferSelectModel } from 'drizzle-orm';
 import { z } from 'zod';
-import { PersonsTable } from '../db/schema'
+import { PersonsTable } from '../db/schema';
 import {
-  loginSchema,
-  otpVerifySchema,
-  idSchema,
-  rolesSchema,
-  postPersonSchema,
-  updateStatusSchema,
-  postMoveSchema,
-  updateMoveSchema,
+	loginSchema,
+	otpVerifySchema,
+	idSchema,
+	rolesSchema,
+	postPersonSchema,
+	updateStatusSchema,
+	updateAlertSchema,
+	postMoveSchema,
+	updateMoveSchema,
 } from '../validations/person';
 
 export type Id = z.infer<typeof idSchema>;
 export type Status = z.infer<typeof updateStatusSchema>;
+export type Alert = z.infer<typeof updateAlertSchema>;
 export type PostMove = z.infer<typeof postMoveSchema>;
 export type UpdateMove = z.infer<typeof updateMoveSchema>;
 export type Login = z.infer<typeof loginSchema>;

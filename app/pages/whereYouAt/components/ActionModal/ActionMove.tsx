@@ -3,13 +3,8 @@ import { Button, Stack, TextField, Typography } from '@mui/material';
 import { Check, Close } from '@mui/icons-material';
 
 import type { Person } from '../../../../types';
-import {
-	getPerson,
-	postMoveStatus,
-	updateAlertStatus,
-	updateReportStatus,
-	updatMoveStatus,
-} from '~/clients/personsClient';
+import { getPerson } from '~/clients/personsClient';
+import { usePostMoveStatus, useUpdateMoveStatus } from '~/hooks/useQueries';
 
 const MoveAction = ({
 	person,
@@ -28,6 +23,9 @@ const MoveAction = ({
 		isPersonnelManager: false,
 	});
 
+	const postMoveStatusMutation = usePostMoveStatus();
+	const updateMoveStatusMutation = useUpdateMoveStatus();
+
 	// Load permissions on component mount
 	React.useEffect(() => {
 		const loadPermissions = async () => {
@@ -42,7 +40,7 @@ const MoveAction = ({
 
 			if (transaction) {
 				user.personRoles?.forEach(({ role }) => {
-					if (userId === person.manager)
+					if (userId === person.manager.id)
 						newPermissions.isPersonnelManager = true;
 					if (role.name === 'hrManager' || role.name === 'hrManager')
 						newPermissions.isHrManager = true;
@@ -72,8 +70,14 @@ const MoveAction = ({
 
 	const handleButtonClick = (event: SyntheticEvent) => {
 		event.stopPropagation();
-		postMoveStatus(id, origin, target);
-		onClose();
+		postMoveStatusMutation.mutate(
+			{ userId: id, origin, target },
+			{
+				onSuccess: () => {
+					onClose();
+				},
+			}
+		);
 	};
 
 	const handleConfirmButtonClick = (
@@ -81,8 +85,14 @@ const MoveAction = ({
 		event: SyntheticEvent
 	) => {
 		event.stopPropagation();
-		updatMoveStatus(id, originator, true);
-		onClose();
+		updateMoveStatusMutation.mutate(
+			{ userId: id, originator, status: true },
+			{
+				onSuccess: () => {
+					onClose();
+				},
+			}
+		);
 	};
 
 	const handleChange = (e: ChangeEvent<HTMLInputElement>, setter: Function) => {
@@ -106,38 +116,15 @@ const MoveAction = ({
 		return false;
 	};
 
+	const isLoading =
+		postMoveStatusMutation.isPending || updateMoveStatusMutation.isPending;
+
 	return (
 		<Stack spacing={3} sx={{ minWidth: 300 }}>
 			<Typography variant="h6" component="h2" gutterBottom>
-				Move Action
+				Move Person
 			</Typography>
-
-			{transaction && transaction.status === 'pending' && (
-				<Stack spacing={2}>
-					<Typography variant="subtitle1">Confirm Transaction</Typography>
-					<Stack direction="row" spacing={2} justifyContent="center">
-						<Button
-							variant="contained"
-							disabled={isButtonDisabled('origin')}
-							color={transaction.originConfirmation ? 'success' : 'info'}
-							onClick={(e) => handleConfirmButtonClick('origin', e)}
-						>
-							Origin
-						</Button>
-						<Button
-							variant="contained"
-							disabled={isButtonDisabled('target')}
-							color={transaction.targetConfirmation ? 'success' : 'info'}
-							onClick={(e) => handleConfirmButtonClick('target', e)}
-						>
-							Target
-						</Button>
-					</Stack>
-				</Stack>
-			)}
-
 			<Stack spacing={2}>
-				<Typography variant="subtitle1">Move Details</Typography>
 				<TextField
 					label="Origin"
 					fullWidth
@@ -155,12 +142,15 @@ const MoveAction = ({
 					}
 				/>
 			</Stack>
-
 			<Stack direction="row" spacing={2} justifyContent="flex-end">
 				<Button variant="outlined" onClick={onClose}>
 					Cancel
 				</Button>
-				<Button variant="contained" onClick={handleButtonClick}>
+				<Button
+					variant="contained"
+					onClick={handleButtonClick}
+					disabled={isLoading}
+				>
 					Submit
 				</Button>
 			</Stack>

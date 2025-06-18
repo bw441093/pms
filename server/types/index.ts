@@ -1,6 +1,7 @@
 import type {
 	Id,
 	Status,
+	Alert,
 	PostMove,
 	UpdateMove,
 	Login,
@@ -14,6 +15,7 @@ import type { Role } from './role';
 export type {
 	Id,
 	Status,
+	Alert,
 	PostMove,
 	UpdateMove,
 	Login,

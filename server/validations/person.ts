@@ -36,6 +36,10 @@ export const updateStatusSchema = z.object({
 	location: z.string(),
 });
 
+export const updateAlertSchema = z.object({
+	status: z.enum(['pending', 'good', 'bad']),
+});
+
 export const postMoveSchema = z.object({
 	origin: z.string(),
 	target: z.string(),

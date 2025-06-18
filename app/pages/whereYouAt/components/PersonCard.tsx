@@ -27,7 +27,10 @@ const defaultPerson: Person = {
 	id: '13123123',
 	name: 'John Doe',
 	site: 'mbt',
-	manager: 'Jane Doe',
+	manager: {
+		id: '13123123',
+		name: 'Jane Doe',
+	},
 	location: 'jerusalem',
 	reportStatus: 'home',
 	alertStatus: 'pending',
@@ -86,7 +89,7 @@ const PersonCard = ({
 						<Stack direction="row" flexGrow={1}>
 							<Stack flexGrow={1}>
 								<Typography>{name}</Typography>
-								<Typography>{manager}</Typography>
+								<Typography>{manager?.name || 'No manager'}</Typography>
 								<Typography>{site}</Typography>
 							</Stack>
 							<Stack flexGrow={1}>

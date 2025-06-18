@@ -11,6 +11,7 @@ import {
 	updateMoveHandler,
 	updateRolesHandler,
 	updateStatusHandler,
+	updateAlertHandler,
 	deleteMoveHandler,
 	getPersonByIdHandler,
 } from '../handlers/persons';
@@ -22,6 +23,7 @@ import {
 	rolesSchema,
 	updateMoveSchema,
 	updateStatusSchema,
+	updateAlertSchema,
 } from '../validations/person';
 
 const router = Router();
@@ -52,6 +54,11 @@ router.put(
 	'/:id/status',
 	validator({ params: idSchema, body: updateStatusSchema }),
 	updateStatusHandler
+);
+router.post(
+	'/:id/alert',
+	validator({ params: idSchema, body: updateAlertSchema }),
+	updateAlertHandler
 );
 router.post(
 	'/:id/move',

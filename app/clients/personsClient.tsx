@@ -4,8 +4,25 @@ import { MANAGERS, PEOPLE, ADMINS, SITE_OPTIONS } from '../consts';
 
 const STATUS_OPTIONS = ['At Home', 'At Work', 'On Vacation', 'In Transit'];
 
+// Create axios instance with base configuration
+const apiClient = axios.create({
+	baseURL: '/api',
+	headers: {
+		'Content-Type': 'application/json',
+	},
+});
+
+// Add request interceptor to include auth token
+apiClient.interceptors.request.use((config) => {
+	const token = localStorage.getItem('login_token');
+	if (token) {
+		config.headers.Authorization = `Bearer ${token}`;
+	}
+	return config;
+});
+
 export async function getPeopleData(userId: string) {
-	const { data } = await axios.get('http://localhost:3000/api/users');
+	const { data } = await apiClient.get('/users');
 
 	const [user, people] = (data as []).reduce(
 		(acc: Person[][], person: Person) => {
@@ -23,22 +40,17 @@ export async function getPeopleData(userId: string) {
 }
 
 export async function getPerson(userId: string) {
-	const { data }: { data: Person } = await axios.get(
-		`http://localhost:3000/api/users/${userId}`
-	);
+	const { data }: { data: Person } = await apiClient.get(`/users/${userId}`);
 
 	return data;
 }
 
 export async function updateAlertStatus(userId: string, status: string) {
-	const response = await axios.post(
-		`https://person-management-b7hve6ftb9b6cfh8.westeurope-01.azurewebsites.net/users/alert/${userId}`,
-		{
-			status,
-		}
-	);
+	const response = await apiClient.post(`/users/${userId}/alert`, {
+		status,
+	});
 
-	return;
+	return response.data;
 }
 
 export async function updatMoveStatus(
@@ -46,15 +58,12 @@ export async function updatMoveStatus(
 	originator: string,
 	status: boolean
 ) {
-	const response = await axios.put(
-		`https://person-management-b7hve6ftb9b6cfh8.westeurope-01.azurewebsites.net/users/${userId}/move`,
-		{
-			status,
-			originator,
-		}
-	);
+	const response = await apiClient.put(`/users/${userId}/move`, {
+		status,
+		originator,
+	});
 
-	return;
+	return response.data;
 }
 
 export async function postMoveStatus(
@@ -62,16 +71,13 @@ export async function postMoveStatus(
 	origin: string,
 	target: string
 ) {
-	const response = await axios.post(
-		`https://person-management-b7hve6ftb9b6cfh8.westeurope-01.azurewebsites.net/users/${userId}/move`,
-		{
-			origin,
-			target,
-			field: 'site',
-		}
-	);
+	const response = await apiClient.post(`/users/${userId}/move`, {
+		origin,
+		target,
+		field: 'site',
+	});
 
-	return;
+	return response.data;
 }
 
 export async function updateReportStatus(
@@ -79,10 +85,13 @@ export async function updateReportStatus(
 	status: string,
 	location: string
 ) {
-	const response = await axios.put(`/api/users/${userId}/status`, {
+	const response = await apiClient.put(`/users/${userId}/status`, {
 		status,
 		location,
 	});
 
-	return;
+	return response.data;
 }
+
+// Export the apiClient for use in other parts of the app
+export { apiClient };
