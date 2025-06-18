@@ -30,6 +30,7 @@ export default function authenticate(
 	status: '2faFulfilled' | 'loginFulfilled' = '2faFulfilled'
 ) {
 	return (req: Request, res: Response, next: NextFunction) => {
+		console.log(JSON.stringify(req.headers))
 		req.user = 'feb8bf9c-d2be-4f25-ad79-9d478af482a1';
 		return next();
 		// const authHeader = req.headers['authorization'];
