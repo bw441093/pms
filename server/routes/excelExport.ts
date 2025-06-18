@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { exportExcal } from '../handlers/excelExport'
+import { exportExcel } from '../handlers/excelExport';
 
-const router = Router()
-router.get('/', exportExcal)
+const router = Router();
+router.get('/', exportExcel);
 
 export default router;
