@@ -3,8 +3,7 @@ import { db } from '../db/db';
 import { eq } from 'drizzle-orm';
 import { PersonsTable } from '../db/schema';
 import { logger } from '../logger';
-
-type Role = 'siteManager' | 'personnelManager' | 'hrManager' | 'admin';
+import { Role } from '../types';
 
 export default function authorize(allowedRoles: Role[] = []) {
 	return async (req: Request, res: Response, next: NextFunction) => {

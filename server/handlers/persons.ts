@@ -30,7 +30,7 @@ import {
 	Status,
 	UpdateMove,
 	UpdateRoles,
-} from '../validations/person';
+} from '../types';
 import { logger } from '../logger';
 
 dayjs.extend(utc);
