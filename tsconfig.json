@@ -19,7 +19,8 @@
 		},
 		"esModuleInterop": true,
 		"verbatimModuleSyntax": true,
-		"noEmit": true,
+		"outDir": "lib",
+		"noEmit": false,
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"strict": true

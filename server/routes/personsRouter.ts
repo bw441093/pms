@@ -39,9 +39,9 @@ router.delete(
 	deletePersonHandler
 );
 router.get('/', getPersonsHandler);
-router.get('/:id', validator({ params: idSchema }), getPersonByIdHandler);
 router.get('/managers', getManagersHandler);
 router.get('/report', authorize(['hrManager', 'admin']), getReportHandler);
+router.get('/:id', validator({ params: idSchema }), getPersonByIdHandler);
 router.put(
 	'/:id/roles',
 	authorize(['siteManager', 'personnelManager', 'hrManager', 'admin']),

@@ -8,7 +8,7 @@ import exportExcelRouter from './excelExport';
 
 const router = Router();
 
-router.use('/health', (req: Request, res: Response) => {
+router.get('/health', (req: Request, res: Response) => {
 	res.send('good');
 });
 router.use('/auth', authRouter);
