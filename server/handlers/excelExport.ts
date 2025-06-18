@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import ExcelJS from 'exceljs';
 
 import { logger } from '../logger';
@@ -37,9 +37,10 @@ export const exportExcel = async (_: Request, res: Response) => {
 
 		await workbook.xlsx.write(res);
 		res.end();
-		logger.info('Export excel succesfully');
-	} catch (error) {
-		logger.error(`Failed to export excel, error: ${error.message}`);
+		logger.info('Export excel successfully');
+	} catch (error: unknown) {
+		const err = error instanceof Error ? error : new Error(String(error));
+		logger.error(`Failed to export excel, error: ${err.message}`);
 		res.status(500).send('Failed to export data');
 	}
 };

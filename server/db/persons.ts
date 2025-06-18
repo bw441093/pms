@@ -2,7 +2,7 @@ import { eq, inArray } from 'drizzle-orm';
 
 import { db } from './db';
 import { PersonsTable, PersonsToRoles, RolesTable } from './schema';
-import { Person } from '../types';
+import type { Person } from '../types/person';
 
 export const find = async (): Promise<Person[]> => {
 	const user = await db.query.PersonsTable.findMany();

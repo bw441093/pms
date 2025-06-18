@@ -1,6 +1,4 @@
-import { and, eq, SQLWrapper } from 'drizzle-orm';
-// import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { z } from 'zod';
+import { eq } from 'drizzle-orm';
 
 import { db } from './db';
 import { TransactionsTable } from './schema';

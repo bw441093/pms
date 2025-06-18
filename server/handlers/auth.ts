@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import jwt from 'jsonwebtoken';

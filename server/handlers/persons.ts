@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import { randomBytes } from 'node:crypto';
@@ -23,7 +23,7 @@ import {
 	deleteTransaction,
 	updateTransaction,
 } from '../db/transactions';
-import {
+import type {
 	Id,
 	PostMove,
 	PostPerson,

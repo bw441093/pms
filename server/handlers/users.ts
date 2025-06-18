@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { randomBytes } from 'node:crypto';
 
 import { createUser } from '../db/users';

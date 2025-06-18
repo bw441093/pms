@@ -1,6 +1,6 @@
 import { relations } from 'drizzle-orm';
 import {
-	AnyPgColumn,
+	type AnyPgColumn,
 	boolean,
 	json,
 	pgTable,

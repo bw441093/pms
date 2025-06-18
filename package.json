@@ -1,15 +1,15 @@
 {
 	"name": "pms",
 	"version": "1.0.0",
-	"main": "index.js",
+	"main": "lib/index.js",
 	"scripts": {
 		"start": "node lib/index.js",
 		"build-server": "tsc",
 		"build": "npm run build-server",
-		"dev": "nodemon -w server server/index.ts",
+		"dev": "tsx watch server/index.ts",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
-	"type": "commonjs",
+	"type": "module",
 	"author": "",
 	"license": "ISC",
 	"description": "",
@@ -36,7 +36,7 @@
 		"@types/winston": "^2.4.4",
 		"drizzle-kit": "^0.31.1",
 		"drizzle-zod": "^0.8.2",
-		"nodemon": "^3.1.10",
+		"tsx": "^4.20.3",
 		"typescript": "^5.8.3"
 	}
 }
