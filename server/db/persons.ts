@@ -14,15 +14,20 @@ export const findPersonById = async (id: string) => {
 	const user = await db.query.PersonsTable.findFirst({
 		where: eq(PersonsTable.id, id),
 		with: {
-			transaction: true,
+			transaction: {
+				columns: {
+					userId: false,
+				},
+			},
 			personRoles: {
+				columns: { userId: false, roleId: false },
 				with: {
 					role: true,
 				},
 			},
 		},
 	});
-
+	user?.personRoles;
 	return user;
 };
 
@@ -45,7 +50,11 @@ export const findDirectReports = async (id: string) => {
 	const users = await db.query.PersonsTable.findMany({
 		where: eq(PersonsTable.manager, id),
 		with: {
-			transaction: true,
+			transaction: {
+				columns: {
+					userId: false,
+				},
+			},
 		},
 	});
 
@@ -56,7 +65,11 @@ export const findSiteMembers = async (sites: string[] = []) => {
 	const users = await db.query.PersonsTable.findMany({
 		where: inArray(PersonsTable.site, sites),
 		with: {
-			transaction: true,
+			transaction: {
+				columns: {
+					userId: false,
+				},
+			},
 		},
 	});
 
