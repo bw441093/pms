@@ -8,6 +8,7 @@
 		"build": "npm run build-server && react-router build",
 		"dev": "concurrently \"tsx watch server/index.ts\" \"react-router dev\"",
 		"dev-client": "react-router dev",
+		"dev-server": "tsx watch server/index.ts",
 		"seed": "tsx server/db/seed.ts",
 		"seed:generate": "tsx server/db/generateTestData.ts generate",
 		"seed:clear": "tsx server/db/generateTestData.ts clear",

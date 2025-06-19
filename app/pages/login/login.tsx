@@ -1,50 +1,48 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ADMINS, PEOPLE, MANAGERS } from '../../consts';
+import {
+	Box,
+	Button,
+	TextField,
+	Typography,
+	Container,
+	Paper,
+	Alert,
+	CircularProgress,
+} from '@mui/material';
+import axios from 'axios';
 
 export default function Login() {
-	const [userId, setUserId] = useState('');
 	const [error, setError] = useState('');
 	const navigate = useNavigate();
 
-	function isValidUser(id: string) {
-		return (
-			ADMINS.includes(id) ||
-			PEOPLE.includes(id) ||
-			MANAGERS.some((m) => m.id === id)
-		);
-	}
+	useEffect(() => {
+		const identifyUser = async () => {
+			setError('');
 
-	function handleSubmit(e: React.FormEvent) {
-		e.preventDefault();
-		if (!userId.trim()) return;
-		if (!isValidUser(userId.trim())) {
-			setError('Invalid user ID');
-			return;
-		}
-		localStorage.setItem('login_token', userId.trim());
-		navigate('/', { replace: true });
-	}
+			try {
+				const response = await axios.post('/api/auth/identify');
+
+				const id = response.data;
+				localStorage.setItem('login_token', id);
+				navigate('/', { replace: true });
+			} catch (err: any) {
+				if (err.response?.status === 404) {
+					setError('User not found with this email');
+				} else if (err.response?.status === 400) {
+					setError('Invalid email format');
+				} else {
+					setError('An error occurred. Please try again.');
+				}
+			}
+		};
+
+		identifyUser();
+	}, [navigate]);
 
 	return (
-		<main className="flex flex-col items-center justify-center min-h-screen">
-			<h1 className="text-2xl mb-4">Login</h1>
-			<form onSubmit={handleSubmit} className="flex flex-col gap-2 w-64">
-				<input
-					type="text"
-					placeholder="Enter your ID"
-					value={userId}
-					onChange={(e) => {
-						setUserId(e.target.value);
-						setError('');
-					}}
-					className="border p-2 rounded"
-				/>
-				<button type="submit" className="bg-blue-500 text-white p-2 rounded">
-					Login
-				</button>
-				{error && <div className="text-red-500 text-sm mt-2">{error}</div>}
-			</form>
-		</main>
+		<Container component="main" maxWidth="xs">
+			<CircularProgress />
+		</Container>
 	);
 }
