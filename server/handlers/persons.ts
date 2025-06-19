@@ -39,19 +39,16 @@ dayjs.extend(utc);
 
 export const postPersonHandler = async (req: Request, res: Response) => {
 	try {
-		const { username, password, name, manager, site, roles } =
-			req.body as PostPerson;
-		logger.info(`Creating user with username: ${username}`, {
-			username,
-			password,
+		const { email, name, manager, site, roles } = req.body as PostPerson;
+		logger.info(`Creating user with email: ${email}`, {
+			email,
 			name,
 			manager,
 			site,
 			roles,
 		});
 
-		const twoFactorSecret = randomBytes(32).toString('hex');
-		const userId = await createUser(username, password, twoFactorSecret);
+		const userId = await createUser(email);
 
 		logger.info(`Creating person with id: ${userId}`);
 		const promises = [
@@ -61,7 +58,7 @@ export const postPersonHandler = async (req: Request, res: Response) => {
 		await Promise.all(promises);
 
 		logger.info(`Finished creating person with id: ${userId}`);
-		res.status(200).send(twoFactorSecret);
+		res.status(200).send(userId);
 	} catch (err) {
 		logger.error(`Error inserting person, error: ${err}`);
 		res.status(500).send('Error inserting person');

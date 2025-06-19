@@ -1,5 +1,5 @@
 {
-  "id": "598c4d5e-781c-40a9-84b9-9a3103203855",
+  "id": "71b1a040-1a28-4db3-bd1a-a3378e346119",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -32,12 +32,26 @@
           "primaryKey": false,
           "notNull": false
         },
-        "status": {
-          "name": "status",
+        "alertStatus": {
+          "name": "alertStatus",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "default": "'good'"
+        },
+        "reportStatus": {
+          "name": "reportStatus",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'present'"
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'home'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -98,7 +112,7 @@
           "columnsTo": [
             "user_id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "persons_to_roles_role_id_roles_role_id_fk": {
@@ -111,7 +125,7 @@
           "columnsTo": [
             "role_id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -198,6 +212,13 @@
           "notNull": true,
           "default": false
         },
+        "field": {
+          "name": "field",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'site'"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -212,8 +233,8 @@
           "notNull": true,
           "default": "'pending'"
         },
-        "person_id": {
-          "name": "person_id",
+        "user_id": {
+          "name": "user_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -221,17 +242,17 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "transactions_person_id_persons_user_id_fk": {
-          "name": "transactions_person_id_persons_user_id_fk",
+        "transactions_user_id_persons_user_id_fk": {
+          "name": "transactions_user_id_persons_user_id_fk",
           "tableFrom": "transactions",
           "tableTo": "persons",
           "columnsFrom": [
-            "person_id"
+            "user_id"
           ],
           "columnsTo": [
             "user_id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -252,20 +273,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "username": {
-          "name": "username",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "password": {
-          "name": "password",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "twoFactorSecret": {
-          "name": "twoFactorSecret",
+        "email": {
+          "name": "email",
           "type": "text",
           "primaryKey": false,
           "notNull": true

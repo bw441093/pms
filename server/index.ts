@@ -24,9 +24,7 @@ const startServer = async () => {
 const injectData = async () => {
 	const user: typeof UsersTable.$inferInsert = {
 		id: 'feb8bf9c-d2be-4f25-ad79-9d478af482a1',
-		username: 'benjaminw',
-		password: 'some:md5',
-		twoFactorSecret: 'some:token',
+		email: 'benjaminw@example.com',
 	};
 
 	const person: typeof PersonsTable.$inferInsert = {

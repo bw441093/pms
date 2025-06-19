@@ -104,14 +104,10 @@ export async function generateUsers(count: number = 30) {
 		const userId = uuidv4();
 		const name = SAMPLE_NAMES[i % SAMPLE_NAMES.length];
 		const username = name.toLowerCase().replace(/\s+/g, '.');
-		const password = await hashPassword('password123');
-		const twoFactorSecret = Math.random().toString(36).substring(2, 15);
 
 		const user = {
 			id: userId,
-			username,
-			password,
-			twoFactorSecret,
+			email: `${username}@example.com`,
 			createdAt: getRandomDateInRange(365), // Random date within last year
 		};
 

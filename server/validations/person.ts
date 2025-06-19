@@ -1,3 +1,4 @@
+import { emit } from 'process';
 import { z } from 'zod';
 
 export const loginSchema = z.object({
@@ -27,9 +28,9 @@ export const postPersonSchema = z
 		name: z.string(),
 		manager: z.string().optional(),
 		site: z.string(),
+		email: z.string().email(),
 	})
-	.merge(rolesSchema)
-	.merge(loginSchema);
+	.merge(rolesSchema);
 
 export const updateStatusSchema = z.object({
 	status: z.string(),

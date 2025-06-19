@@ -12,9 +12,7 @@ import {
 
 export const UsersTable = pgTable('users', {
 	id: uuid('user_id').primaryKey().defaultRandom().notNull(),
-	username: text().notNull(),
-	password: text().notNull(),
-	twoFactorSecret: text().notNull(),
+	email: text().notNull(),
 	createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
