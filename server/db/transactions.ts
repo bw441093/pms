@@ -34,7 +34,7 @@ export const updateTransaction = async (
 	const transactionId = await db
 		.update(TransactionsTable)
 		.set({ [field]: status })
-		.where(eq(TransactionsTable.id, id))
+		.where(eq(TransactionsTable.userId, id))
 		.returning({ id: TransactionsTable.id });
 	return transactionId;
 };

@@ -40,9 +40,9 @@ const MoveAction = ({
 
 			if (transaction) {
 				user.personRoles?.forEach(({ role }) => {
-					if (userId === person.manager.id)
+					if (userId === person.manager?.id)
 						newPermissions.isPersonnelManager = true;
-					if (role.name === 'hrManager' || role.name === 'hrManager')
+					if (role.name === 'hrManager' || role.name === 'admin')
 						newPermissions.isHrManager = true;
 					if (role.name === 'siteManager') {
 						if (
