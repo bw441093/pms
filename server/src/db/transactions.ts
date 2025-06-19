@@ -11,7 +11,19 @@ export const createTransaction = async (
 ) => {
 	const transactionId = await db
 		.insert(TransactionsTable)
-		.values({ origin, target, userId, field })
+		.values({ origin, target, userId, field, status: 'pending' })
+		.onConflictDoUpdate({
+			target: TransactionsTable.userId,
+			set: {
+				origin,
+				target,
+				field,
+				status: 'pending',
+				originConfirmation: false,
+				targetConfirmation: false,
+				// Do not update id or createdAt
+			},
+		})
 		.returning({ id: TransactionsTable.id });
 	return transactionId;
 };

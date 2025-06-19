@@ -8,6 +8,7 @@ import {
 	text,
 	timestamp,
 	uuid,
+	unique,
 } from 'drizzle-orm/pg-core';
 
 export const UsersTable = pgTable('users', {
@@ -29,26 +30,32 @@ export const PersonsTable = pgTable('persons', {
 	updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
-export const TransactionsTable = pgTable('transactions', {
-	id: uuid('transaction_id') // Change this to transaction_id to better represent a transaction.
-		.primaryKey()
-		.defaultRandom()
-		.notNull(),
-	origin: text().notNull(),
-	target: text().notNull(),
-	originConfirmation: boolean().default(false).notNull(),
-	targetConfirmation: boolean().default(false).notNull(),
-	field: text({ enum: ['site', 'manager'] })
-		.default('site')
-		.notNull(),
-	createdAt: timestamp('created_at').defaultNow().notNull(),
-	status: text({ enum: ['pending', 'resolved'] })
-		.default('pending')
-		.notNull(),
-	userId: uuid('user_id') // Add the correct person reference
-		.references(() => PersonsTable.id, { onDelete: 'cascade' })
-		.notNull(),
-});
+export const TransactionsTable = pgTable(
+	'transactions',
+	{
+		id: uuid('transaction_id') // Change this to transaction_id to better represent a transaction.
+			.primaryKey()
+			.defaultRandom()
+			.notNull(),
+		origin: text().notNull(),
+		target: text().notNull(),
+		originConfirmation: boolean().default(false).notNull(),
+		targetConfirmation: boolean().default(false).notNull(),
+		field: text({ enum: ['site', 'manager'] })
+			.default('site')
+			.notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		status: text({ enum: ['pending', 'resolved'] })
+			.default('pending')
+			.notNull(),
+		userId: uuid('user_id') // Add the correct person reference
+			.references(() => PersonsTable.id, { onDelete: 'cascade' })
+			.notNull(),
+	},
+	(t) => ({
+		userUnique: unique('transactions_user_id_unique').on(t.userId),
+	})
+);
 
 export const RolesTable = pgTable('roles', {
 	id: uuid('role_id').defaultRandom().notNull().primaryKey(),
