@@ -17,11 +17,11 @@ export const loadApp = async () => {
 	app.use('/api', router);
 
 	// Serve static files from the build directory
-	app.use(express.static(path.join(process.cwd(), 'build')));
+	app.use(express.static(path.join(process.cwd(), 'build', 'client')));
 
 	// Catch-all route to serve index.html for client-side routing
 	app.get('/', (req, res) => {
-		res.sendFile(path.join(process.cwd(), 'build', 'index.html'));
+		res.sendFile(path.join(process.cwd(), 'build', 'client', 'index.html'));
 	});
 
 	return app;

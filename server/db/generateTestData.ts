@@ -16,8 +16,8 @@ async function main() {
 		case 'generate':
 		case 'seed':
 			const options = {
-				userCount: parseInt(args[1]) || 30,
-				transactionCount: parseInt(args[2]) || 50,
+				userCount: parseInt(args[1] ?? '30'),
+				transactionCount: parseInt(args[2] ?? '50'),
 				includeScenarios: args[3] !== 'false',
 			};
 

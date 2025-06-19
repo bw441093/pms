@@ -71,7 +71,8 @@ const SAMPLE_TARGETS = [...SAMPLE_SITES];
 
 // Helper functions
 function getRandomElement<T>(array: T[]): T {
-	return array[Math.floor(Math.random() * array.length)];
+	const randomIndex = Math.floor(Math.random() * array.length);
+	return array[randomIndex]!;
 }
 
 function getRandomElements<T>(array: T[], count: number): T[] {
@@ -103,7 +104,7 @@ export async function generateUsers(count: number = 30) {
 	for (let i = 0; i < count; i++) {
 		const userId = uuidv4();
 		const name = SAMPLE_NAMES[i % SAMPLE_NAMES.length];
-		const username = name.toLowerCase().replace(/\s+/g, '.');
+		const username = name?.toLowerCase().replace(/\s+/g, '.');
 
 		const user = {
 			id: userId,
@@ -157,7 +158,7 @@ export async function generatePersons(users: any[], roles: any[]) {
 			updatedAt: getRandomDateInRange(30), // Random date within last 30 days
 		};
 
-		await db.insert(PersonsTable).values(person);
+		await db.insert(PersonsTable).values(person as any);
 		persons.push(person);
 
 		// Assign first 5 as managers
@@ -173,7 +174,7 @@ export async function generatePersons(users: any[], roles: any[]) {
 		await db
 			.update(PersonsTable)
 			.set({ manager: managerId })
-			.where(eq(PersonsTable.id, persons[i].id));
+			.where(eq(PersonsTable.id, persons[i]?.id));
 	}
 
 	// Assign roles to persons

@@ -14,7 +14,6 @@
 		"seed:clear": "tsx server/db/generateTestData.ts clear",
 		"seed:help": "tsx server/db/generateTestData.ts help"
 	},
-	"type": "module",
 	"author": "",
 	"license": "ISC",
 	"description": "",
