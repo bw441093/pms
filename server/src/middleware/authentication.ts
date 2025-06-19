@@ -1,9 +1,6 @@
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import type { NextFunction, Request, Response } from 'express';
-import type { TokenExpiredError } from 'jsonwebtoken';
-import jwt from 'jsonwebtoken';
-import { z, ZodError } from 'zod';
 import { logger } from '../logger';
 import { findUserByEmail } from '../db/users';
 

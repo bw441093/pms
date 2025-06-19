@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 import * as schema from './schema';
@@ -7,8 +8,7 @@ import { Pool } from 'pg';
 const connectionOptions =
 	process.env.ENV === 'dev'
 		? {
-				connectionString:
-					process.env.DB_URI || 'postgres://postgres:secret@localhost:5432/pms',
+				connectionString: process.env.DB_URI,
 		  }
 		: {
 				host: process.env.DB_HOST,

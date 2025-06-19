@@ -1,4 +1,5 @@
 // src/index.ts
+import 'dotenv/config';
 import type { Express } from 'express';
 import { loadApp } from './server';
 import { logger } from './logger';
