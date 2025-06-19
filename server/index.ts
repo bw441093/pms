@@ -5,7 +5,6 @@ import { logger } from './logger';
 import {
 	UsersTable,
 	PersonsTable,
-	TransactionsTable,
 	RolesTable,
 	PersonsToRoles,
 } from './db/schema';
@@ -22,47 +21,39 @@ const startServer = async () => {
 };
 
 const injectData = async () => {
+	const userId = 'feb8bf9c-d2be-4f25-ad79-9d478af482a1';
+	const roleId = '6f0757b0-c371-4bb4-bde9-d71dc394d85f';
+
 	const user: typeof UsersTable.$inferInsert = {
-		id: 'feb8bf9c-d2be-4f25-ad79-9d478af482a1',
-		email: 'benjaminw@example.com',
+		id: userId,
+		email: process.env.ADMIN_EMAIL || 'benjaminw@example.com',
 	};
 
 	const person: typeof PersonsTable.$inferInsert = {
-		id: 'feb8bf9c-d2be-4f25-ad79-9d478af482a1',
-		name: 'benjamin weiner',
+		id: userId,
+		name: 'admin mcadmin',
 		site: 'mbt',
 		location: 'mbt',
 		alertStatus: 'good',
 		reportStatus: 'present',
 	};
 
-	const transaction: typeof TransactionsTable.$inferInsert = {
-		id: 'feb8bf9c-d2be-4f25-ad79-9d478af482a1',
-		userId: 'feb8bf9c-d2be-4f25-ad79-9d478af482a1',
-		origin: 'mbt',
-		originConfirmation: false,
-		target: 'kir',
-		targetConfirmation: false,
-		status: 'pending',
-	};
-
 	const role: typeof RolesTable.$inferInsert = {
-		id: '6f0757b0-c371-4bb4-bde9-d71dc394d85f',
+		id: roleId,
 		name: 'admin',
 	};
 
 	const personToRole: typeof PersonsToRoles.$inferInsert = {
-		roleId: '6f0757b0-c371-4bb4-bde9-d71dc394d85f',
-		userId: 'feb8bf9c-d2be-4f25-ad79-9d478af482a1',
+		roleId: roleId,
+		userId: userId,
 	};
 
 	const dbCheck = await db.query.PersonsTable.findFirst({
-		where: eq(PersonsTable.id, 'feb8bf9c-d2be-4f25-ad79-9d478af482a1'),
+		where: eq(PersonsTable.id, person.id),
 	});
 	if (!dbCheck) {
 		await db.insert(UsersTable).values(user);
 		await db.insert(PersonsTable).values(person);
-		await db.insert(TransactionsTable).values(transaction);
 		await db.insert(RolesTable).values(role);
 		await db.insert(PersonsToRoles).values(personToRole);
 	}

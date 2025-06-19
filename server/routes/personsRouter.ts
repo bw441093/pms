@@ -14,6 +14,7 @@ import {
 	updateAlertHandler,
 	deleteMoveHandler,
 	getPersonByIdHandler,
+	alertAllUsersHandler,
 } from '../handlers/persons';
 import authorize from '../middleware/authorization';
 import {
@@ -43,6 +44,11 @@ router.delete(
 router.get('/', getPersonsHandler);
 router.get('/managers', getManagersHandler);
 router.get('/report', authorize(['hrManager', 'admin']), getReportHandler);
+router.post(
+	'/alert-all',
+	authorize(['hrManager', 'admin']),
+	alertAllUsersHandler
+);
 router.get('/:id', validator({ params: idSchema }), getPersonByIdHandler);
 router.put(
 	'/:id/roles',

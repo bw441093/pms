@@ -5,6 +5,7 @@ import type { Person } from '../../../../types';
 import AlertAction from './AlertAction';
 import ReportAction from './ReportAction';
 import MoveAction from './ActionMove';
+import RoleAction from './RoleAction';
 
 const ActionModal = ({
 	person,
@@ -47,6 +48,16 @@ const ActionModal = ({
 					<ReportAction person={person} onClose={onClose} />
 				)}
 				{action === 'Move' && <MoveAction person={person} onClose={onClose} />}
+				{action === 'More' && (
+					<RoleAction
+						person={person}
+						onClose={onClose}
+						onSuccess={() => {
+							// You can add a callback here to refresh the person list
+							console.log('Roles updated successfully');
+						}}
+					/>
+				)}
 			</Box>
 		</Modal>
 	);

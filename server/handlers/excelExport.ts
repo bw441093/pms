@@ -23,7 +23,7 @@ export const exportExcel = async (_: Request, res: Response) => {
 			worksheet.addRow({
 				name: person.name,
 				site: person.site,
-				manager: person.manager,
+				manager: person.manager?.name || 'No Manager',
 				location: person.location,
 				reportStatus: person.reportStatus,
 			});

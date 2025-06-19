@@ -4,7 +4,7 @@ import { db } from './db';
 import { PersonsTable, PersonsToRoles, RolesTable } from './schema';
 import type { Person } from '../types/person';
 
-export const find = async (): Promise<Person[]> => {
+export const find = async () => {
 	const user = await db.query.PersonsTable.findMany({
 		with: {
 			transaction: {

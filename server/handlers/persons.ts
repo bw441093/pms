@@ -261,3 +261,25 @@ export const updateAlertHandler = async (req: Request, res: Response) => {
 		res.status(500).send('Error updating alert status');
 	}
 };
+
+export const alertAllUsersHandler = async (req: Request, res: Response) => {
+	try {
+		logger.info('Alerting all users - setting alert status to pending');
+
+		// Get all users
+		const allUsers = await find();
+
+		// Update alert status for all users to 'pending'
+		const updatePromises = allUsers.map((user) =>
+			updatePersonAlertStatus(user.id, 'pending')
+		);
+
+		await Promise.all(updatePromises);
+
+		logger.info(`Successfully alerted ${allUsers.length} users`);
+		res.status(200).send({ message: `Alerted ${allUsers.length} users` });
+	} catch (err) {
+		logger.error(`Error alerting all users, error: ${err}`);
+		res.status(500).send('Error alerting all users');
+	}
+};
