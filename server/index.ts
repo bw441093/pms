@@ -56,6 +56,7 @@ const injectData = async () => {
 		await db.insert(PersonsTable).values(person);
 		await db.insert(RolesTable).values(role);
 		await db.insert(PersonsToRoles).values(personToRole);
+		logger.info('Injected objects into db');
 	}
 };
 

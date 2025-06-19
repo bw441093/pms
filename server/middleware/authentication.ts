@@ -37,6 +37,7 @@ export default function authenticate() {
 			return;
 		}
 		req.user = user.id;
+
 		return next();
 	};
 }
