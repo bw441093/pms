@@ -1,10 +1,12 @@
 import React, { useState, type ChangeEvent, type SyntheticEvent } from 'react';
-import { Button, Stack, TextField, Typography } from '@mui/material';
+import { Button, Stack, TextField, Typography, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 import { Check, Close } from '@mui/icons-material';
 
 import type { Person } from '../../../../types';
 import { getPerson } from '~/clients/personsClient';
 import { usePostMoveStatus, useUpdateMoveStatus } from '~/hooks/useQueries';
+
+const SITE_OPTIONS = ['mbt', 'mfs', 'kir', 'other'];
 
 const MoveAction = ({
 	person,
@@ -148,22 +150,38 @@ const MoveAction = ({
 
 			{shouldShowTextInputs && (
 				<Stack spacing={2}>
-					<TextField
-						label="Origin"
-						fullWidth
-						value={origin}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							handleChange(e, setOrigin)
-						}
-					/>
-					<TextField
-						label="Target"
-						fullWidth
-						value={target}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							handleChange(e, setTarget)
-						}
-					/>
+					<FormControl fullWidth>
+						<InputLabel id="origin-select-label">Origin</InputLabel>
+						<Select
+							labelId="origin-select-label"
+							id="origin-select"
+							value={origin}
+							label="Origin"
+							onChange={(e) => setOrigin(e.target.value)}
+						>
+							{SITE_OPTIONS.map((option: string) => (
+								<MenuItem key={option} value={option}>
+									{option.toUpperCase()}
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
+					<FormControl fullWidth>
+						<InputLabel id="target-select-label">Target</InputLabel>
+						<Select
+							labelId="target-select-label"
+							id="target-select"
+							value={target}
+							label="Target"
+							onChange={(e) => setTarget(e.target.value)}
+						>
+							{SITE_OPTIONS.map((option: string) => (
+								<MenuItem key={option} value={option}>
+									{option.toUpperCase()}
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
 				</Stack>
 			)}
 

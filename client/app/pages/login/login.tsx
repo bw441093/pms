@@ -42,7 +42,8 @@ export default function Login() {
 
 	return (
 		<Container component="main" maxWidth="xs">
-			<CircularProgress />
+			{!error && <CircularProgress />}
+			{error && <Alert severity="error">{error}</Alert>}
 		</Container>
 	);
 }

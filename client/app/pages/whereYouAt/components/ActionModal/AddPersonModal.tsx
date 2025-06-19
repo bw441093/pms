@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Manager {
 	userId: string;
@@ -140,6 +141,8 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 				},
 			});
 
+			useQueryClient().invalidateQueries({ queryKey: ['users'] });
+
 			// Reset form
 			setFormData({
 				email: '',
@@ -188,7 +191,8 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					top: '50%',
 					left: '50%',
 					transform: 'translate(-50%, -50%)',
-					width: 500,
+					width: '90vw',
+					maxWidth: '500px',
 					bgcolor: 'background.paper',
 					border: '2px solid #000',
 					boxShadow: 24,

@@ -135,7 +135,7 @@ export const updatePersonStatusLocation = async (
 ) => {
 	const user = await db
 		.update(PersonsTable)
-		.set({ reportStatus: status, location })
+		.set({ reportStatus: status, location, updatedAt: new Date() })
 		.where(eq(PersonsTable.id, id))
 		.returning({ id: PersonsTable.id });
 
@@ -145,7 +145,7 @@ export const updatePersonStatusLocation = async (
 export const updatePersonManager = async (id: string, manager: string) => {
 	const user = await db
 		.update(PersonsTable)
-		.set({ manager })
+		.set({ manager, updatedAt: new Date() })
 		.where(eq(PersonsTable.id, id))
 		.returning({ id: PersonsTable.id });
 
@@ -155,7 +155,7 @@ export const updatePersonManager = async (id: string, manager: string) => {
 export const updatePersonSite = async (id: string, site: string) => {
 	const user = await db
 		.update(PersonsTable)
-		.set({ site })
+		.set({ site, updatedAt: new Date() })
 		.where(eq(PersonsTable.id, id))
 		.returning({ id: PersonsTable.id });
 
@@ -168,7 +168,7 @@ export const updatePersonAlertStatus = async (
 ) => {
 	const user = await db
 		.update(PersonsTable)
-		.set({ alertStatus })
+		.set({ alertStatus, updatedAt: new Date() })
 		.where(eq(PersonsTable.id, id))
 		.returning({ id: PersonsTable.id });
 

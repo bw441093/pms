@@ -1,9 +1,10 @@
 import React, { useState, type ChangeEvent, type SyntheticEvent } from 'react';
-import { Button, Stack, TextField, Typography } from '@mui/material';
+import { Button, Stack, TextField, Typography, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 import { Check, Close } from '@mui/icons-material';
 
 import type { Person } from '../../../../types';
 import { useUpdateReportStatus } from '~/hooks/useQueries';
+import { STATUS_OPTIONS } from '../../../../consts';
 
 const ReportAction = ({
 	person,
@@ -44,14 +45,22 @@ const ReportAction = ({
 				Report your location/status
 			</Typography>
 			<Stack spacing={2}>
-				<TextField
-					label="Status"
-					fullWidth
-					value={reportStatusReport}
-					onChange={(e: ChangeEvent<HTMLInputElement>) =>
-						handleChange(e, setReportStatusReport)
-					}
-				/>
+				<FormControl fullWidth>
+					<InputLabel id="status-select-label">Status</InputLabel>
+					<Select
+						labelId="status-select-label"
+						id="status-select"
+						value={reportStatusReport}
+						label="Status"
+						onChange={(e) => setReportStatusReport(e.target.value)}
+					>
+						{STATUS_OPTIONS.map((option: string) => (
+							<MenuItem key={option} value={option}>
+								{option}
+							</MenuItem>
+						))}
+					</Select>
+				</FormControl>
 				<TextField
 					label="Location"
 					fullWidth
