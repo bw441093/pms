@@ -6,10 +6,8 @@ import {
 	PersonsToRoles,
 	TransactionsTable,
 } from './schema';
-import { eq, and, or, desc, asc } from 'drizzle-orm';
+import { eq, or, desc } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
-import bcrypt from 'bcrypt';
-
 // Enhanced sample data with more variety
 const SAMPLE_NAMES = [
 	// Management team
@@ -90,10 +88,6 @@ function getRandomDateInRange(daysAgo: number): Date {
 	const now = new Date();
 	const past = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
 	return getRandomDate(past, now);
-}
-
-async function hashPassword(password: string): Promise<string> {
-	return await bcrypt.hash(password, 10);
 }
 
 // Test data generation functions
