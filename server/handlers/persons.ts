@@ -90,23 +90,39 @@ export const getPersonsHandler = async (req: Request, res: Response) => {
 			return;
 		}
 
+		let users: any[];
 		if (
 			user.personRoles.some(
 				({ role }) => role.name === 'hrManager' || role.name === 'admin'
 			)
 		) {
-			const users = await find();
+			users = await find();
 			logger.info(`Done fetching relevant persons for user: ${req.user}`);
-			res.status(200).send(users);
-			return;
+		} else {
+			const directReports = await findDirectReports(user.id);
+			const sites = user.personRoles.filter(
+				({ role }) => role.name === 'siteManager'
+			)[0]?.role?.opts;
+			const siteMembers = await findSiteMembers(sites as string[]);
+			users = [...directReports, ...siteMembers];
+			logger.info(`Done fetching relevant persons for user: ${req.user}`);
 		}
-		const directReports = await findDirectReports(user.id);
-		const sites = user.personRoles.filter(
-			({ role }) => role.name === 'siteManager'
-		)[0]?.role?.opts;
-		const siteMembers = await findSiteMembers(sites as string[]);
-		logger.info(`Done fetching relevant persons for user: ${req.user}`);
-		res.status(200).send([...directReports, ...siteMembers]);
+
+		// Sort users: priority for open alerts/transactions, then by UUID
+		const sortedUsers = users.sort((a, b) => {
+			// Check if user has open alert (not 'good') or active transaction
+			const aHasOpenIssue = a.alertStatus !== 'good' || a.transaction;
+			const bHasOpenIssue = b.alertStatus !== 'good' || b.transaction;
+
+			// If one has open issue and the other doesn't, prioritize the one with open issue
+			if (aHasOpenIssue && !bHasOpenIssue) return -1;
+			if (!aHasOpenIssue && bHasOpenIssue) return 1;
+
+			// If both have same priority status, sort by UUID
+			return a.id.localeCompare(b.id);
+		});
+
+		res.status(200).send(sortedUsers);
 		return;
 	} catch (err) {
 		logger.error(`Error fetching relevant persons, error: ${err}`);

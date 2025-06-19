@@ -37,12 +37,19 @@ const defaultPerson: Person = {
 	updatedAt: '2025-06-18T11:09:04.797Z',
 };
 
-const PersonCard = ({
+interface PersonCardProps {
+	person?: Person;
+	isUser?: boolean;
+	expanded?: boolean;
+	onExpandChange?: (expanded: boolean) => void;
+}
+
+const PersonCard: React.FC<PersonCardProps> = ({
 	person = defaultPerson,
 	isUser = false,
-	active = false,
+	expanded = false,
+	onExpandChange,
 }) => {
-	const [expanded, setExpanded] = useState(isUser || active);
 	const [openModal, setOpenModal] = useState(false);
 	const [action, setAction] = useState('');
 	const {
@@ -53,9 +60,13 @@ const PersonCard = ({
 		reportStatus,
 		alertStatus,
 		updatedAt,
+		transaction,
 	} = person;
+
 	const handleExpandClick = () => {
-		setExpanded(!expanded);
+		if (onExpandChange) {
+			onExpandChange(!expanded);
+		}
 	};
 
 	const handleButtonClick = (action: string, event: SyntheticEvent) => {
@@ -83,7 +94,13 @@ const PersonCard = ({
 				}}
 			>
 				<Stack direction="row" alignItems="center" gap={2}>
-					<Circle color={alertStatus === 'good' ? 'success' : 'error'} />
+					<Circle
+						color={
+							alertStatus !== 'good' || transaction?.status !== 'resolved'
+								? 'error'
+								: 'success'
+						}
+					/>
 
 					<Stack flexGrow={1}>
 						<Stack direction="row" flexGrow={1}>
