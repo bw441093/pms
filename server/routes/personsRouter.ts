@@ -11,8 +11,10 @@ import {
 	updateMoveHandler,
 	updateRolesHandler,
 	updateStatusHandler,
+	updateAlertHandler,
 	deleteMoveHandler,
 	getPersonByIdHandler,
+	alertAllUsersHandler,
 } from '../handlers/persons';
 import authorize from '../middleware/authorization';
 import {
@@ -22,6 +24,7 @@ import {
 	rolesSchema,
 	updateMoveSchema,
 	updateStatusSchema,
+	updateAlertSchema,
 } from '../validations/person';
 
 const router = Router();
@@ -39,9 +42,14 @@ router.delete(
 	deletePersonHandler
 );
 router.get('/', getPersonsHandler);
-router.get('/:id', validator({ params: idSchema }), getPersonByIdHandler);
 router.get('/managers', getManagersHandler);
 router.get('/report', authorize(['hrManager', 'admin']), getReportHandler);
+router.post(
+	'/alert-all',
+	authorize(['hrManager', 'admin']),
+	alertAllUsersHandler
+);
+router.get('/:id', validator({ params: idSchema }), getPersonByIdHandler);
 router.put(
 	'/:id/roles',
 	authorize(['siteManager', 'personnelManager', 'hrManager', 'admin']),
@@ -52,6 +60,11 @@ router.put(
 	'/:id/status',
 	validator({ params: idSchema, body: updateStatusSchema }),
 	updateStatusHandler
+);
+router.post(
+	'/:id/alert',
+	validator({ params: idSchema, body: updateAlertSchema }),
+	updateAlertHandler
 );
 router.post(
 	'/:id/move',

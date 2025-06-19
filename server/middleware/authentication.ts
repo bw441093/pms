@@ -1,9 +1,11 @@
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
-import { NextFunction, Request, Response } from 'express';
-import jwt, { TokenExpiredError } from 'jsonwebtoken';
+import type { NextFunction, Request, Response } from 'express';
+import type { TokenExpiredError } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { z, ZodError } from 'zod';
 import { logger } from '../logger';
+import { findUserByEmail } from '../db/users';
 
 dayjs.extend(utc);
 
@@ -17,57 +19,25 @@ declare global {
 	}
 }
 
-const tokenSchema = z
-	.object({
-		userId: z.string().uuid(),
-		status: z.enum(['2faFulfilled', 'loginFulfilled']),
-	})
-	.passthrough();
+export default function authenticate() {
+	return async (req: Request, res: Response, next: NextFunction) => {
+		let email = req.headers['x-ms-client-principal-name'] as string;
+		if (process.env.NODE_ENV === 'development') {
+			email = 'benjaminw@example.com';
+		}
+		if (!email) {
+			logger.error('Error validating authentication - Missing email');
+			res.status(401).send('Missing email');
+			return;
+		}
+		const user = await findUserByEmail(email);
+		if (!user) {
+			logger.error('Error validating authentication - User not found');
+			res.status(401).send('User not found');
+			return;
+		}
+		req.user = user.id;
 
-type Payload = z.infer<typeof tokenSchema>;
-
-export default function authenticate(
-	status: '2faFulfilled' | 'loginFulfilled' = '2faFulfilled'
-) {
-	return (req: Request, res: Response, next: NextFunction) => {
-		console.log(JSON.stringify(req.headers))
-		req.user = 'feb8bf9c-d2be-4f25-ad79-9d478af482a1';
 		return next();
-		// const authHeader = req.headers['authorization'];
-		// const token = authHeader && authHeader.split(' ')[1];
-
-		// if (token == null) {
-		// 	logger.error('Error validating authentication - Missing token');
-		// 	res.status(401).send('Missing token');
-		// 	return;
-		// }
-
-		// try {
-		// 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		// 	const decodedPayload = jwt.verify(
-		// 		token,
-		// 		process.env.JWT_SECRET || 'secret'
-		// 	);
-		// 	// validate token
-		// 	tokenSchema.parse(decodedPayload);
-		// 	if ((decodedPayload as Payload).status !== status) {
-		// 		logger.error('Error validating authentication - Token state mismatch');
-		// 		res.status(403).send('Token state mismatch');
-		// 		return;
-		// 	}
-		// 	req.user = (decodedPayload as Payload).userId;
-		// 	return next();
-		// } catch (err) {
-		// 	logger.error(`Error decoding token, error: ${err}`);
-		// 	if (err instanceof TokenExpiredError) {
-		// 		res.status(401).send('Token expired');
-		// 		return;
-		// 	}
-		// 	if (err instanceof ZodError) {
-		// 		res.status(401).send('Malformed token');
-		// 		return;
-		// 	}
-		// 	res.status(500).send(err);
-		// }
 	};
 }

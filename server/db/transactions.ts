@@ -1,6 +1,4 @@
-import { and, eq, SQLWrapper } from 'drizzle-orm';
-// import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { z } from 'zod';
+import { eq } from 'drizzle-orm';
 
 import { db } from './db';
 import { TransactionsTable } from './schema';
@@ -36,7 +34,7 @@ export const updateTransaction = async (
 	const transactionId = await db
 		.update(TransactionsTable)
 		.set({ [field]: status })
-		.where(eq(TransactionsTable.id, id))
+		.where(eq(TransactionsTable.userId, id))
 		.returning({ id: TransactionsTable.id });
 	return transactionId;
 };

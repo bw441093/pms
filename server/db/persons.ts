@@ -2,10 +2,30 @@ import { eq, inArray } from 'drizzle-orm';
 
 import { db } from './db';
 import { PersonsTable, PersonsToRoles, RolesTable } from './schema';
-import { Person } from '../types';
+import type { Person } from '../types/person';
 
-export const find = async (): Promise<Person[]> => {
-	const user = await db.query.PersonsTable.findMany();
+export const find = async () => {
+	const user = await db.query.PersonsTable.findMany({
+		with: {
+			transaction: {
+				columns: {
+					userId: false,
+				},
+			},
+			personRoles: {
+				columns: { userId: false, roleId: false },
+				with: {
+					role: true,
+				},
+			},
+			manager: {
+				columns: {
+					id: true,
+					name: true,
+				},
+			},
+		},
+	});
 
 	return user;
 };
@@ -14,15 +34,26 @@ export const findPersonById = async (id: string) => {
 	const user = await db.query.PersonsTable.findFirst({
 		where: eq(PersonsTable.id, id),
 		with: {
-			transaction: true,
+			transaction: {
+				columns: {
+					userId: false,
+				},
+			},
 			personRoles: {
+				columns: { userId: false, roleId: false },
 				with: {
 					role: true,
 				},
 			},
+			manager: {
+				columns: {
+					id: true,
+					name: true,
+				},
+			},
 		},
 	});
-
+	user?.personRoles;
 	return user;
 };
 
@@ -45,7 +76,17 @@ export const findDirectReports = async (id: string) => {
 	const users = await db.query.PersonsTable.findMany({
 		where: eq(PersonsTable.manager, id),
 		with: {
-			transaction: true,
+			transaction: {
+				columns: {
+					userId: false,
+				},
+			},
+			manager: {
+				columns: {
+					id: true,
+					name: true,
+				},
+			},
 		},
 	});
 
@@ -56,7 +97,17 @@ export const findSiteMembers = async (sites: string[] = []) => {
 	const users = await db.query.PersonsTable.findMany({
 		where: inArray(PersonsTable.site, sites),
 		with: {
-			transaction: true,
+			transaction: {
+				columns: {
+					userId: false,
+				},
+			},
+			manager: {
+				columns: {
+					id: true,
+					name: true,
+				},
+			},
 		},
 	});
 
@@ -105,6 +156,19 @@ export const updatePersonSite = async (id: string, site: string) => {
 	const user = await db
 		.update(PersonsTable)
 		.set({ site })
+		.where(eq(PersonsTable.id, id))
+		.returning({ id: PersonsTable.id });
+
+	return user;
+};
+
+export const updatePersonAlertStatus = async (
+	id: string,
+	alertStatus: 'pending' | 'good' | 'bad'
+) => {
+	const user = await db
+		.update(PersonsTable)
+		.set({ alertStatus })
 		.where(eq(PersonsTable.id, id))
 		.returning({ id: PersonsTable.id });
 

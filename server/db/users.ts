@@ -11,22 +11,18 @@ export const findUserById = async (id: string) => {
 	return user;
 };
 
-export const findUserByUsername = async (username: string) => {
+export const findUserByEmail = async (email: string) => {
 	const user = await db.query.UsersTable.findFirst({
-		where: eq(UsersTable.username, username),
+		where: eq(UsersTable.email, email),
 	});
 
 	return user;
 };
 
-export const createUser = async (
-	username: string,
-	password: string,
-	twoFactorSecret: string
-) => {
+export const createUser = async (email: string) => {
 	const user = await db
 		.insert(UsersTable)
-		.values({ username, password, twoFactorSecret })
+		.values({ email })
 		.returning({ id: UsersTable.id });
 
 	if (!user[0]?.id) throw new Error('Could not insert user, db returned no ID');

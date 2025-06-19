@@ -1,5 +1,4 @@
 import { eq } from 'drizzle-orm';
-// import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 import { db } from './db';
 import { PersonsToRoles, RolesTable } from './schema';

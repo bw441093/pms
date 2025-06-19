@@ -1,5 +1,7 @@
-import express, { Express } from 'express';
+import type { Express } from 'express';
+import express from 'express';
 import cors from 'cors';
+import path from 'path';
 
 import router from './routes';
 import { connectDB } from './db/db';
@@ -10,6 +12,17 @@ export const loadApp = async () => {
 	await connectDB();
 	app.use(express.json());
 	app.use(cors());
-	app.use(router);
+
+	// API routes should come before static file serving
+	app.use('/api', router);
+
+	// Serve static files from the build directory
+	app.use(express.static(path.join(process.cwd(), 'build')));
+
+	// Catch-all route to serve index.html for client-side routing
+	app.get('/', (req, res) => {
+		res.sendFile(path.join(process.cwd(), 'build', 'index.html'));
+	});
+
 	return app;
 };

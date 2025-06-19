@@ -1,9 +1,9 @@
-import { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { db } from '../db/db';
 import { eq } from 'drizzle-orm';
 import { PersonsTable } from '../db/schema';
 import { logger } from '../logger';
-import { Role } from '../types';
+import type { Role } from '../types';
 
 export default function authorize(allowedRoles: Role[] = []) {
 	return async (req: Request, res: Response, next: NextFunction) => {

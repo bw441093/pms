@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import { randomBytes } from 'node:crypto';
@@ -15,6 +15,7 @@ import {
 	updatePersonManager,
 	updatePersonSite,
 	updatePersonStatusLocation,
+	updatePersonAlertStatus,
 } from '../db/persons';
 import { createRole, deleteRoles } from '../db/roles';
 import {
@@ -23,11 +24,12 @@ import {
 	deleteTransaction,
 	updateTransaction,
 } from '../db/transactions';
-import {
+import type {
 	Id,
 	PostMove,
 	PostPerson,
 	Status,
+	Alert,
 	UpdateMove,
 	UpdateRoles,
 } from '../types';
@@ -37,19 +39,16 @@ dayjs.extend(utc);
 
 export const postPersonHandler = async (req: Request, res: Response) => {
 	try {
-		const { username, password, name, manager, site, roles } =
-			req.body as PostPerson;
-		logger.info(`Creating user with username: ${username}`, {
-			username,
-			password,
+		const { email, name, manager, site, roles } = req.body as PostPerson;
+		logger.info(`Creating user with email: ${email}`, {
+			email,
 			name,
 			manager,
 			site,
 			roles,
 		});
 
-		const twoFactorSecret = randomBytes(32).toString('hex');
-		const userId = await createUser(username, password, twoFactorSecret);
+		const userId = await createUser(email);
 
 		logger.info(`Creating person with id: ${userId}`);
 		const promises = [
@@ -59,7 +58,7 @@ export const postPersonHandler = async (req: Request, res: Response) => {
 		await Promise.all(promises);
 
 		logger.info(`Finished creating person with id: ${userId}`);
-		res.status(200).send(twoFactorSecret);
+		res.status(200).send(userId);
 	} catch (err) {
 		logger.error(`Error inserting person, error: ${err}`);
 		res.status(500).send('Error inserting person');
@@ -91,23 +90,39 @@ export const getPersonsHandler = async (req: Request, res: Response) => {
 			return;
 		}
 
+		let users: any[];
 		if (
 			user.personRoles.some(
 				({ role }) => role.name === 'hrManager' || role.name === 'admin'
 			)
 		) {
-			const users = await find();
+			users = await find();
 			logger.info(`Done fetching relevant persons for user: ${req.user}`);
-			res.status(200).send(users);
-			return;
+		} else {
+			const directReports = await findDirectReports(user.id);
+			const sites = user.personRoles.filter(
+				({ role }) => role.name === 'siteManager'
+			)[0]?.role?.opts;
+			const siteMembers = await findSiteMembers(sites as string[]);
+			users = [...directReports, ...siteMembers];
+			logger.info(`Done fetching relevant persons for user: ${req.user}`);
 		}
-		const directReports = await findDirectReports(user.id);
-		const sites = user.personRoles.filter(
-			({ role }) => role.name === 'siteManager'
-		)[0]?.role?.opts;
-		const siteMembers = await findSiteMembers(sites as string[]);
-		logger.info(`Done fetching relevant persons for user: ${req.user}`);
-		res.status(200).send([...directReports, ...siteMembers]);
+
+		// Sort users: priority for open alerts/transactions, then by UUID
+		const sortedUsers = users.sort((a, b) => {
+			// Check if user has open alert (not 'good') or active transaction
+			const aHasOpenIssue = a.alertStatus !== 'good' || a.transaction;
+			const bHasOpenIssue = b.alertStatus !== 'good' || b.transaction;
+
+			// If one has open issue and the other doesn't, prioritize the one with open issue
+			if (aHasOpenIssue && !bHasOpenIssue) return -1;
+			if (!aHasOpenIssue && bHasOpenIssue) return 1;
+
+			// If both have same priority status, sort by UUID
+			return a.id.localeCompare(b.id);
+		});
+
+		res.status(200).send(sortedUsers);
 		return;
 	} catch (err) {
 		logger.error(`Error fetching relevant persons, error: ${err}`);
@@ -245,5 +260,42 @@ export const deleteMoveHandler = async (req: Request, res: Response) => {
 	} catch (err) {
 		logger.error(`Error deleting transaction, error: ${err}`);
 		res.status(500).send('Error deleting transaction');
+	}
+};
+
+export const updateAlertHandler = async (req: Request, res: Response) => {
+	try {
+		const { id } = req.params as Id;
+		const { status } = req.body as Alert;
+		logger.info(`Update alert status for user: ${id}`, { status });
+		await updatePersonAlertStatus(id, status);
+
+		logger.info(`Done updating alert status for user: ${id}`);
+		res.status(200).send();
+	} catch (err) {
+		logger.error(`Error updating alert status, error: ${err}`);
+		res.status(500).send('Error updating alert status');
+	}
+};
+
+export const alertAllUsersHandler = async (req: Request, res: Response) => {
+	try {
+		logger.info('Alerting all users - setting alert status to pending');
+
+		// Get all users
+		const allUsers = await find();
+
+		// Update alert status for all users to 'pending'
+		const updatePromises = allUsers.map((user) =>
+			updatePersonAlertStatus(user.id, 'pending')
+		);
+
+		await Promise.all(updatePromises);
+
+		logger.info(`Successfully alerted ${allUsers.length} users`);
+		res.status(200).send({ message: `Alerted ${allUsers.length} users` });
+	} catch (err) {
+		logger.error(`Error alerting all users, error: ${err}`);
+		res.status(500).send('Error alerting all users');
 	}
 };
