@@ -19,20 +19,12 @@ declare global {
 	}
 }
 
-const tokenSchema = z
-	.object({
-		userId: z.string().uuid(),
-		status: z.enum(['2faFulfilled', 'loginFulfilled']),
-	})
-	.passthrough();
-
-type Payload = z.infer<typeof tokenSchema>;
-
-export default function authenticate(
-	status: '2faFulfilled' | 'loginFulfilled' = '2faFulfilled'
-) {
+export default function authenticate() {
 	return async (req: Request, res: Response, next: NextFunction) => {
-		const email = req.headers['x-ms-client-principal-name'] as string;
+		let email = req.headers['x-ms-client-principal-name'] as string;
+		if (process.env.NODE_ENV === 'development') {
+			email = 'benjaminw@example.com';
+		}
 		if (!email) {
 			logger.error('Error validating authentication - Missing email');
 			res.status(401).send('Missing email');
