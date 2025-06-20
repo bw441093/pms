@@ -20,7 +20,7 @@ export const loadApp = async () => {
 	app.use(express.static(path.join(process.cwd(), 'build', 'client')));
 
 	// Catch-all route to serve index.html for client-side routing
-	app.get('/', (req, res) => {
+	app.get('*', (req, res) => {
 		res.sendFile(path.join(process.cwd(), 'build', 'client', 'index.html'));
 	});
 
