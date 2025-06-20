@@ -19,6 +19,7 @@ declare global {
 export default function authenticate() {
 	return async (req: Request, res: Response, next: NextFunction) => {
 		let email = req.headers['x-ms-client-principal-name'] as string;
+
 		if (process.env.NODE_ENV === 'development') {
 			email = 'benjaminw@example.com';
 		}
@@ -29,8 +30,10 @@ export default function authenticate() {
 		}
 		const user = await findUserByEmail(email);
 		if (!user) {
-			logger.error('Error validating authentication - User not found');
-			res.status(401).send('User not found');
+			logger.error(
+				`Error validating authentication - User not found, email: ${email}`
+			);
+			res.status(401).send(`User with email ${email} not found`);
 			return;
 		}
 		req.user = user.id;
