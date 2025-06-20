@@ -12,7 +12,6 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import type { Route } from './+types/root';
-import PWAInstallPrompt from './components/PWAInstallPrompt';
 import './app.css';
 
 export const links: Route.LinksFunction = () => [
@@ -62,7 +61,6 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<div>
 			<main>{children}</main>
-			<PWAInstallPrompt />
 		</div>
 	);
 }
