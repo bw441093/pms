@@ -4,7 +4,7 @@ import { Check, Close } from '@mui/icons-material';
 
 import type { Person } from '../../../../types';
 import { useUpdateReportStatus } from '~/hooks/useQueries';
-import { STATUS_OPTIONS } from '../../../../consts';
+import { LOCATION_STATUSES } from '../../../../consts';
 
 const ReportAction = ({
 	person,
@@ -54,7 +54,7 @@ const ReportAction = ({
 						label="סטטוס"
 						onChange={(e) => setReportStatusReport(e.target.value)}
 					>
-						{STATUS_OPTIONS.map((option: string) => (
+						{LOCATION_STATUSES.map((option: string) => (
 							<MenuItem key={option} value={option}>
 								{option}
 							</MenuItem>
