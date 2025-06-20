@@ -15,6 +15,7 @@ import { Close as CloseIcon } from '@mui/icons-material';
 import axios from 'axios';
 
 import type { Person } from '../../../../types';
+import { hebrewRoleNames, hebrewSiteNames, SITE_MANAGER_OPTIONS, ROLE_OPTIONS } from '~/consts';
 import { getPerson } from '../../../../clients/personsClient';
 
 interface RoleActionProps {
@@ -22,8 +23,6 @@ interface RoleActionProps {
 	onClose: () => void;
 	onSuccess?: () => void;
 }
-
-const ROLE_OPTIONS = ['siteManager', 'personnelManager', 'hrManager', 'admin'];
 
 const RoleAction: React.FC<RoleActionProps> = ({
 	person,
@@ -48,7 +47,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 				}
 			} catch (err) {
 				console.error('Error fetching current user:', err);
-				setError('Failed to load user information');
+				setError('אירעה שגיאה בעת טעינת פרטי המשתמש');
 			} finally {
 				setUserLoading(false);
 			}
@@ -127,7 +126,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 
 	const handleRoleChange = (role: string) => {
 		if (!canModifyRole(role)) {
-			setError('You do not have permission to modify this role');
+			setError('אין לך הרשאות מתאימות לעריכת תפקיד זה');
 			return;
 		}
 
@@ -148,7 +147,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 
 	const handleSiteChange = (site: string) => {
 		if (!canModifySite(site)) {
-			setError('You do not have permission to modify this site');
+			setError('אין לך הרשאות מתאימות לעריכת אתר זה');
 			return;
 		}
 
@@ -164,7 +163,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 
 	const handleSubmit = async () => {
 		if (selectedRoles.length === 0) {
-			setError('At least one role must be selected');
+			setError('יש לסמן לפחות תפקיד אחד');
 			return;
 		}
 
@@ -173,7 +172,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 			selectedRoles.includes('siteManager') &&
 			siteManagerSites.length === 0
 		) {
-			setError('Site Manager must have at least one site selected');
+			setError('מנהל אתר חייב לבחור לפחות אתר אחד');
 			return;
 		}
 
@@ -183,9 +182,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 		);
 		if (unauthorizedRoles.length > 0) {
 			setError(
-				`You do not have permission to assign these roles: ${unauthorizedRoles.join(
-					', '
-				)}`
+				`אין לך הרשאה להקצות את התפקידים הבאים: ${unauthorizedRoles.join(', ')}`
 			);
 			return;
 		}
@@ -195,9 +192,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 		);
 		if (unauthorizedSites.length > 0) {
 			setError(
-				`You do not have permission to assign these sites: ${unauthorizedSites.join(
-					', '
-				)}`
+				`אין לך הרשאה להקצות את האתרים הבאים: ${unauthorizedSites.join(', ')}`
 			);
 			return;
 		}
@@ -225,7 +220,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 			onClose();
 		} catch (err: any) {
 			console.error('Error updating roles:', err);
-			setError(err.response?.data || 'Failed to update roles');
+			setError(err.response?.data || 'עדכון התפקידים נכשל');
 		} finally {
 			setLoading(false);
 		}
@@ -240,95 +235,104 @@ const RoleAction: React.FC<RoleActionProps> = ({
 	if (userLoading) {
 		return (
 			<Box sx={{ width: '100%', textAlign: 'center', py: 4 }}>
-				<Typography>Loading user permissions...</Typography>
+				<Typography>...טוען הרשאות משתמש</Typography>
 			</Box>
 		);
 	}
 
-	return (
-		<Box sx={{ width: '100%' }}>
-			<Box
-				sx={{
-					display: 'flex',
-					justifyContent: 'space-between',
-					alignItems: 'center',
-					mb: 3,
-				}}
-			>
-				<Typography variant="h6" component="h2">
-					Manage Roles - {person.name}
-				</Typography>
-				<IconButton onClick={handleClose}>
-					<CloseIcon />
-				</IconButton>
-			</Box>
-
-			{error && (
-				<Alert severity="error" sx={{ mb: 2 }}>
-					{error}
-				</Alert>
-			)}
-
-			<Stack spacing={3}>
-				<Box>
-					<Typography variant="subtitle1" sx={{ mb: 2 }}>
-						Roles
-					</Typography>
-					<FormGroup>
-						{ROLE_OPTIONS.map((role) => (
-							<FormControlLabel
-								key={role}
-								control={
-									<Checkbox
-										checked={selectedRoles.includes(role)}
-										onChange={() => handleRoleChange(role)}
-										disabled={!canModifyRole(role)}
-									/>
-								}
-								label={role
-									.replace(/([A-Z])/g, ' $1')
-									.replace(/^./, (str) => str.toUpperCase())}
-							/>
-						))}
-					</FormGroup>
-				</Box>
-
-				{/* Site Manager Sites Selection */}
-				{hasSiteManagerRole && (
-					<Box>
-						<Divider sx={{ my: 2 }} />
-						<Typography variant="subtitle1" sx={{ mb: 2 }}>
-							Sites to Manage
-						</Typography>
-						<FormGroup>
-							{['mbt', 'mfs', 'kir'].map((site) => (
-								<FormControlLabel
-									key={site}
-									control={
-										<Checkbox
-											checked={siteManagerSites.includes(site)}
-											onChange={() => handleSiteChange(site)}
-											disabled={!canModifySite(site)}
-										/>
-									}
-									label={site.toUpperCase()}
-								/>
-							))}
-						</FormGroup>
-					</Box>
-				)}
-
-				<Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-					<Button variant="outlined" onClick={handleClose}>
-						Cancel
-					</Button>
-					<Button variant="contained" onClick={handleSubmit} disabled={loading}>
-						{loading ? 'Updating...' : 'Update Roles'}
-					</Button>
-				</Box>
-			</Stack>
-		</Box>
-	);
-};
-
+return (
+ <Box sx={{ width: '100%' }}>
+   <Box
+     sx={{
+       display: 'flex',
+       justifyContent: 'space-between',
+       alignItems: 'center',
+       mb: 3,
+     }}
+  	>
+			<IconButton onClick={handleClose}>
+       <CloseIcon />
+     </IconButton>
+     <Typography variant="h6" component="h2" sx={{ textAlign: 'right' }}>
+       {person.name} - ניהול תפקידים
+     </Typography>
+   </Box>
+   {error && (
+     <Alert severity="error" sx={{ mb: 2 }}>
+       {error}
+     </Alert>
+   )}
+   <Stack spacing={3}>
+     <Box>
+       <Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'right' }}>
+         תפקידים
+       </Typography>
+       <FormGroup sx={{ alignItems: 'flex-end' }}>
+         {ROLE_OPTIONS.map((role) => (
+           <FormControlLabel
+             key={role}
+             control={
+               <Checkbox
+                 checked={selectedRoles.includes(role)}
+                 onChange={() => handleRoleChange(role)}
+                 disabled={!canModifyRole(role)}
+               />
+             }
+             label={hebrewRoleNames[role] || 'תפקיד לא ידוע'}
+             sx={{ 
+               flexDirection: 'row-reverse',
+               marginLeft: 0,
+               marginRight: 0,
+               '& .MuiFormControlLabel-label': {
+                 textAlign: 'right'
+               }
+             }}
+           />
+         ))}
+       </FormGroup>
+     </Box>
+     {/* Site Manager Sites Selection */}
+     {hasSiteManagerRole && (
+       <Box>
+         <Divider sx={{ my: 2 }} />
+         <Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'right' }}>
+           אתרים לניהול
+         </Typography>
+         <FormGroup sx={{ alignItems: 'flex-end' }}>
+           {SITE_MANAGER_OPTIONS.map((site) => (
+             <FormControlLabel
+               key={site}
+               control={
+                 <Checkbox
+                   checked={siteManagerSites.includes(site)}
+                   onChange={() => handleSiteChange(site)}
+                   disabled={!canModifySite(site)}
+                 />
+               }
+               label={hebrewSiteNames[site] ?? site.toUpperCase()}
+               sx={{ 
+                 flexDirection: 'row-reverse',
+                 marginLeft: 0,
+                 marginRight: 0,
+                 '& .MuiFormControlLabel-label': {
+                   textAlign: 'right'
+                 }
+               }}
+             />
+           ))}
+         </FormGroup>
+       </Box>
+     )}
+     <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+       <Button variant="contained" onClick={handleSubmit} disabled={loading}>
+         {loading ? 'מעדכן...' : 'עדכן תפקידים'}
+       </Button>
+			 <Button variant="outlined" onClick={handleClose}>
+         ביטול
+       </Button>
+     </Box>
+   </Stack>
+ </Box>
+);
+}
 export default RoleAction;

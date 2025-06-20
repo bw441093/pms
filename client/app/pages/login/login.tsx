@@ -28,11 +28,11 @@ export default function Login() {
 				navigate('/', { replace: true });
 			} catch (err: any) {
 				if (err.response?.status === 404) {
-					setError('User not found with this email');
+					setError('.לא נמצא משתמש עם המייל הזה');
 				} else if (err.response?.status === 400) {
-					setError('Invalid email format');
+					setError('.פורמט מייל אינו תקין');
 				} else {
-					setError('An error occurred. Please try again.');
+					setError('התרחשה שגיאה. נסה שוב');
 				}
 			}
 		};

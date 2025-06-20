@@ -20,6 +20,8 @@ import { Close as CloseIcon } from '@mui/icons-material';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { hebrewSiteNames, SITE_OPTIONS, SITE_MANAGER_OPTIONS, ROLE_OPTIONS, hebrewRoleNames } from '~/consts';
+
 interface Manager {
 	userId: string;
 	name: string;
@@ -31,10 +33,6 @@ interface AddPersonModalProps {
 	onClose: () => void;
 	onSuccess?: () => void;
 }
-
-const SITE_OPTIONS = ['mbt', 'mfs', 'kir', 'other'];
-const SITE_MANAGER_OPTIONS = ['mbt', 'mfs', 'kir']; // Only these sites can have site managers
-const ROLE_OPTIONS = ['siteManager', 'personnelManager', 'hrManager', 'admin'];
 
 const AddPersonModal: React.FC<AddPersonModalProps> = ({
 	open,
@@ -108,13 +106,13 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 			!formData.site ||
 			formData.roles.length === 0
 		) {
-			setError('Please fill in all required fields');
+			setError('אנא מלא את כל השדות חובה');
 			return;
 		}
 
 		// Check if siteManager role is selected but no site is chosen
 		if (formData.roles.includes('siteManager') && !formData.siteManagerSite) {
-			setError('Please select a site to manage for the Site Manager role');
+			setError('אנא בחר אתר לניהול עבור תפקיד מנהל האתר');
 			return;
 		}
 
@@ -156,8 +154,8 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 			onSuccess?.();
 			onClose();
 		} catch (err: any) {
-			console.error('Error creating person:', err);
-			setError(err.response?.data || 'Failed to create person');
+			console.error(':שגיאה ביצירת משתמש:', err);
+			setError(err.response?.data || 'יצירת האדם נכשלה');
 		} finally {
 			setLoading(false);
 		}
@@ -203,19 +201,19 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 				}}
 			>
 				<Box
-					sx={{
+					sx={{	
 						display: 'flex',
 						justifyContent: 'space-between',
 						alignItems: 'center',
 						mb: 3,
 					}}
 				>
-					<Typography id="add-person-modal-title" variant="h6" component="h2">
-						Add New Person
-					</Typography>
 					<IconButton onClick={handleClose}>
 						<CloseIcon />
 					</IconButton>
+					<Typography id="add-person-modal-title" variant="h6" component="h2" sx={{ textAlign: 'right' }}>
+						הוספת משתמש חדש
+					</Typography>
 				</Box>
 
 				{error && (
@@ -226,8 +224,9 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 
 				<Stack spacing={3}>
 					<TextField
-						label="Email"
+						label="אימייל"
 						type="email"
+						inputProps={{ style: { textAlign: 'right' } }}
 						value={formData.email}
 						onChange={(e) => handleInputChange('email', e.target.value)}
 						required
@@ -235,7 +234,8 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					/>
 
 					<TextField
-						label="Name"
+						label="שם"
+						inputProps={{ style: { textAlign: 'right' } }}
 						value={formData.name}
 						onChange={(e) => handleInputChange('name', e.target.value)}
 						required
@@ -243,29 +243,40 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					/>
 
 					<FormControl fullWidth required>
-						<InputLabel>Site</InputLabel>
+						<InputLabel>אתר</InputLabel>
 						<Select
+							sx={{ 
+								'& .MuiSelect-select': { 
+									textAlign: 'right' 
+								} 
+							}}
 							value={formData.site}
 							label="Site"
 							onChange={(e) => handleInputChange('site', e.target.value)}
 						>
 							{SITE_OPTIONS.map((site) => (
-								<MenuItem key={site} value={site}>
-									{site.toUpperCase()}
+								<MenuItem key={site} value={site}  style={{ textAlign: 'right' }}>
+									{hebrewSiteNames[site] || site.toUpperCase()}
 								</MenuItem>
 							))}
 						</Select>
 					</FormControl>
 
 					<FormControl fullWidth>
-						<InputLabel>Manager (Optional)</InputLabel>
+						<InputLabel>(רשות) מנהל</InputLabel>
 						<Select
+							sx={{ 
+								'& .MuiSelect-select': { 
+									textAlign: 'right' 
+								} 
+							}}
 							value={formData.manager}
-							label="Manager (Optional)"
+							label="(רשות) מנהל"
+							inputProps={{ style: { textAlign: 'right' } }}
 							onChange={(e) => handleInputChange('manager', e.target.value)}
 						>
 							<MenuItem value="">
-								<em>No manager</em>
+								<em>אין מנהל</em>
 							</MenuItem>
 							{managers.map((manager) => (
 								<MenuItem key={manager.userId} value={manager.userId}>
@@ -276,10 +287,10 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					</FormControl>
 
 					<Box>
-						<Typography variant="subtitle1" sx={{ mb: 1 }}>
-							Roles *
+						<Typography variant="subtitle1" sx={{ mb: 1, textAlign: 'right' }}>
+							תפקידים *
 						</Typography>
-						<FormGroup>
+						<FormGroup sx={{ alignItems: 'flex-end' }}>
 							{ROLE_OPTIONS.map((role) => (
 								<FormControlLabel
 									key={role}
@@ -289,9 +300,15 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 											onChange={() => handleRoleChange(role)}
 										/>
 									}
-									label={role
-										.replace(/([A-Z])/g, ' $1')
-										.replace(/^./, (str) => str.toUpperCase())}
+									label={hebrewRoleNames[role] || 'תפקיד לא ידוע'}
+									sx={{ 
+										flexDirection: 'row-reverse',
+										marginLeft: 0,
+										marginRight: 0,
+										'& .MuiFormControlLabel-label': {
+											textAlign: 'right'
+										}
+									}}
 								/>
 							))}
 						</FormGroup>
@@ -300,17 +317,22 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					{/* Site Manager Site Selection */}
 					{hasSiteManagerRole && (
 						<FormControl fullWidth required>
-							<InputLabel>Site to Manage</InputLabel>
+							<InputLabel>אתר לניהול</InputLabel>
 							<Select
+								sx={{ 
+									'& .MuiSelect-select': { 
+										textAlign: 'right' 
+									} 
+								}}
 								value={formData.siteManagerSite}
-								label="Site to Manage"
+								label="אתר לניהול"
 								onChange={(e) =>
 									handleInputChange('siteManagerSite', e.target.value)
 								}
 							>
 								{SITE_MANAGER_OPTIONS.map((site) => (
 									<MenuItem key={site} value={site}>
-										{site.toUpperCase()}
+										{hebrewSiteNames[site] || site.toUpperCase()}
 									</MenuItem>
 								))}
 							</Select>
@@ -319,14 +341,14 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 
 					<Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
 						<Button variant="outlined" onClick={handleClose}>
-							Cancel
+							ביטול
 						</Button>
 						<Button
 							variant="contained"
 							onClick={handleSubmit}
 							disabled={loading}
 						>
-							{loading ? 'Adding...' : 'Add Person'}
+							{loading ? '...בתהליך הוספה' : 'הוסף משתמש'}
 						</Button>
 					</Box>
 				</Stack>
