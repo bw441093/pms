@@ -1,5 +1,5 @@
 const CACHE_NAME = 'whereyouat-v1';
-const urlsToCache = ['/', '/manifest.json', '/favicon.ico'];
+const urlsToCache = ['/'];
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {

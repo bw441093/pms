@@ -12,15 +12,21 @@
 			"src": "/icon-192x192.png",
 			"sizes": "192x192",
 			"type": "image/png",
-			"form": "wide",
-			"purpose": "maskable any"
+			"purpose": "any",
+			"form": "wide"
+		}
+	],
+	"screenshots": [
+		{
+			"src": "/screenshotWide.png",
+			"sizes": "520x825",
+			"type": "image/png",
+			"form_factor": "wide"
 		},
 		{
-			"src": "/icon-512x512.png",
-			"sizes": "512x512",
-			"type": "image/png",
-			"form": "wide",
-			"purpose": "maskable any"
+			"src": "/screenshot.png",
+			"sizes": "520x825",
+			"type": "image/png"
 		}
 	]
 }
