@@ -1,11 +1,9 @@
 import axios from 'axios';
-import type { Person } from './types';
-import { MANAGERS, PEOPLE, ADMINS, SITE_OPTIONS } from './consts';
+import type { Person, Locations } from './types';
+import { MANAGERS, PEOPLE, LOCATION_STATUSES } from './consts';
 
-const STATUS_OPTIONS = ['At Home', 'At Work', 'On Vacation', 'In Transit'];
-
-function getRandomSite() {
-	return SITE_OPTIONS[Math.floor(Math.random() * SITE_OPTIONS.length)];
+function getRandomLocation(): Locations {
+	return LOCATION_STATUSES[Math.floor(Math.random() * LOCATION_STATUSES.length)];
 }
 
 function getRandomPastDate() {
@@ -21,7 +19,7 @@ const initialSites: {
 } = {};
 [...PEOPLE].forEach((person) => {
 	initialSites[person] = {
-		currentSite: getRandomSite(),
+		currentSite: getRandomLocation(),
 		updatedAt: getRandomPastDate(),
 	};
 });
@@ -72,7 +70,7 @@ export async function getUserSite(userId: string) {
 	if (!mockUserSites[userId]) {
 		// Initialize if not present
 		mockUserSites[userId] = {
-			currentSite: getRandomSite(),
+			currentSite: getRandomLocation(),
 			updatedAt: getRandomPastDate(),
 		};
 	}
@@ -105,7 +103,7 @@ export async function addNewPerson(managerId: string, personId: string) {
 
 	// Initialize the person's site data
 	mockPersonSites[personId] = {
-		currentSite: getRandomSite(),
+		currentSite: getRandomLocation(),
 		updatedAt: new Date().toISOString(),
 	};
 

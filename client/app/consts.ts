@@ -1,3 +1,5 @@
+import type { Sites, Roles, Locations } from "./types";
+
 // List of admin user IDs
 export const ADMINS = ['admin1', 'admin2'];
 
@@ -16,13 +18,28 @@ export const MANAGERS = [
 	},
 ];
 
-// List of possible sites
-export const SITE_OPTIONS = ['At Home', 'At Work', 'On Vacation', 'In Transit'];
+export const LOCATION_STATUSES = ["At Home", "At Work", "On Vacation", "In Transit"] as const;
+export const SITE_OPTIONS = ['mbt', 'mfs', 'kir', 'other'] as const;
+export const SITE_MANAGER_OPTIONS = ['mbt', 'mfs', 'kir'] as const ; // Only these sites can have site managers
+export const ROLE_OPTIONS = ['siteManager', 'personnelManager', 'hrManager', 'admin'] as const;
 
-// List of possible report statuses
-export const STATUS_OPTIONS = [
-	'At Home',
-	'At Work',
-	'On Vacation',
-	'In Transit',
-];
+export const hebrewSiteNames: Record<Sites, string> = {
+  mbt: 'מב"ת',
+  mfs: 'מפרשית',
+  kir: 'קריה',
+  other: 'אחר'
+};
+
+export const hebrewRoleNames: Record<Roles, string> = {
+  siteManager: 'מנהל אתר',
+  personnelManager: 'מנהל כוח אדם',
+  hrManager: 'מנהל משאבי אנוש',
+  admin: 'מנהל מערכת',
+};
+
+export const hebrewLocationNames: Record<Locations, string> = {
+  'At Home': "בבית",
+  'At Work': "בעבודה",
+  'On Vacation': "בחופשה",
+  'In Transit': "במעבר",
+};

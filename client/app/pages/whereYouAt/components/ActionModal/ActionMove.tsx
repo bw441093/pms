@@ -5,6 +5,7 @@ import { Check, Close } from '@mui/icons-material';
 import type { Person } from '../../../../types';
 import { getPerson } from '~/clients/personsClient';
 import { usePostMoveStatus, useUpdateMoveStatus } from '~/hooks/useQueries';
+import { hebrewSiteNames } from '~/consts';
 
 const SITE_OPTIONS = ['mbt', 'mfs', 'kir', 'other'];
 
@@ -145,7 +146,7 @@ const MoveAction = ({
 	return (
 		<Stack spacing={3} sx={{ minWidth: 300 }}>
 			<Typography variant="h6" component="h2" gutterBottom>
-				Move Person
+				הזז משתמש
 			</Typography>
 
 			{shouldShowTextInputs && (
@@ -188,8 +189,7 @@ const MoveAction = ({
 			{shouldShowConfirmationButtons && (
 				<Stack spacing={2}>
 					<Typography variant="body2" color="text.secondary">
-						Awaiting confirmation for move from {transaction.origin} to{' '}
-						{transaction.target}
+						ממתין לאישור מעבר מ-{hebrewSiteNames[transaction.origin]} אל- {hebrewSiteNames[transaction.target]}
 					</Typography>
 
 					<Stack direction="row" spacing={2}>
@@ -200,7 +200,7 @@ const MoveAction = ({
 							disabled={isButtonDisabled('origin') || isLoading}
 							fullWidth
 						>
-							Origin Auth
+							אישור מקור
 						</Button>
 						<Button
 							variant="outlined"
@@ -209,7 +209,7 @@ const MoveAction = ({
 							disabled={isButtonDisabled('target') || isLoading}
 							fullWidth
 						>
-							Target Auth
+							אישור יעד
 						</Button>
 					</Stack>
 				</Stack>
@@ -217,7 +217,7 @@ const MoveAction = ({
 
 			<Stack direction="row" spacing={2} justifyContent="flex-end">
 				<Button variant="outlined" onClick={onClose}>
-					Cancel
+					ביטול
 				</Button>
 				{shouldShowTextInputs && (
 					<Button
@@ -225,7 +225,7 @@ const MoveAction = ({
 						onClick={handleButtonClick}
 						disabled={isLoading}
 					>
-						Submit
+						שליחה
 					</Button>
 				)}
 			</Stack>

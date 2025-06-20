@@ -1,7 +1,15 @@
+import type { SITE_OPTIONS, ROLE_OPTIONS, LOCATION_STATUSES } from "./consts";
+
+export type Roles = typeof ROLE_OPTIONS[number];
+
+export type Sites = typeof SITE_OPTIONS[number];
+
+export type Locations = typeof LOCATION_STATUSES[number];
+
 export type Person = {
 	id: string;
 	name: string;
-	site: string;
+	site: Sites;
 	manager: {
 		id: string;
 		name: string;
@@ -12,8 +20,8 @@ export type Person = {
 	updatedAt: string;
 	transaction?: {
 		id: string;
-		origin: string;
-		target: string;
+		origin: Sites;
+		target: Sites;
 		originConfirmation: boolean;
 		targetConfirmation: boolean;
 		field: string;
@@ -23,7 +31,7 @@ export type Person = {
 	personRoles?: {
 		role: {
 			id: string;
-			name: string;
+			name: Roles;
 			opts: any;
 		};
 	}[];

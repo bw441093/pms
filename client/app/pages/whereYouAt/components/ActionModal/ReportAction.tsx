@@ -42,16 +42,16 @@ const ReportAction = ({
 	return (
 		<Stack spacing={3} sx={{ minWidth: 300 }}>
 			<Typography variant="h6" component="h2" gutterBottom>
-				Report your location/status
+		  	דווח מיקום / סטטוס 
 			</Typography>
 			<Stack spacing={2}>
 				<FormControl fullWidth>
-					<InputLabel id="status-select-label">Status</InputLabel>
+					<InputLabel id="status-select-label">סטטוס</InputLabel>
 					<Select
 						labelId="status-select-label"
 						id="status-select"
 						value={reportStatusReport}
-						label="Status"
+						label="סטטוס"
 						onChange={(e) => setReportStatusReport(e.target.value)}
 					>
 						{STATUS_OPTIONS.map((option: string) => (
@@ -62,7 +62,7 @@ const ReportAction = ({
 					</Select>
 				</FormControl>
 				<TextField
-					label="Location"
+					label="מיקום"
 					fullWidth
 					disabled={site !== 'other'}
 					value={locationReport}
@@ -73,14 +73,14 @@ const ReportAction = ({
 			</Stack>
 			<Stack direction="row" spacing={2} justifyContent="flex-end">
 				<Button variant="outlined" onClick={onClose}>
-					Cancel
+					ביטול
 				</Button>
 				<Button
 					variant="contained"
 					onClick={handleButtonClick}
 					disabled={updateReportStatusMutation.isPending}
 				>
-					Submit
+					שליחה
 				</Button>
 			</Stack>
 		</Stack>

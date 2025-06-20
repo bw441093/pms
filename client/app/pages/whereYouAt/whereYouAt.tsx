@@ -9,7 +9,7 @@ import {
 } from '../../hooks/useQueries';
 import TopBar from './components/TopBar';
 import { Stack } from '@mui/material';
-import type { Person } from '~/types';
+import type { Person } from '../../types';
 
 export default function WhereYouAt() {
 	const [userId, setUserId] = useState('');
@@ -52,7 +52,7 @@ export default function WhereYouAt() {
 						key={person.id}
 						person={person}
 						expanded={expandedCardId === person.id}
-						onExpandChange={(expanded) => handleCardExpand(person.id, expanded)}
+						onExpandChange={(expanded: boolean) => handleCardExpand(person.id, expanded)}
 					/>
 				))}
 		</Stack>

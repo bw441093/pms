@@ -49,8 +49,8 @@ const TopBar = () => {
 					setCurrentUser(user);
 				}
 			} catch (err) {
-				console.error('Error fetching current user:', err);
-				setError('Failed to load user information');
+				console.error('שגיאה בשליפת פרטי המשתמש', err);
+				setError('אירעה שגיאה בטעינת פרטי המשתמש');
 			} finally {
 				setUserLoading(false);
 			}
@@ -67,7 +67,7 @@ const TopBar = () => {
 
 	const toggleDrawer = (open: Boolean) => {
 		if (open && !hasAdminAccess()) {
-			setError('You do not have permission to access this menu');
+			setError('אין לך הרשאה לגשת לתפריט הזה');
 			return;
 		}
 		setDrawerOpen(!!open);
@@ -101,7 +101,7 @@ const TopBar = () => {
 			console.log('All users alerted successfully');
 		} catch (err: any) {
 			console.error('Error alerting all users:', err);
-			setError(err.response?.data || 'Failed to alert all users');
+			setError(err.response?.data || 'נכשל ניסיון לשלוח התראה לכל המשתמשים');
 		} finally {
 			setLoading(false);
 		}
@@ -133,7 +133,7 @@ const TopBar = () => {
 			setDrawerOpen(false);
 		} catch (err: any) {
 			console.error('Error exporting users:', err);
-			setError(err.response?.data || 'Failed to export users');
+			setError(err.response?.data || 'אירעה שגיאה בעת ייצוא המשתמשים');
 		} finally {
 			setLoading(false);
 		}
@@ -141,13 +141,13 @@ const TopBar = () => {
 
 	const menuItems = [
 		{
-			text: 'Alert All Users',
+			text: 'שלח התראה לכולם',
 			icon: <AlertIcon />,
 			onClick: handleAlertAll,
 			disabled: loading,
 		},
 		{
-			text: 'Export Users',
+			text: 'ייצוא משתמשים',
 			icon: <ExportIcon />,
 			onClick: handleExport,
 			disabled: loading,
@@ -182,7 +182,7 @@ const TopBar = () => {
 							size="large"
 							edge="end"
 							color="inherit"
-							aria-label="add person"
+							aria-label="הוסף משתמש"
 							onClick={handleAddPersonOpen}
 						>
 							<AddIcon />
@@ -257,7 +257,7 @@ const TopBar = () => {
 				onClose={handleAddPersonClose}
 				onSuccess={() => {
 					// You can add a callback here to refresh the person list
-					console.log('Person added successfully');
+					console.log('המשתמש נוסף בהצלחה');
 				}}
 			/>
 		</>

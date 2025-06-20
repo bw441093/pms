@@ -15,6 +15,7 @@ import { Close as CloseIcon } from '@mui/icons-material';
 import axios from 'axios';
 
 import type { Person } from '../../../../types';
+import { hebrewRoleNames, hebrewSiteNames, SITE_MANAGER_OPTIONS, ROLE_OPTIONS } from '~/consts';
 import { getPerson } from '../../../../clients/personsClient';
 
 interface RoleActionProps {
@@ -22,8 +23,6 @@ interface RoleActionProps {
 	onClose: () => void;
 	onSuccess?: () => void;
 }
-
-const ROLE_OPTIONS = ['siteManager', 'personnelManager', 'hrManager', 'admin'];
 
 const RoleAction: React.FC<RoleActionProps> = ({
 	person,
@@ -48,7 +47,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 				}
 			} catch (err) {
 				console.error('Error fetching current user:', err);
-				setError('Failed to load user information');
+				setError('אירעה שגיאה בעת טעינת פרטי המשתמש');
 			} finally {
 				setUserLoading(false);
 			}
@@ -127,7 +126,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 
 	const handleRoleChange = (role: string) => {
 		if (!canModifyRole(role)) {
-			setError('You do not have permission to modify this role');
+			setError('אין לך הרשאות מתאימות לעריכת תפקיד זה');
 			return;
 		}
 
@@ -148,7 +147,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 
 	const handleSiteChange = (site: string) => {
 		if (!canModifySite(site)) {
-			setError('You do not have permission to modify this site');
+			setError('אין לך הרשאות מתאימות לעריכת אתר זה');
 			return;
 		}
 
@@ -164,7 +163,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 
 	const handleSubmit = async () => {
 		if (selectedRoles.length === 0) {
-			setError('At least one role must be selected');
+			setError('יש לסמן לפחות תפקיד אחד');
 			return;
 		}
 
@@ -173,7 +172,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 			selectedRoles.includes('siteManager') &&
 			siteManagerSites.length === 0
 		) {
-			setError('Site Manager must have at least one site selected');
+			setError('מנהל אתר חייב לבחור לפחות אתר אחד');
 			return;
 		}
 
@@ -183,9 +182,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 		);
 		if (unauthorizedRoles.length > 0) {
 			setError(
-				`You do not have permission to assign these roles: ${unauthorizedRoles.join(
-					', '
-				)}`
+				`אין לך הרשאה להקצות את התפקידים הבאים: ${unauthorizedRoles.join(', ')}`
 			);
 			return;
 		}
@@ -195,9 +192,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 		);
 		if (unauthorizedSites.length > 0) {
 			setError(
-				`You do not have permission to assign these sites: ${unauthorizedSites.join(
-					', '
-				)}`
+				`אין לך הרשאה להקצות את האתרים הבאים: ${unauthorizedSites.join(', ')}`
 			);
 			return;
 		}
@@ -225,7 +220,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 			onClose();
 		} catch (err: any) {
 			console.error('Error updating roles:', err);
-			setError(err.response?.data || 'Failed to update roles');
+			setError(err.response?.data || 'עדכון התפקידים נכשל');
 		} finally {
 			setLoading(false);
 		}
@@ -240,7 +235,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 	if (userLoading) {
 		return (
 			<Box sx={{ width: '100%', textAlign: 'center', py: 4 }}>
-				<Typography>Loading user permissions...</Typography>
+				<Typography>...טוען הרשאות משתמש</Typography>
 			</Box>
 		);
 	}
@@ -256,7 +251,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 				}}
 			>
 				<Typography variant="h6" component="h2">
-					Manage Roles - {person.name}
+				{person.name} - ניהול תפקידים
 				</Typography>
 				<IconButton onClick={handleClose}>
 					<CloseIcon />
@@ -272,7 +267,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 			<Stack spacing={3}>
 				<Box>
 					<Typography variant="subtitle1" sx={{ mb: 2 }}>
-						Roles
+						תפקידים
 					</Typography>
 					<FormGroup>
 						{ROLE_OPTIONS.map((role) => (
@@ -285,9 +280,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 										disabled={!canModifyRole(role)}
 									/>
 								}
-								label={role
-									.replace(/([A-Z])/g, ' $1')
-									.replace(/^./, (str) => str.toUpperCase())}
+								label={hebrewRoleNames[role] || 'תפקיד לא ידוע'}
 							/>
 						))}
 					</FormGroup>
@@ -298,10 +291,10 @@ const RoleAction: React.FC<RoleActionProps> = ({
 					<Box>
 						<Divider sx={{ my: 2 }} />
 						<Typography variant="subtitle1" sx={{ mb: 2 }}>
-							Sites to Manage
+							אתרים לניהול
 						</Typography>
 						<FormGroup>
-							{['mbt', 'mfs', 'kir'].map((site) => (
+							{SITE_MANAGER_OPTIONS.map((site) => (
 								<FormControlLabel
 									key={site}
 									control={
@@ -311,7 +304,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 											disabled={!canModifySite(site)}
 										/>
 									}
-									label={site.toUpperCase()}
+									label={hebrewSiteNames[site] ?? site.toUpperCase()}
 								/>
 							))}
 						</FormGroup>
@@ -323,7 +316,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 						Cancel
 					</Button>
 					<Button variant="contained" onClick={handleSubmit} disabled={loading}>
-						{loading ? 'Updating...' : 'Update Roles'}
+						{loading ? '...מעדכן' : 'עדכן תפקידים'}
 					</Button>
 				</Box>
 			</Stack>

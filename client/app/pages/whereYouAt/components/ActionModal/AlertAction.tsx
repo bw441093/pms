@@ -30,7 +30,7 @@ const AlertAction = ({
 	return (
 		<Stack spacing={3} sx={{ minWidth: 300 }}>
 			<Typography variant="h6" component="h2" gutterBottom>
-				Update Alert Status
+			  עדכן מצב התראה  
 			</Typography>
 			<Stack direction="row" spacing={2} justifyContent="center">
 				<Button
@@ -41,7 +41,7 @@ const AlertAction = ({
 					onClick={(e) => handleButtonClick('good', e)}
 					disabled={updateAlertStatusMutation.isPending}
 				>
-					Good
+					טוב
 				</Button>
 				<Button
 					variant="contained"
@@ -51,12 +51,12 @@ const AlertAction = ({
 					onClick={(e) => handleButtonClick('bad', e)}
 					disabled={updateAlertStatusMutation.isPending}
 				>
-					Bad
+					רע
 				</Button>
 			</Stack>
 			<Stack direction="row" spacing={2} justifyContent="center">
 				<Button variant="outlined" onClick={onClose}>
-					Cancel
+					ביטול
 				</Button>
 			</Stack>
 		</Stack>

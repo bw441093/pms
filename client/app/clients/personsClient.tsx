@@ -1,8 +1,5 @@
 import axios from 'axios';
 import type { Person } from '../types';
-import { MANAGERS, PEOPLE, ADMINS, SITE_OPTIONS } from '../consts';
-
-const STATUS_OPTIONS = ['At Home', 'At Work', 'On Vacation', 'In Transit'];
 
 // Create axios instance with base configuration
 const apiClient = axios.create({

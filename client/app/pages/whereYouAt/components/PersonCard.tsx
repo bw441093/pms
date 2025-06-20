@@ -106,7 +106,7 @@ const PersonCard: React.FC<PersonCardProps> = ({
 						<Stack direction="row" flexGrow={1}>
 							<Stack flexGrow={1}>
 								<Typography>{name}</Typography>
-								<Typography>{manager?.name || 'No manager'}</Typography>
+								<Typography>{manager?.name || 'אין מפקד'}</Typography>
 								<Typography>{site}</Typography>
 							</Stack>
 							<Stack flexGrow={1}>
@@ -125,7 +125,7 @@ const PersonCard: React.FC<PersonCardProps> = ({
 							transition: 'transform 0.3s ease',
 						}}
 						aria-expanded={expanded}
-						aria-label="show more"
+						aria-label="הראה יותר"
 					>
 						<ExpandMoreIcon />
 					</IconButton>
