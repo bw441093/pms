@@ -4,7 +4,7 @@ import { Check, Close } from '@mui/icons-material';
 
 import type { Person } from '../../../../types';
 import { useUpdateReportStatus } from '~/hooks/useQueries';
-import { LOCATION_STATUSES } from '../../../../consts';
+import { hebrewLocationNames, LOCATION_STATUSES } from '../../../../consts';
 
 const ReportAction = ({
 	person,
@@ -41,27 +41,12 @@ const ReportAction = ({
 
 	return (
 		<Stack spacing={3} sx={{ minWidth: 300 }}>
-			<Typography variant="h6" component="h2" gutterBottom>
+			<Typography variant="h6" component="h2" sx={{ textAlign: 'right' }} gutterBottom>
 		  	דווח מיקום / סטטוס 
 			</Typography>
-			<Stack spacing={2}>
-				<FormControl fullWidth>
-					<InputLabel id="status-select-label">סטטוס</InputLabel>
-					<Select
-						labelId="status-select-label"
-						id="status-select"
-						value={reportStatusReport}
-						label="סטטוס"
-						onChange={(e) => setReportStatusReport(e.target.value)}
-					>
-						{LOCATION_STATUSES.map((option: string) => (
-							<MenuItem key={option} value={option}>
-								{option}
-							</MenuItem>
-						))}
-					</Select>
-				</FormControl>
-				<TextField
+			<Stack spacing={2}>				
+				<TextField				
+					inputProps={{ style: { textAlign: 'right' } }}
 					label="מיקום"
 					fullWidth
 					disabled={site !== 'other'}
@@ -71,6 +56,27 @@ const ReportAction = ({
 					}
 				/>
 			</Stack>
+			<FormControl fullWidth>
+					<InputLabel id="status-select-label">סטטוס</InputLabel>
+					<Select
+						labelId="status-select-label"
+						id="status-select"
+						value={reportStatusReport}
+						label="סטטוס"
+						sx={{ 
+							'& .MuiSelect-select': { 
+								textAlign: 'right' 
+							} 
+						}}
+						onChange={(e) => setReportStatusReport(e.target.value)}
+					>
+						{LOCATION_STATUSES.map((option) => (
+							<MenuItem key={option} value={option}>
+								{hebrewLocationNames[option]}
+							</MenuItem>
+						))}
+					</Select>
+				</FormControl>
 			<Stack direction="row" spacing={2} justifyContent="flex-end">
 				<Button variant="outlined" onClick={onClose}>
 					ביטול

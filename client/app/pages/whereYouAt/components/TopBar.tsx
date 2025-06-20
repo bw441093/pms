@@ -175,7 +175,7 @@ const TopBar = () => {
 							component="div"
 							sx={{ flexGrow: 1, textAlign: 'center' }}
 						>
-							My App
+						  ?איפה אתה נמצא
 						</Typography>
 
 						<IconButton
@@ -228,10 +228,10 @@ const TopBar = () => {
 					}}
 				>
 					<Box sx={{ p: 2 }}>
-						<Typography variant="h6" sx={{ mb: 2 }}>
-							Admin Menu
+						<Typography variant="h6" sx={{ mb: 2, textAlign: 'right' }}>
+							תפריט מנהלים
 						</Typography>
-						<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+						<Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'right' }}>
 							{currentUser?.name}
 						</Typography>
 					</Box>
@@ -242,12 +242,18 @@ const TopBar = () => {
 								key={item.text}
 								onClick={item.onClick}
 								disabled={item.disabled}
+								sx={{ flexDirection: 'row-reverse' }}
 							>
-								<ListItemIcon>{item.icon}</ListItemIcon>
-								<ListItemText primary={item.text} />
+								<ListItemIcon sx={{ minWidth: 'auto', marginRight: 0, marginLeft: 2 }}>
+									{item.icon}
+								</ListItemIcon>
+								<ListItemText 
+									primary={item.text} 
+									sx={{ textAlign: 'right' }} 
+								/>
 							</ListItemButton>
 						))}
-					</List>
+				</List>
 				</Box>
 			</Drawer>
 

@@ -5,9 +5,7 @@ import { Check, Close } from '@mui/icons-material';
 import type { Person } from '../../../../types';
 import { getPerson } from '~/clients/personsClient';
 import { usePostMoveStatus, useUpdateMoveStatus } from '~/hooks/useQueries';
-import { hebrewSiteNames } from '~/consts';
-
-const SITE_OPTIONS = ['mbt', 'mfs', 'kir', 'other'];
+import { hebrewSiteNames, SITE_OPTIONS } from '~/consts';
 
 const MoveAction = ({
 	person,
@@ -145,40 +143,50 @@ const MoveAction = ({
 
 	return (
 		<Stack spacing={3} sx={{ minWidth: 300 }}>
-			<Typography variant="h6" component="h2" gutterBottom>
+			<Typography variant="h6" component="h2" sx={{ textAlign: 'right' }} gutterBottom>
 				הזז משתמש
 			</Typography>
 
 			{shouldShowTextInputs && (
 				<Stack spacing={2}>
 					<FormControl fullWidth>
-						<InputLabel id="origin-select-label">Origin</InputLabel>
+						<InputLabel id="origin-select-label">מקור</InputLabel>
 						<Select
+							sx={{ 
+								'& .MuiSelect-select': { 
+									textAlign: 'right' 
+								} 
+							}}
 							labelId="origin-select-label"
 							id="origin-select"
 							value={origin}
-							label="Origin"
+							label="origin"
 							onChange={(e) => setOrigin(e.target.value)}
 						>
-							{SITE_OPTIONS.map((option: string) => (
+							{SITE_OPTIONS.map((option) => (
 								<MenuItem key={option} value={option}>
-									{option.toUpperCase()}
+									{hebrewSiteNames[option]}
 								</MenuItem>
 							))}
 						</Select>
 					</FormControl>
 					<FormControl fullWidth>
-						<InputLabel id="target-select-label">Target</InputLabel>
+						<InputLabel id="target-select-label">יעד</InputLabel>
 						<Select
+							sx={{ 
+								'& .MuiSelect-select': { 
+									textAlign: 'right' 
+								} 
+							}}
 							labelId="target-select-label"
 							id="target-select"
 							value={target}
 							label="Target"
 							onChange={(e) => setTarget(e.target.value)}
 						>
-							{SITE_OPTIONS.map((option: string) => (
+							{SITE_OPTIONS.map((option) => (
 								<MenuItem key={option} value={option}>
-									{option.toUpperCase()}
+									{hebrewSiteNames[option]}
 								</MenuItem>
 							))}
 						</Select>
@@ -188,20 +196,11 @@ const MoveAction = ({
 
 			{shouldShowConfirmationButtons && (
 				<Stack spacing={2}>
-					<Typography variant="body2" color="text.secondary">
+					<Typography variant="body2" color="text.secondary" sx={{ textAlign: 'right' }}>
 						ממתין לאישור מעבר מ-{hebrewSiteNames[transaction.origin]} אל- {hebrewSiteNames[transaction.target]}
 					</Typography>
 
 					<Stack direction="row" spacing={2}>
-						<Button
-							variant="outlined"
-							startIcon={<Check />}
-							onClick={(e) => handleConfirmButtonClick('origin', e)}
-							disabled={isButtonDisabled('origin') || isLoading}
-							fullWidth
-						>
-							אישור מקור
-						</Button>
 						<Button
 							variant="outlined"
 							startIcon={<Check />}
@@ -210,6 +209,15 @@ const MoveAction = ({
 							fullWidth
 						>
 							אישור יעד
+						</Button>
+						<Button
+							variant="outlined"
+							startIcon={<Check />}
+							onClick={(e) => handleConfirmButtonClick('origin', e)}
+							disabled={isButtonDisabled('origin') || isLoading}
+							fullWidth
+						>
+							אישור מקור
 						</Button>
 					</Stack>
 				</Stack>

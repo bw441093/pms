@@ -18,7 +18,7 @@ export const MANAGERS = [
 	},
 ];
 
-export const LOCATION_STATUSES = ["At Home", "At Work", "On Vacation", "In Transit"] as const;
+export const LOCATION_STATUSES = ["At Home", "At Work", "On Vacation", "In Transit", "late", "on_leave", "absent", "present", "on shift"] as const;
 export const SITE_OPTIONS = ['mbt', 'mfs', 'kir', 'other'] as const;
 export const SITE_MANAGER_OPTIONS = ['mbt', 'mfs', 'kir'] as const ; // Only these sites can have site managers
 export const ROLE_OPTIONS = ['siteManager', 'personnelManager', 'hrManager', 'admin'] as const;
@@ -42,4 +42,10 @@ export const hebrewLocationNames: Record<Locations, string> = {
   'At Work': "בעבודה",
   'On Vacation': "בחופשה",
   'In Transit': "במעבר",
+  'late': "מאחר",
+  'on_leave': "עוזב",
+  'absent': "נעדר",
+  'present': "נוכח",
+  'on shift': "במשמרת"
+
 };

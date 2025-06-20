@@ -22,6 +22,7 @@ import {
 
 import type { Person } from '../../../types';
 import ActionModal from './ActionModal/ActionModal';
+import { hebrewLocationNames, hebrewSiteNames } from '~/consts';
 
 const defaultPerson: Person = {
 	id: '13123123',
@@ -92,33 +93,7 @@ const PersonCard: React.FC<PersonCardProps> = ({
 					},
 				}}
 			>
-				<Stack direction="row" alignItems="center" gap={2}>
-					<Circle
-						color={
-							alertStatus !== 'good' ||
-							(transaction && transaction?.status !== 'resolved')
-								? 'error'
-								: 'success'
-						}
-					/>
-
-					<Stack flexGrow={1}>
-						<Stack direction="row" flexGrow={1}>
-							<Stack flexGrow={1}>
-								<Typography>{name}</Typography>
-								<Typography>{manager?.name || 'אין מפקד'}</Typography>
-								<Typography>{site}</Typography>
-							</Stack>
-							<Stack flexGrow={1}>
-								<Typography>{reportStatus}</Typography>
-								<Typography>{location}</Typography>
-							</Stack>
-						</Stack>
-						<Typography variant="caption" color="text.secondary">
-							{updatedAt}
-						</Typography>
-					</Stack>
-
+				<Stack direction="row" alignItems="center" gap={2}>		
 					<IconButton
 						sx={{
 							transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -129,6 +104,51 @@ const PersonCard: React.FC<PersonCardProps> = ({
 					>
 						<ExpandMoreIcon />
 					</IconButton>
+					<Stack flexGrow={1}>
+						<Stack direction="row" flexGrow={1}>							
+							<Stack flexGrow={1} textAlign="right">
+								<Typography>
+									{
+										reportStatus in hebrewLocationNames 
+											? hebrewLocationNames[reportStatus as keyof typeof hebrewLocationNames] 
+											: reportStatus
+									}
+								</Typography>
+								<Typography>
+									{
+										location in hebrewSiteNames 
+											? hebrewSiteNames[location as keyof typeof hebrewSiteNames] 
+											: location
+									}
+								</Typography>
+							</Stack>
+							<Stack flexGrow={1} textAlign="right">
+								<Typography>{name}</Typography>
+								<Typography>{manager?.name || 'אין מפקד'}</Typography>
+								<Typography>{hebrewSiteNames[site]}</Typography>
+							</Stack>
+						</Stack>
+						<Typography variant="caption" color="text.secondary">
+							{new Date(updatedAt).toLocaleDateString('he-IL', {
+								year: 'numeric',
+								month: '2-digit',
+								day: '2-digit',
+								hour: '2-digit',
+								minute: '2-digit',
+								second: '2-digit',
+								hour12: false
+							})}
+						</Typography>
+					</Stack>
+					
+					<Circle
+						color={
+							alertStatus !== 'good' ||
+							(transaction && transaction?.status !== 'resolved')
+								? 'error'
+								: 'success'
+						}
+					/>
 				</Stack>
 			</CardContent>
 

@@ -201,19 +201,19 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 				}}
 			>
 				<Box
-					sx={{
+					sx={{	
 						display: 'flex',
 						justifyContent: 'space-between',
 						alignItems: 'center',
 						mb: 3,
 					}}
 				>
-					<Typography id="add-person-modal-title" variant="h6" component="h2">
-						הוספת משתמש חדש
-					</Typography>
 					<IconButton onClick={handleClose}>
 						<CloseIcon />
 					</IconButton>
+					<Typography id="add-person-modal-title" variant="h6" component="h2" sx={{ textAlign: 'right' }}>
+						הוספת משתמש חדש
+					</Typography>
 				</Box>
 
 				{error && (
@@ -224,8 +224,9 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 
 				<Stack spacing={3}>
 					<TextField
-						label="Email"
+						label="אימייל"
 						type="email"
+						inputProps={{ style: { textAlign: 'right' } }}
 						value={formData.email}
 						onChange={(e) => handleInputChange('email', e.target.value)}
 						required
@@ -233,7 +234,8 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					/>
 
 					<TextField
-						label="Name"
+						label="שם"
+						inputProps={{ style: { textAlign: 'right' } }}
 						value={formData.name}
 						onChange={(e) => handleInputChange('name', e.target.value)}
 						required
@@ -243,12 +245,17 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					<FormControl fullWidth required>
 						<InputLabel>אתר</InputLabel>
 						<Select
+							sx={{ 
+								'& .MuiSelect-select': { 
+									textAlign: 'right' 
+								} 
+							}}
 							value={formData.site}
 							label="Site"
 							onChange={(e) => handleInputChange('site', e.target.value)}
 						>
 							{SITE_OPTIONS.map((site) => (
-								<MenuItem key={site} value={site}>
+								<MenuItem key={site} value={site}  style={{ textAlign: 'right' }}>
 									{hebrewSiteNames[site] || site.toUpperCase()}
 								</MenuItem>
 							))}
@@ -258,8 +265,14 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					<FormControl fullWidth>
 						<InputLabel>(רשות) מנהל</InputLabel>
 						<Select
+							sx={{ 
+								'& .MuiSelect-select': { 
+									textAlign: 'right' 
+								} 
+							}}
 							value={formData.manager}
 							label="(רשות) מנהל"
+							inputProps={{ style: { textAlign: 'right' } }}
 							onChange={(e) => handleInputChange('manager', e.target.value)}
 						>
 							<MenuItem value="">
@@ -274,10 +287,10 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					</FormControl>
 
 					<Box>
-						<Typography variant="subtitle1" sx={{ mb: 1 }}>
+						<Typography variant="subtitle1" sx={{ mb: 1, textAlign: 'right' }}>
 							תפקידים *
 						</Typography>
-						<FormGroup>
+						<FormGroup sx={{ alignItems: 'flex-end' }}>
 							{ROLE_OPTIONS.map((role) => (
 								<FormControlLabel
 									key={role}
@@ -288,6 +301,14 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 										/>
 									}
 									label={hebrewRoleNames[role] || 'תפקיד לא ידוע'}
+									sx={{ 
+										flexDirection: 'row-reverse',
+										marginLeft: 0,
+										marginRight: 0,
+										'& .MuiFormControlLabel-label': {
+											textAlign: 'right'
+										}
+									}}
 								/>
 							))}
 						</FormGroup>
@@ -298,6 +319,11 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 						<FormControl fullWidth required>
 							<InputLabel>אתר לניהול</InputLabel>
 							<Select
+								sx={{ 
+									'& .MuiSelect-select': { 
+										textAlign: 'right' 
+									} 
+								}}
 								value={formData.siteManagerSite}
 								label="אתר לניהול"
 								onChange={(e) =>
