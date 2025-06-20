@@ -11,15 +11,12 @@ import {
 	Stack,
 	Modal,
 } from '@mui/material';
-import {
-	ExpandMore as ExpandMoreIcon,
-	Warning,
-	Campaign,
-	Shuffle,
-	MoreVert,
-	Circle,
-} from '@mui/icons-material';
-
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import Warning from '@mui/icons-material/Warning';
+import Campaign from '@mui/icons-material/Campaign';
+import Shuffle from '@mui/icons-material/Shuffle';
+import MoreVert from '@mui/icons-material/MoreVert';
+import Circle from '@mui/icons-material/Circle';
 import type { Person } from '../../../types';
 import ActionModal from './ActionModal/ActionModal';
 import { hebrewLocationNames, hebrewSiteNames } from '~/consts';
@@ -93,7 +90,7 @@ const PersonCard: React.FC<PersonCardProps> = ({
 					},
 				}}
 			>
-				<Stack direction="row" alignItems="center" gap={2}>		
+				<Stack direction="row" alignItems="center" gap={2}>
 					<IconButton
 						sx={{
 							transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -105,21 +102,19 @@ const PersonCard: React.FC<PersonCardProps> = ({
 						<ExpandMoreIcon />
 					</IconButton>
 					<Stack flexGrow={1}>
-						<Stack direction="row" flexGrow={1}>							
+						<Stack direction="row" flexGrow={1}>
 							<Stack flexGrow={1} textAlign="right">
 								<Typography>
-									{
-										reportStatus in hebrewLocationNames 
-											? hebrewLocationNames[reportStatus as keyof typeof hebrewLocationNames] 
-											: reportStatus
-									}
+									{reportStatus in hebrewLocationNames
+										? hebrewLocationNames[
+												reportStatus as keyof typeof hebrewLocationNames
+										  ]
+										: reportStatus}
 								</Typography>
 								<Typography>
-									{
-										location in hebrewSiteNames 
-											? hebrewSiteNames[location as keyof typeof hebrewSiteNames] 
-											: location
-									}
+									{location in hebrewSiteNames
+										? hebrewSiteNames[location as keyof typeof hebrewSiteNames]
+										: location}
 								</Typography>
 							</Stack>
 							<Stack flexGrow={1} textAlign="right">
@@ -136,11 +131,11 @@ const PersonCard: React.FC<PersonCardProps> = ({
 								hour: '2-digit',
 								minute: '2-digit',
 								second: '2-digit',
-								hour12: false
+								hour12: false,
 							})}
 						</Typography>
 					</Stack>
-					
+
 					<Circle
 						color={
 							alertStatus !== 'good' ||

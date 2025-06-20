@@ -16,6 +16,7 @@ import {
 	updatePersonSite,
 	updatePersonStatusLocation,
 	updatePersonAlertStatus,
+	updateAlertStatus,
 } from '../db/persons';
 import { createRole, deleteRoles } from '../db/roles';
 import {
@@ -34,6 +35,7 @@ import type {
 	UpdateRoles,
 } from '../types';
 import { logger } from '../logger';
+import { broadcast } from '../websocket';
 
 dayjs.extend(utc);
 
@@ -286,12 +288,9 @@ export const alertAllUsersHandler = async (req: Request, res: Response) => {
 		const allUsers = await find();
 
 		// Update alert status for all users to 'pending'
-		const updatePromises = allUsers.map((user) =>
-			updatePersonAlertStatus(user.id, 'pending')
-		);
+		await updateAlertStatus();
 
-		await Promise.all(updatePromises);
-
+		broadcast('alert', { status: 'pending' });
 		logger.info(`Successfully alerted ${allUsers.length} users`);
 		res.status(200).send({ message: `Alerted ${allUsers.length} users` });
 	} catch (err) {

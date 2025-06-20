@@ -175,6 +175,14 @@ export const updatePersonAlertStatus = async (
 	return user;
 };
 
+export const updateAlertStatus = async () => {
+	const user = await db
+		.update(PersonsTable)
+		.set({ alertStatus: 'pending', updatedAt: new Date() });
+
+	return user;
+};
+
 export const deletePerson = async (id: string) => {
 	const user = await db
 		.delete(PersonsTable)

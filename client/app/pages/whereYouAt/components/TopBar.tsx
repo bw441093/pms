@@ -14,16 +14,14 @@ import {
 	Stack,
 	Alert,
 } from '@mui/material';
-import {
-	Menu as MenuIcon,
-	Add as AddIcon,
-	Warning as AlertIcon,
-	Download as ExportIcon,
-	Home as HomeIcon,
-	Settings as SettingsIcon,
-	Person as PersonIcon,
-	Info as InfoIcon,
-} from '@mui/icons-material';
+import MenuIcon from '@mui/icons-material/Menu';
+import AddIcon from '@mui/icons-material/Add';
+import AlertIcon from '@mui/icons-material/Warning';
+import ExportIcon from '@mui/icons-material/Download';
+import HomeIcon from '@mui/icons-material/Home';
+import SettingsIcon from '@mui/icons-material/Settings';
+import PersonIcon from '@mui/icons-material/Person';
+import InfoIcon from '@mui/icons-material/Info';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 import AddPersonModal from './ActionModal/AddPersonModal';
@@ -175,7 +173,7 @@ const TopBar = () => {
 							component="div"
 							sx={{ flexGrow: 1, textAlign: 'center' }}
 						>
-						  ?איפה אתה נמצא
+							?איפה אתה נמצא
 						</Typography>
 
 						<IconButton
@@ -231,7 +229,11 @@ const TopBar = () => {
 						<Typography variant="h6" sx={{ mb: 2, textAlign: 'right' }}>
 							תפריט מנהלים
 						</Typography>
-						<Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'right' }}>
+						<Typography
+							variant="body2"
+							color="text.secondary"
+							sx={{ mb: 2, textAlign: 'right' }}
+						>
 							{currentUser?.name}
 						</Typography>
 					</Box>
@@ -244,16 +246,15 @@ const TopBar = () => {
 								disabled={item.disabled}
 								sx={{ flexDirection: 'row-reverse' }}
 							>
-								<ListItemIcon sx={{ minWidth: 'auto', marginRight: 0, marginLeft: 2 }}>
+								<ListItemIcon
+									sx={{ minWidth: 'auto', marginRight: 0, marginLeft: 2 }}
+								>
 									{item.icon}
 								</ListItemIcon>
-								<ListItemText 
-									primary={item.text} 
-									sx={{ textAlign: 'right' }} 
-								/>
+								<ListItemText primary={item.text} sx={{ textAlign: 'right' }} />
 							</ListItemButton>
 						))}
-				</List>
+					</List>
 				</Box>
 			</Drawer>
 

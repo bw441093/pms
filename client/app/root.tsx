@@ -13,6 +13,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import type { Route } from './+types/root';
 import './app.css';
+import { SocketContext } from './contexts/SocketContext';
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -70,22 +71,60 @@ const queryClient = new QueryClient();
 export default function App() {
 	const location = useLocation();
 	const navigate = useNavigate();
+	const [socket, setSocket] = React.useState<WebSocket | null>(null);
 
 	React.useEffect(() => {
 		const token = localStorage.getItem('login_token');
 		if (!token && location.pathname !== '/login') {
 			navigate('/login', { replace: true });
 		}
+
+		if ('Notification' in window && Notification.permission !== 'granted') {
+			Notification.requestPermission();
+		}
 	}, [location, navigate]);
+
+	React.useEffect(() => {
+		const connectionString =
+			window.location.hostname === 'localhost'
+				? 'ws://localhost:3000'
+				: `wss://${window.location.host}`;
+		const ws = new WebSocket(connectionString);
+		setSocket(ws);
+
+		ws.onopen = () => {
+			console.log('connected');
+		};
+
+		ws.onmessage = (event) => {
+			console.log(JSON.stringify(event));
+			const { event: eventName } = JSON.parse(event.data);
+			if (eventName === 'alert') {
+				new Notification('נכס״ל', {
+					body: 'משאן הגדירו מצב נכס״ל, נא לעדכן סטטוס',
+				});
+			}
+		};
+
+		ws.onclose = () => {
+			console.log('disconnected');
+		};
+
+		return () => {
+			ws.close();
+		};
+	}, []);
 
 	if (location.pathname === '/login') {
 		return <Outlet />;
 	}
 	return (
 		<QueryClientProvider client={queryClient}>
-			<AppLayout>
-				<Outlet />
-			</AppLayout>
+			<SocketContext.Provider value={{ socket }}>
+				<AppLayout>
+					<Outlet />
+				</AppLayout>
+			</SocketContext.Provider>
 		</QueryClientProvider>
 	);
 }

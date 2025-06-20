@@ -16,11 +16,17 @@ import {
 	Alert,
 	Modal,
 } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
+import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { hebrewSiteNames, SITE_OPTIONS, SITE_MANAGER_OPTIONS, ROLE_OPTIONS, hebrewRoleNames } from '~/consts';
+import {
+	hebrewSiteNames,
+	SITE_OPTIONS,
+	SITE_MANAGER_OPTIONS,
+	ROLE_OPTIONS,
+	hebrewRoleNames,
+} from '~/consts';
 
 interface Manager {
 	userId: string;
@@ -201,7 +207,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 				}}
 			>
 				<Box
-					sx={{	
+					sx={{
 						display: 'flex',
 						justifyContent: 'space-between',
 						alignItems: 'center',
@@ -211,7 +217,12 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					<IconButton onClick={handleClose}>
 						<CloseIcon />
 					</IconButton>
-					<Typography id="add-person-modal-title" variant="h6" component="h2" sx={{ textAlign: 'right' }}>
+					<Typography
+						id="add-person-modal-title"
+						variant="h6"
+						component="h2"
+						sx={{ textAlign: 'right' }}
+					>
 						הוספת משתמש חדש
 					</Typography>
 				</Box>
@@ -245,17 +256,21 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					<FormControl fullWidth required>
 						<InputLabel>אתר</InputLabel>
 						<Select
-							sx={{ 
-								'& .MuiSelect-select': { 
-									textAlign: 'right' 
-								} 
+							sx={{
+								'& .MuiSelect-select': {
+									textAlign: 'right',
+								},
 							}}
 							value={formData.site}
 							label="Site"
 							onChange={(e) => handleInputChange('site', e.target.value)}
 						>
 							{SITE_OPTIONS.map((site) => (
-								<MenuItem key={site} value={site}  style={{ textAlign: 'right' }}>
+								<MenuItem
+									key={site}
+									value={site}
+									style={{ textAlign: 'right' }}
+								>
 									{hebrewSiteNames[site] || site.toUpperCase()}
 								</MenuItem>
 							))}
@@ -265,10 +280,10 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					<FormControl fullWidth>
 						<InputLabel>(רשות) מנהל</InputLabel>
 						<Select
-							sx={{ 
-								'& .MuiSelect-select': { 
-									textAlign: 'right' 
-								} 
+							sx={{
+								'& .MuiSelect-select': {
+									textAlign: 'right',
+								},
 							}}
 							value={formData.manager}
 							label="(רשות) מנהל"
@@ -301,13 +316,13 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 										/>
 									}
 									label={hebrewRoleNames[role] || 'תפקיד לא ידוע'}
-									sx={{ 
+									sx={{
 										flexDirection: 'row-reverse',
 										marginLeft: 0,
 										marginRight: 0,
 										'& .MuiFormControlLabel-label': {
-											textAlign: 'right'
-										}
+											textAlign: 'right',
+										},
 									}}
 								/>
 							))}
@@ -319,10 +334,10 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 						<FormControl fullWidth required>
 							<InputLabel>אתר לניהול</InputLabel>
 							<Select
-								sx={{ 
-									'& .MuiSelect-select': { 
-										textAlign: 'right' 
-									} 
+								sx={{
+									'& .MuiSelect-select': {
+										textAlign: 'right',
+									},
 								}}
 								value={formData.siteManagerSite}
 								label="אתר לניהול"

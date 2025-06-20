@@ -22,6 +22,7 @@
 		"express": "^4.21.2",
 		"pg": "^8.16.0",
 		"winston": "^3.17.0",
+		"ws": "^8.18.2",
 		"xlsx": "^0.18.5",
 		"zod": "^3.25.64",
 		"zod-validation-error": "^3.5.0"
@@ -34,6 +35,7 @@
 		"@types/pg": "^8.15.4",
 		"@types/uuid": "^10.0.0",
 		"@types/winston": "^2.4.4",
+		"@types/ws": "^8.18.1",
 		"drizzle-kit": "^0.31.1",
 		"drizzle-zod": "^0.8.2",
 		"tsx": "^4.20.3",

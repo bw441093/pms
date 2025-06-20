@@ -11,12 +11,19 @@ import {
 } from './db/schema';
 import { db } from './db/db';
 import { eq } from 'drizzle-orm';
+import http from 'http';
+import { WebSocketServer } from 'ws';
+import { setWss } from './websocket';
 
 const startServer = async () => {
 	const app: Express = await loadApp();
 	const port = process.env.PORT || 3000;
+	const server = http.createServer(app);
+	const wss = new WebSocketServer({ server });
 
-	app.listen(port, () => {
+	setWss(wss);
+
+	server.listen(port, () => {
 		logger.info(`Server is running at http://localhost:${port}`);
 	});
 };

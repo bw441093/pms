@@ -1,6 +1,7 @@
 import React, { useState, type SyntheticEvent } from 'react';
 import { Button, Stack, Typography } from '@mui/material';
-import { Check, Close } from '@mui/icons-material';
+import Check from '@mui/icons-material/Check';
+import Close from '@mui/icons-material/Close';
 
 import type { Person } from '../../../../types';
 import { useUpdateAlertStatus } from '~/hooks/useQueries';
@@ -29,8 +30,13 @@ const AlertAction = ({
 
 	return (
 		<Stack spacing={3} sx={{ minWidth: 300 }}>
-			<Typography variant="h6" component="h2" gutterBottom sx={{ textAlign: 'right' }} >
-			  עדכן מצב התראה  
+			<Typography
+				variant="h6"
+				component="h2"
+				gutterBottom
+				sx={{ textAlign: 'right' }}
+			>
+				עדכן מצב התראה
 			</Typography>
 			<Stack direction="row" spacing={2} justifyContent="center">
 				<Button

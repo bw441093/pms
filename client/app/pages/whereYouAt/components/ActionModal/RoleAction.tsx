@@ -11,11 +11,16 @@ import {
 	Alert,
 	Divider,
 } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
+import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';
 
 import type { Person } from '../../../../types';
-import { hebrewRoleNames, hebrewSiteNames, SITE_MANAGER_OPTIONS, ROLE_OPTIONS } from '~/consts';
+import {
+	hebrewRoleNames,
+	hebrewSiteNames,
+	SITE_MANAGER_OPTIONS,
+	ROLE_OPTIONS,
+} from '~/consts';
 import { getPerson } from '../../../../clients/personsClient';
 
 interface RoleActionProps {
@@ -240,99 +245,99 @@ const RoleAction: React.FC<RoleActionProps> = ({
 		);
 	}
 
-return (
- <Box sx={{ width: '100%' }}>
-   <Box
-     sx={{
-       display: 'flex',
-       justifyContent: 'space-between',
-       alignItems: 'center',
-       mb: 3,
-     }}
-  	>
-			<IconButton onClick={handleClose}>
-       <CloseIcon />
-     </IconButton>
-     <Typography variant="h6" component="h2" sx={{ textAlign: 'right' }}>
-       {person.name} - ניהול תפקידים
-     </Typography>
-   </Box>
-   {error && (
-     <Alert severity="error" sx={{ mb: 2 }}>
-       {error}
-     </Alert>
-   )}
-   <Stack spacing={3}>
-     <Box>
-       <Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'right' }}>
-         תפקידים
-       </Typography>
-       <FormGroup sx={{ alignItems: 'flex-end' }}>
-         {ROLE_OPTIONS.map((role) => (
-           <FormControlLabel
-             key={role}
-             control={
-               <Checkbox
-                 checked={selectedRoles.includes(role)}
-                 onChange={() => handleRoleChange(role)}
-                 disabled={!canModifyRole(role)}
-               />
-             }
-             label={hebrewRoleNames[role] || 'תפקיד לא ידוע'}
-             sx={{ 
-               flexDirection: 'row-reverse',
-               marginLeft: 0,
-               marginRight: 0,
-               '& .MuiFormControlLabel-label': {
-                 textAlign: 'right'
-               }
-             }}
-           />
-         ))}
-       </FormGroup>
-     </Box>
-     {/* Site Manager Sites Selection */}
-     {hasSiteManagerRole && (
-       <Box>
-         <Divider sx={{ my: 2 }} />
-         <Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'right' }}>
-           אתרים לניהול
-         </Typography>
-         <FormGroup sx={{ alignItems: 'flex-end' }}>
-           {SITE_MANAGER_OPTIONS.map((site) => (
-             <FormControlLabel
-               key={site}
-               control={
-                 <Checkbox
-                   checked={siteManagerSites.includes(site)}
-                   onChange={() => handleSiteChange(site)}
-                   disabled={!canModifySite(site)}
-                 />
-               }
-               label={hebrewSiteNames[site] ?? site.toUpperCase()}
-               sx={{ 
-                 flexDirection: 'row-reverse',
-                 marginLeft: 0,
-                 marginRight: 0,
-                 '& .MuiFormControlLabel-label': {
-                   textAlign: 'right'
-                 }
-               }}
-             />
-           ))}
-         </FormGroup>
-       </Box>
-     )}
-     <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-       <Button variant="contained" onClick={handleSubmit} disabled={loading}>
-         {loading ? 'מעדכן...' : 'עדכן תפקידים'}
-       </Button>
-			 <Button variant="outlined" onClick={handleClose}>
-         ביטול
-       </Button>
-     </Box>
-   </Stack>
- </Box>
-);
-}
+	return (
+		<Box sx={{ width: '100%' }}>
+			<Box
+				sx={{
+					display: 'flex',
+					justifyContent: 'space-between',
+					alignItems: 'center',
+					mb: 3,
+				}}
+			>
+				<IconButton onClick={handleClose}>
+					<CloseIcon />
+				</IconButton>
+				<Typography variant="h6" component="h2" sx={{ textAlign: 'right' }}>
+					{person.name} - ניהול תפקידים
+				</Typography>
+			</Box>
+			{error && (
+				<Alert severity="error" sx={{ mb: 2 }}>
+					{error}
+				</Alert>
+			)}
+			<Stack spacing={3}>
+				<Box>
+					<Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'right' }}>
+						תפקידים
+					</Typography>
+					<FormGroup sx={{ alignItems: 'flex-end' }}>
+						{ROLE_OPTIONS.map((role) => (
+							<FormControlLabel
+								key={role}
+								control={
+									<Checkbox
+										checked={selectedRoles.includes(role)}
+										onChange={() => handleRoleChange(role)}
+										disabled={!canModifyRole(role)}
+									/>
+								}
+								label={hebrewRoleNames[role] || 'תפקיד לא ידוע'}
+								sx={{
+									flexDirection: 'row-reverse',
+									marginLeft: 0,
+									marginRight: 0,
+									'& .MuiFormControlLabel-label': {
+										textAlign: 'right',
+									},
+								}}
+							/>
+						))}
+					</FormGroup>
+				</Box>
+				{/* Site Manager Sites Selection */}
+				{hasSiteManagerRole && (
+					<Box>
+						<Divider sx={{ my: 2 }} />
+						<Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'right' }}>
+							אתרים לניהול
+						</Typography>
+						<FormGroup sx={{ alignItems: 'flex-end' }}>
+							{SITE_MANAGER_OPTIONS.map((site) => (
+								<FormControlLabel
+									key={site}
+									control={
+										<Checkbox
+											checked={siteManagerSites.includes(site)}
+											onChange={() => handleSiteChange(site)}
+											disabled={!canModifySite(site)}
+										/>
+									}
+									label={hebrewSiteNames[site] ?? site.toUpperCase()}
+									sx={{
+										flexDirection: 'row-reverse',
+										marginLeft: 0,
+										marginRight: 0,
+										'& .MuiFormControlLabel-label': {
+											textAlign: 'right',
+										},
+									}}
+								/>
+							))}
+						</FormGroup>
+					</Box>
+				)}
+				<Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+					<Button variant="contained" onClick={handleSubmit} disabled={loading}>
+						{loading ? 'מעדכן...' : 'עדכן תפקידים'}
+					</Button>
+					<Button variant="outlined" onClick={handleClose}>
+						ביטול
+					</Button>
+				</Box>
+			</Stack>
+		</Box>
+	);
+};
 export default RoleAction;

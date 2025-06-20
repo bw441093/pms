@@ -1,6 +1,15 @@
 import React, { useState, type ChangeEvent, type SyntheticEvent } from 'react';
-import { Button, Stack, TextField, Typography, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
-import { Check, Close } from '@mui/icons-material';
+import {
+	Button,
+	Stack,
+	TextField,
+	Typography,
+	MenuItem,
+	Select,
+	FormControl,
+	InputLabel,
+} from '@mui/material';
+import Check from '@mui/icons-material/Check';
 
 import type { Person } from '../../../../types';
 import { getPerson } from '~/clients/personsClient';
@@ -143,7 +152,12 @@ const MoveAction = ({
 
 	return (
 		<Stack spacing={3} sx={{ minWidth: 300 }}>
-			<Typography variant="h6" component="h2" sx={{ textAlign: 'right' }} gutterBottom>
+			<Typography
+				variant="h6"
+				component="h2"
+				sx={{ textAlign: 'right' }}
+				gutterBottom
+			>
 				הזז משתמש
 			</Typography>
 
@@ -152,10 +166,10 @@ const MoveAction = ({
 					<FormControl fullWidth>
 						<InputLabel id="origin-select-label">מקור</InputLabel>
 						<Select
-							sx={{ 
-								'& .MuiSelect-select': { 
-									textAlign: 'right' 
-								} 
+							sx={{
+								'& .MuiSelect-select': {
+									textAlign: 'right',
+								},
 							}}
 							labelId="origin-select-label"
 							id="origin-select"
@@ -173,10 +187,10 @@ const MoveAction = ({
 					<FormControl fullWidth>
 						<InputLabel id="target-select-label">יעד</InputLabel>
 						<Select
-							sx={{ 
-								'& .MuiSelect-select': { 
-									textAlign: 'right' 
-								} 
+							sx={{
+								'& .MuiSelect-select': {
+									textAlign: 'right',
+								},
 							}}
 							labelId="target-select-label"
 							id="target-select"
@@ -196,8 +210,13 @@ const MoveAction = ({
 
 			{shouldShowConfirmationButtons && (
 				<Stack spacing={2}>
-					<Typography variant="body2" color="text.secondary" sx={{ textAlign: 'right' }}>
-						ממתין לאישור מעבר מ-{hebrewSiteNames[transaction.origin]} אל- {hebrewSiteNames[transaction.target]}
+					<Typography
+						variant="body2"
+						color="text.secondary"
+						sx={{ textAlign: 'right' }}
+					>
+						ממתין לאישור מעבר מ-{hebrewSiteNames[transaction.origin]} אל-{' '}
+						{hebrewSiteNames[transaction.target]}
 					</Typography>
 
 					<Stack direction="row" spacing={2}>
