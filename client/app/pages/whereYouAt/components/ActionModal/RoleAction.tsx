@@ -32,7 +32,6 @@ import { getPerson, updatePersonDetails } from '../../../../clients/personsClien
 interface RoleActionProps {
 	person: Person;
 	onClose: () => void;
-	onSuccess?: () => void;
 }
 
 interface Manager {
@@ -44,7 +43,6 @@ interface Manager {
 const RoleAction: React.FC<RoleActionProps> = ({
 	person,
 	onClose,
-	onSuccess,
 }) => {
 	const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
 	const [siteManagerSites, setSiteManagerSites] = useState<string[]>([]);
@@ -267,7 +265,6 @@ const RoleAction: React.FC<RoleActionProps> = ({
 
 			await axios.put(`/api/users/${person.id}/roles`, rolesPayload );
 
-			onSuccess?.();
 			onClose();
 		} catch (err: any) {
 			console.error('Error updating person:', err);

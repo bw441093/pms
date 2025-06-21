@@ -58,6 +58,7 @@ const PersonCard: React.FC<PersonCardProps> = ({
 		alertStatus,
 		updatedAt,
 		transaction,
+		personRoles,
 	} = person;
 
 	const handleExpandClick = () => {
@@ -188,6 +189,7 @@ const PersonCard: React.FC<PersonCardProps> = ({
 						<Button
 							variant="contained"
 							onClick={(e) => handleButtonClick('More', e)}
+							disabled={!personRoles?.some(({role}) => ['personnelManager', 'hrManager', 'admin'].includes(role.name))}
 							sx={{ flexGrow: 1, borderRadius: 0 }}
 						>
 							<MoreVert />

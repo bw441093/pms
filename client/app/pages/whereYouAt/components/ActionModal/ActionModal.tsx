@@ -52,10 +52,6 @@ const ActionModal = ({
 					<RoleAction
 						person={person}
 						onClose={onClose}
-						onSuccess={() => {
-							// You can add a callback here to refresh the person list
-							console.log('Roles updated successfully');
-						}}
 					/>
 				)}
 			</Box>
