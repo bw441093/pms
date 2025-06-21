@@ -18,7 +18,7 @@ import {
 	updatePersonAlertStatus,
 	updateAlertStatus,
 } from '../db/persons';
-import { createRole, deleteRoles } from '../db/roles';
+import { createRole, deleteUserRoles } from '../db/roles';
 import {
 	completeTransaction,
 	createTransaction,
@@ -169,8 +169,9 @@ export const updateRolesHandler = async (req: Request, res: Response) => {
 	try {
 		const { id } = req.params as Id;
 		const { roles } = req.body as UpdateRoles;
-		logger.info(`Update roles for user: ${id}`, roles);
-		await deleteRoles(id);
+		logger.info(`Update roles for user: ${id}`);
+		console.log(roles);
+		await deleteUserRoles(id);
 
 		const promises = roles.map(({ name, opts }) => createRole(name, opts, id));
 		await Promise.all(promises);

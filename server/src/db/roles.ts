@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 import { db } from './db';
 import { PersonsToRoles, RolesTable } from './schema';
@@ -14,10 +14,16 @@ export const createRole = async (name: string, opts: any, userId: string) => {
 	return roleId;
 };
 
-export const deleteRoles = async (id: string) => {
-	const results = await db
-		.delete(RolesTable)
-		.where(eq(RolesTable.id, id))
-		.returning({ deletedId: RolesTable.id });
-	return results[0];
+export const deleteUserRoles = async (userId: string) => {
+	const roleIds = await db
+		.select({ id: PersonsToRoles.roleId })
+		.from(PersonsToRoles)
+		.where(eq(PersonsToRoles.userId, userId));
+
+	await db.delete(RolesTable).where(
+		inArray(RolesTable.id, roleIds.map((r) => r.id))
+	);
+	
+	await db.delete(PersonsToRoles).where(eq(PersonsToRoles.userId, userId));
+	return;
 };

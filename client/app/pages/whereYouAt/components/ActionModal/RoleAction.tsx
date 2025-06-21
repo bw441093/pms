@@ -48,7 +48,15 @@ const RoleAction: React.FC<RoleActionProps> = ({
 				const userId = localStorage.getItem('login_token');
 				if (userId) {
 					const user = await getPerson(userId);
+					const roles = user?.personRoles?.map((pr) => pr.role.name) ?? [];
 					setCurrentUser(user);
+					setSelectedRoles(roles);
+					const siteManagerRole = user?.personRoles?.find(
+						(pr) => pr.role.name === 'siteManager'
+					);
+					if (siteManagerRole && siteManagerRole.role.opts) {
+						setSiteManagerSites(siteManagerRole.role.opts);
+					}
 				}
 			} catch (err) {
 				console.error('Error fetching current user:', err);
@@ -60,22 +68,6 @@ const RoleAction: React.FC<RoleActionProps> = ({
 
 		fetchCurrentUser();
 	}, []);
-
-	// Initialize roles from person data
-	useEffect(() => {
-		if (person.personRoles) {
-			const roles = person.personRoles.map((pr) => pr.role.name);
-			setSelectedRoles(roles);
-
-			// Extract site manager sites
-			const siteManagerRole = person.personRoles.find(
-				(pr) => pr.role.name === 'siteManager'
-			);
-			if (siteManagerRole && siteManagerRole.role.opts) {
-				setSiteManagerSites(siteManagerRole.role.opts);
-			}
-		}
-	}, [person]);
 
 	// Authorization logic
 	const getCurrentUserRoles = () => {
