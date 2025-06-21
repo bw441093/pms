@@ -27,7 +27,8 @@ import {
 	ROLE_OPTIONS,
 	SITE_OPTIONS,
 } from '~/consts';
-import { getPerson, updatePersonDetails } from '../../../../clients/personsClient';
+import { getPerson } from '../../../../clients/personsClient';
+import { useUpdatePersonDetails } from '~/hooks/useQueries';
 
 interface RoleActionProps {
 	person: Person;
@@ -50,7 +51,8 @@ const RoleAction: React.FC<RoleActionProps> = ({
 	const [error, setError] = useState('');
 	const [currentUser, setCurrentUser] = useState<Person | null>(null);
 	const [userLoading, setUserLoading] = useState(true);
-	
+	const updatePersonDetailsMutation = useUpdatePersonDetails();
+
 	// Person details form state
 	const [personDetails, setPersonDetails] = useState({
 		name: person.name,
@@ -68,10 +70,9 @@ const RoleAction: React.FC<RoleActionProps> = ({
 				const userId = localStorage.getItem('login_token');
 				if (userId) {
 					const user = await getPerson(userId);
-					const roles = user?.personRoles?.map((pr) => pr.role.name) ?? [];
 					setCurrentUser(user);
-					setSelectedRoles(roles);
-					const siteManagerRole = user?.personRoles?.find(
+					setSelectedRoles(person.personRoles?.map((pr) => pr.role.name) ?? []);
+					const siteManagerRole = person.personRoles?.find(
 						(pr) => pr.role.name === 'siteManager'
 					);
 					if (siteManagerRole && siteManagerRole.role.opts) {
@@ -198,11 +199,6 @@ const RoleAction: React.FC<RoleActionProps> = ({
 	};
 
 	const handleSubmit = async () => {
-		if (selectedRoles.length === 0) {
-			setError('יש לסמן לפחות תפקיד אחד');
-			return;
-		}
-
 		// Validate site manager has sites selected
 		if (
 			selectedRoles.includes('siteManager') &&
@@ -239,31 +235,23 @@ const RoleAction: React.FC<RoleActionProps> = ({
 			return;
 		}
 
-		setLoading(true);
 		setError('');
 
 		try {
-			
 			// Update person details
 			const detailsPayload = {
+				userId: person.id,
 				name: personDetails.name,
 				manager: personDetails.manager || undefined,
 				email: personDetails.email || undefined,
 				site: personDetails.site,
-			};
-
-			await updatePersonDetails(person.id, detailsPayload);
-
-
-			// Update roles
-			const rolesPayload = {
 				roles: selectedRoles.map((role) => ({
 					name: role,
-					opts: role === 'siteManager' ? siteManagerSites : undefined,
-				})),
+					opts: role === 'siteManager' ? siteManagerSites : [],
+				})) || [],
 			};
 
-			await axios.put(`/api/users/${person.id}/roles`, rolesPayload );
+			await updatePersonDetailsMutation.mutate(detailsPayload);
 
 			onClose();
 		} catch (err: any) {
@@ -411,7 +399,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 						))}
 					</FormGroup>
 				</Box>
-				
+
 				{hasSiteManagerRole && (
 					<Box>
 						<Divider sx={{ my: 2 }} />

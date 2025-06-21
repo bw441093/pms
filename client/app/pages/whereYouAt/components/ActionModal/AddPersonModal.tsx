@@ -27,6 +27,7 @@ import {
 	ROLE_OPTIONS,
 	hebrewRoleNames,
 } from '~/consts';
+import { useAddNewPerson } from '~/hooks/useQueries';
 
 interface Manager {
 	userId: string;
@@ -56,7 +57,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 	const [managers, setManagers] = useState<Manager[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
-
+	const addNewPersonMutation = useAddNewPerson();
 	// Fetch managers when modal opens
 	useEffect(() => {
 		if (open) {
@@ -109,8 +110,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 		if (
 			!formData.email ||
 			!formData.name ||
-			!formData.site ||
-			formData.roles.length === 0
+			!formData.site
 		) {
 			setError('אנא מלא את כל השדות חובה');
 			return;
@@ -126,26 +126,18 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 		setError('');
 
 		try {
-			const token = localStorage.getItem('login_token');
 			const payload = {
 				email: formData.email,
 				name: formData.name,
 				site: formData.site,
-				manager: formData.manager || undefined,
+				manager: formData.manager || '',
 				roles: formData.roles.map((role) => ({
 					name: role,
-					opts: role === 'siteManager' ? [formData.siteManagerSite] : undefined,
+					opts: role === 'siteManager' ? [formData.siteManagerSite] : [],
 				})),
 			};
 
-			await axios.post('/api/users', payload, {
-				headers: {
-					Authorization: `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			});
-
-			useQueryClient().invalidateQueries({ queryKey: ['users'] });
+			await addNewPersonMutation.mutate(payload);
 
 			// Reset form
 			setFormData({
@@ -237,7 +229,6 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					<TextField
 						label="אימייל"
 						type="email"
-						inputProps={{ style: { textAlign: 'right' } }}
 						value={formData.email}
 						onChange={(e) => handleInputChange('email', e.target.value)}
 						required
@@ -246,7 +237,6 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 
 					<TextField
 						label="שם"
-						inputProps={{ style: { textAlign: 'right' } }}
 						value={formData.name}
 						onChange={(e) => handleInputChange('name', e.target.value)}
 						required

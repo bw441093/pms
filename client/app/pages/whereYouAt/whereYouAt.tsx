@@ -4,8 +4,6 @@ import PersonCard from './components/PersonCard';
 import { useQueryClient } from '@tanstack/react-query';
 import {
 	usePeopleData,
-	useUserSite,
-	useUpdateUserSite,
 } from '../../hooks/useQueries';
 import TopBar from './components/TopBar';
 import { Stack } from '@mui/material';
@@ -25,6 +23,7 @@ export default function WhereYouAt() {
 	const { data: sortedPeople, isLoading: peopleLoading } =
 		usePeopleData(userId);
 
+	const permissions = sortedPeople?.user?.personRoles?.map((pr) => ({ name: pr.role.name, opts: pr.role.opts }));
 	const handleCardExpand = (personId: string, expanded: boolean) => {
 		if (expanded) {
 			setExpandedCardId(personId);
@@ -41,7 +40,7 @@ export default function WhereYouAt() {
 					person={sortedPeople.user}
 					isUser
 					expanded={true} // User card is always expanded
-					onExpandChange={() => {}} // No-op for user card
+					onExpandChange={() => { }} // No-op for user card
 				/>
 			)}
 
@@ -51,6 +50,7 @@ export default function WhereYouAt() {
 					<PersonCard
 						key={person.id}
 						person={person}
+						permissions={permissions}
 						expanded={expandedCardId === person.id}
 						onExpandChange={(expanded: boolean) => handleCardExpand(person.id, expanded)}
 					/>

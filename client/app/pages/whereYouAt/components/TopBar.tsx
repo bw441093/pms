@@ -80,17 +80,7 @@ const TopBar = () => {
 		setError('');
 
 		try {
-			const token = localStorage.getItem('login_token');
-			await axios.post(
-				'/api/users/alert-all',
-				{},
-				{
-					headers: {
-						Authorization: `Bearer ${token}`,
-						'Content-Type': 'application/json',
-					},
-				}
-			);
+			await axios.post('/api/users/alert-all');
 
 			// Invalidate and refetch person data to update the UI
 			await queryClient.invalidateQueries({ queryKey: ['people'] });

@@ -8,7 +8,6 @@ import {
 	postMoveHandler,
 	postPersonHandler,
 	updateMoveHandler,
-	updateRolesHandler,
 	updateStatusHandler,
 	updateAlertHandler,
 	deleteMoveHandler,
@@ -51,12 +50,6 @@ router.post(
 );
 router.get('/:id', validator({ params: idSchema }), getPersonByIdHandler);
 router.put(
-	'/:id/roles',
-	authorize(['siteManager', 'personnelManager', 'hrManager', 'admin']),
-	validator({ params: idSchema, body: rolesSchema }),
-	updateRolesHandler
-);
-router.put(
 	'/:id/status',
 	validator({ params: idSchema, body: updateStatusSchema }),
 	updateStatusHandler
@@ -79,7 +72,7 @@ router.patch(
 router.delete('/:id/move', validator({ params: idSchema }), deleteMoveHandler);
 router.put(
 	'/:id/details',
-	authorize(['personnelManager', 'hrManager', 'admin']),
+	authorize(['siteManager', 'personnelManager', 'hrManager', 'admin']),
 	validator({ params: idSchema, body: updatePersonDetailsSchema }),
 	updatePersonDetailsHandler
 );

@@ -2,7 +2,6 @@ import React, { useState, type SyntheticEvent } from 'react';
 import {
 	Card,
 	CardContent,
-	Avatar,
 	Typography,
 	IconButton,
 	Button,
@@ -38,12 +37,14 @@ const defaultPerson: Person = {
 interface PersonCardProps {
 	person?: Person;
 	isUser?: boolean;
+	permissions?: { name: string; opts: string[] }[];
 	expanded?: boolean;
 	onExpandChange?: (expanded: boolean) => void;
 }
 
 const PersonCard: React.FC<PersonCardProps> = ({
 	person = defaultPerson,
+	permissions,
 	expanded = false,
 	onExpandChange,
 }) => {
@@ -108,8 +109,8 @@ const PersonCard: React.FC<PersonCardProps> = ({
 								<Typography>
 									{reportStatus in hebrewLocationNames
 										? hebrewLocationNames[
-												reportStatus as keyof typeof hebrewLocationNames
-										  ]
+										reportStatus as keyof typeof hebrewLocationNames
+										]
 										: reportStatus}
 								</Typography>
 								<Typography>
@@ -140,7 +141,7 @@ const PersonCard: React.FC<PersonCardProps> = ({
 					<Circle
 						color={
 							alertStatus !== 'good' ||
-							(transaction && transaction?.status !== 'resolved')
+								(transaction && transaction?.status !== 'resolved')
 								? 'error'
 								: 'success'
 						}
@@ -189,7 +190,7 @@ const PersonCard: React.FC<PersonCardProps> = ({
 						<Button
 							variant="contained"
 							onClick={(e) => handleButtonClick('More', e)}
-							disabled={!personRoles?.some(({role}) => ['personnelManager', 'hrManager', 'admin'].includes(role.name))}
+							disabled={permissions?.length === 0}
 							sx={{ flexGrow: 1, borderRadius: 0 }}
 						>
 							<MoreVert />

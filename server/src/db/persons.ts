@@ -1,4 +1,4 @@
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 import { db } from './db';
 import { PersonsTable, PersonsToRoles, RolesTable } from './schema';
@@ -92,9 +92,10 @@ export const findDirectReports = async (id: string) => {
 	return users;
 };
 
-export const findSiteMembers = async (sites: string[] = []) => {
+export const findSiteMembers = async (sites: string[] = [], userId: string | undefined) => {
+	const query = userId ? and(inArray(PersonsTable.site, sites), eq(PersonsTable.manager, userId)) : inArray(PersonsTable.site, sites);
 	const users = await db.query.PersonsTable.findMany({
-		where: inArray(PersonsTable.site, sites),
+		where: query,
 		with: {
 			transaction: {
 				columns: {
@@ -119,9 +120,11 @@ export const createPerson = async (
 	site: string,
 	manager?: string
 ) => {
+	const updateData: any = { id, name, site };
+	if (manager) updateData.manager = manager;
 	const user = await db
 		.insert(PersonsTable)
-		.values({ id, name, site, manager })
+		.values(updateData)
 		.returning({ id: PersonsTable.id });
 
 	return user;

@@ -4,18 +4,6 @@ import type { Person } from '../types';
 // Create axios instance with base configuration
 const apiClient = axios.create({
 	baseURL: '/api',
-	headers: {
-		'Content-Type': 'application/json',
-	},
-});
-
-// Add request interceptor to include auth token
-apiClient.interceptors.request.use((config) => {
-	const token = localStorage.getItem('login_token');
-	if (token) {
-		config.headers.Authorization = `Bearer ${token}`;
-	}
-	return config;
 });
 
 export async function getPeopleData(userId: string) {
@@ -97,16 +85,28 @@ export async function updatePersonDetails(
 		manager?: string;
 		site?: string;
 		email?: string;
+		roles?: { name: string; opts: string[] }[];
 	}
 ) {
 	const response = await apiClient.put(`/users/${userId}/details`, details);
 	return response.data;
 }
 
-export async function updatePersonRoles(userId: string, roles: { name: string; opts: string[] }[]) {
-	const response = await apiClient.put(`/users/${userId}/roles`, { roles });
+export async function addNewPerson(
+		name: string,
+		manager: string,
+		site: string,
+		email: string,
+		roles: { name: string; opts: string[] }[]
+	) {
+	const response = await apiClient.post('/users', {
+		name,
+		manager,
+		site,
+		email,
+		roles,
+	});
 	return response.data;
 }
-
 // Export the apiClient for use in other parts of the app
 export { apiClient };

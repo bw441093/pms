@@ -33,7 +33,6 @@ import type {
 	Status,
 	Alert,
 	UpdateMove,
-	UpdateRoles,
 	UpdatePersonDetails,
 } from '../types';
 import { logger } from '../logger';
@@ -72,6 +71,7 @@ export const postPersonHandler = async (req: Request, res: Response) => {
 		res.status(200).send(userId);
 	} catch (err) {
 		logger.error(`Error inserting person, error: ${err}`);
+		console.log(err);
 		res.status(500).send('Error inserting person');
 	}
 };
@@ -113,8 +113,8 @@ export const getPersonsHandler = async (req: Request, res: Response) => {
 			const sites = user.personRoles.filter(
 				({ role }) => role.name === 'siteManager'
 			)[0]?.role?.opts;
-			const siteMembers = await findSiteMembers(sites as string[]);
-			users = [...directReports, ...siteMembers];
+			const siteMembers = await findSiteMembers(sites as string[], user.id);
+			users = [user,...directReports, ...siteMembers];
 		}
 		logger.info(`Done fetching relevant persons for user: ${req.user}`);
 
@@ -166,25 +166,6 @@ export const getManagersHandler = async (req: Request, res: Response) => {
 	} catch (err) {
 		logger.error(`Error fetching managers, error: ${err}`);
 		res.status(500).send('Error getting managers');
-	}
-};
-
-export const updateRolesHandler = async (req: Request, res: Response) => {
-	try {
-		const { id } = req.params as Id;
-		const { roles } = req.body as UpdateRoles;
-		logger.info(`Update roles for user: ${id}`);
-		console.log(roles);
-		await deleteUserRoles(id);
-
-		const promises = roles.map(({ name, opts }) => createRole(name, opts, id));
-		await Promise.all(promises);
-
-		logger.info(`Done updating roles for user: ${id}`);
-		res.status(200).send();
-	} catch (err) {
-		logger.error(`Error updating roles, error: ${err}`);
-		res.status(500).send('Error updating roles');
 	}
 };
 
@@ -288,12 +269,18 @@ export const updateAlertHandler = async (req: Request, res: Response) => {
 export const updatePersonDetailsHandler = async (req: Request, res: Response) => {
 	try {
 		const { id } = req.params as Id;
-		const { name, manager, site, email } = req.body as UpdatePersonDetails;
-		logger.info(`Update person details for user: ${id}`, { name, manager, site, email });
+		const { name, manager, site, email, roles } = req.body as UpdatePersonDetails;
+		logger.info(`Update person details for user: ${id}`);
 
-		if (email) await updateUserEmail(id, email);
-
+		console.log(req.body);
 		await updatePersonDetails(id, { name, manager, site });
+		if (email) await updateUserEmail(id, email);
+		if (roles) {
+			await deleteUserRoles(id);
+
+			const promises = roles.map(({ name, opts }: { name: string; opts: string[] }) => createRole(name, opts, id));
+			await Promise.all(promises);
+		}
 
 		logger.info(`Done updating person details for user: ${id}`);
 		res.status(200).send();

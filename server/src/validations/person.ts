@@ -1,4 +1,3 @@
-import { emit } from 'process';
 import { z } from 'zod';
 
 export const loginSchema = z.object({
@@ -57,4 +56,4 @@ export const updatePersonDetailsSchema = z.object({
 	manager: z.string().optional(),
 	site: z.string().optional(),
 	email: z.string().email().optional(),
-});
+}).merge(rolesSchema);
