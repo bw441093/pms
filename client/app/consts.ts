@@ -29,8 +29,8 @@ export const LOCATION_STATUSES = [
 	'present',
 	'on shift',
 ] as const;
-export const SITE_OPTIONS = ['mbt', 'mfs', 'kir', 'other'] as const;
-export const SITE_MANAGER_OPTIONS = ['mbt', 'mfs', 'kir'] as const; // Only these sites can have site managers
+export const SITE_OPTIONS = ['mbt', 'mfs', 'kir', 'mdt', 'other'] as const;
+export const SITE_MANAGER_OPTIONS = ['mbt', 'mfs', 'mdt', 'kir'] as const; // Only these sites can have site managers
 export const ROLE_OPTIONS = [
 	'siteManager',
 	'personnelManager',
@@ -42,6 +42,7 @@ export const hebrewSiteNames: Record<Sites, string> = {
 	mbt: 'איילת השחר',
 	mfs: 'בראשית',
 	kir: 'ביה״ב',
+	mdt: 'רקיע',
 	other: 'אחר',
 };
 

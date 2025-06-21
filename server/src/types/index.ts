@@ -9,6 +9,7 @@ import type {
 	UpdateRoles,
 	PostPerson,
 	Person,
+	UpdatePersonDetails,
 } from './person';
 import type { Role } from './role';
 
@@ -24,4 +25,5 @@ export type {
 	PostPerson,
 	Person,
 	Role,
+	UpdatePersonDetails,
 };

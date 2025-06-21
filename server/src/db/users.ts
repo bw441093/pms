@@ -28,3 +28,13 @@ export const createUser = async (email: string) => {
 	if (!user[0]?.id) throw new Error('Could not insert user, db returned no ID');
 	return user[0].id;
 };
+
+export const updateUserEmail = async (id: string, email: string) => {
+	const user = await db
+		.update(UsersTable)
+		.set({ email })
+		.where(eq(UsersTable.id, id))
+		.returning({ id: UsersTable.id });
+
+	return user[0];
+};

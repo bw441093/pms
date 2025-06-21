@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import { randomBytes } from 'node:crypto';
 
-import { createUser } from '../db/users';
+import { createUser, findUserByEmail, updateUserEmail } from '../db/users';
 import {
 	createPerson,
 	deletePerson,
@@ -17,6 +17,7 @@ import {
 	updatePersonStatusLocation,
 	updatePersonAlertStatus,
 	updateAlertStatus,
+	updatePersonDetails,
 } from '../db/persons';
 import { createRole, deleteUserRoles } from '../db/roles';
 import {
@@ -33,6 +34,7 @@ import type {
 	Alert,
 	UpdateMove,
 	UpdateRoles,
+	UpdatePersonDetails,
 } from '../types';
 import { logger } from '../logger';
 import { broadcast } from '../websocket';
@@ -49,6 +51,13 @@ export const postPersonHandler = async (req: Request, res: Response) => {
 			site,
 			roles,
 		});
+
+		const existingUser = await findUserByEmail(email);
+		if (existingUser) {
+			logger.error(`User with email: ${email} already exists`);
+			res.status(400).send('User already exists');
+			return;
+		}
 
 		const userId = await createUser(email);
 
@@ -99,7 +108,6 @@ export const getPersonsHandler = async (req: Request, res: Response) => {
 			)
 		) {
 			users = await find();
-			logger.info(`Done fetching relevant persons for user: ${req.user}`);
 		} else {
 			const directReports = await findDirectReports(user.id);
 			const sites = user.personRoles.filter(
@@ -107,14 +115,16 @@ export const getPersonsHandler = async (req: Request, res: Response) => {
 			)[0]?.role?.opts;
 			const siteMembers = await findSiteMembers(sites as string[]);
 			users = [...directReports, ...siteMembers];
-			logger.info(`Done fetching relevant persons for user: ${req.user}`);
 		}
+		logger.info(`Done fetching relevant persons for user: ${req.user}`);
 
 		// Sort users: priority for open alerts/transactions, then by UUID
 		const sortedUsers = users.sort((a, b) => {
 			// Check if user has open alert (not 'good') or active transaction
-			const aHasOpenIssue = a.alertStatus !== 'good' || a.transaction;
-			const bHasOpenIssue = b.alertStatus !== 'good' || b.transaction;
+			const aHasOpenIssue =
+				a.alertStatus !== 'good' || a.transaction?.status === 'pending';
+			const bHasOpenIssue =
+				b.alertStatus !== 'good' || b.transaction?.status === 'pending';
 
 			// If one has open issue and the other doesn't, prioritize the one with open issue
 			if (aHasOpenIssue && !bHasOpenIssue) return -1;
@@ -157,12 +167,6 @@ export const getManagersHandler = async (req: Request, res: Response) => {
 		logger.error(`Error fetching managers, error: ${err}`);
 		res.status(500).send('Error getting managers');
 	}
-};
-
-export const getReportHandler = async (req: Request, res: Response) => {
-	try {
-		// build excel sheet
-	} catch (err) {}
 };
 
 export const updateRolesHandler = async (req: Request, res: Response) => {
@@ -278,6 +282,24 @@ export const updateAlertHandler = async (req: Request, res: Response) => {
 	} catch (err) {
 		logger.error(`Error updating alert status, error: ${err}`);
 		res.status(500).send('Error updating alert status');
+	}
+};
+
+export const updatePersonDetailsHandler = async (req: Request, res: Response) => {
+	try {
+		const { id } = req.params as Id;
+		const { name, manager, site, email } = req.body as UpdatePersonDetails;
+		logger.info(`Update person details for user: ${id}`, { name, manager, site, email });
+
+		if (email) await updateUserEmail(id, email);
+
+		await updatePersonDetails(id, { name, manager, site });
+
+		logger.info(`Done updating person details for user: ${id}`);
+		res.status(200).send();
+	} catch (err) {
+		logger.error(`Error updating person details, error: ${err}`);
+		res.status(500).send('Error updating person details');
 	}
 };
 

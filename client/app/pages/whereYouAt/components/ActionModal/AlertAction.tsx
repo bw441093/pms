@@ -41,16 +41,6 @@ const AlertAction = ({
 			<Stack direction="row" spacing={2} justifyContent="center">
 				<Button
 					variant="contained"
-					color="error"
-					size="large"
-					startIcon={<Close />}
-					onClick={(e) => handleButtonClick('bad', e)}
-					disabled={updateAlertStatusMutation.isPending}
-				>
-					רע
-				</Button>
-				<Button
-					variant="contained"
 					color="success"
 					size="large"
 					startIcon={<Check />}

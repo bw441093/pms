@@ -2,7 +2,6 @@ import { eq, inArray } from 'drizzle-orm';
 
 import { db } from './db';
 import { PersonsTable, PersonsToRoles, RolesTable } from './schema';
-import type { Person } from '../types/person';
 
 export const find = async () => {
 	const user = await db.query.PersonsTable.findMany({
@@ -186,6 +185,29 @@ export const updateAlertStatus = async () => {
 export const deletePerson = async (id: string) => {
 	const user = await db
 		.delete(PersonsTable)
+		.where(eq(PersonsTable.id, id))
+		.returning({ id: PersonsTable.id });
+
+	return user;
+};
+
+export const updatePersonDetails = async (
+	id: string,
+	updates: {
+		name?: string;
+		manager?: string;
+		site?: string;
+	}
+) => {
+	const updateData: any = { updatedAt: new Date() };
+	
+	if (updates.name !== undefined) updateData.name = updates.name;
+	if (updates.manager !== undefined) updateData.manager = updates.manager;
+	if (updates.site !== undefined) updateData.site = updates.site;
+
+	const user = await db
+		.update(PersonsTable)
+		.set(updateData)
 		.where(eq(PersonsTable.id, id))
 		.returning({ id: PersonsTable.id });
 

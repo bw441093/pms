@@ -46,7 +46,7 @@ const SAMPLE_NAMES = [
 	'Melissa Turner',
 ];
 
-const SAMPLE_SITES = ['mbt', 'mfs', 'kir', 'other'];
+const SAMPLE_SITES = ['mbt', 'mfs', 'kir', 'mdt', 'other'];
 
 const SAMPLE_ROLES = [
 	{ name: 'siteManager', opts: ['mbt'] },

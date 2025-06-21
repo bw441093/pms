@@ -10,6 +10,11 @@ import {
 	Stack,
 	Alert,
 	Divider,
+	TextField,
+	FormControl,
+	InputLabel,
+	Select,
+	MenuItem,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';
@@ -20,13 +25,20 @@ import {
 	hebrewSiteNames,
 	SITE_MANAGER_OPTIONS,
 	ROLE_OPTIONS,
+	SITE_OPTIONS,
 } from '~/consts';
-import { getPerson } from '../../../../clients/personsClient';
+import { getPerson, updatePersonDetails } from '../../../../clients/personsClient';
 
 interface RoleActionProps {
 	person: Person;
 	onClose: () => void;
 	onSuccess?: () => void;
+}
+
+interface Manager {
+	userId: string;
+	name: string;
+	site: string;
 }
 
 const RoleAction: React.FC<RoleActionProps> = ({
@@ -40,6 +52,16 @@ const RoleAction: React.FC<RoleActionProps> = ({
 	const [error, setError] = useState('');
 	const [currentUser, setCurrentUser] = useState<Person | null>(null);
 	const [userLoading, setUserLoading] = useState(true);
+	
+	// Person details form state
+	const [personDetails, setPersonDetails] = useState({
+		name: person.name,
+		email: '',
+		manager: person.manager?.id || '',
+		site: person.site,
+	});
+	const [managers, setManagers] = useState<Manager[]>([]);
+	const [managersLoading, setManagersLoading] = useState(false);
 
 	// Get current user's information for authorization
 	useEffect(() => {
@@ -67,7 +89,21 @@ const RoleAction: React.FC<RoleActionProps> = ({
 		};
 
 		fetchCurrentUser();
+		fetchManagers();
 	}, []);
+
+	const fetchManagers = async () => {
+		try {
+			setManagersLoading(true);
+			const response = await axios.get('/api/users/managers');
+			setManagers(response.data);
+		} catch (err) {
+			console.error('Error fetching managers:', err);
+			setError('Failed to load managers');
+		} finally {
+			setManagersLoading(false);
+		}
+	};
 
 	// Authorization logic
 	const getCurrentUserRoles = () => {
@@ -118,6 +154,11 @@ const RoleAction: React.FC<RoleActionProps> = ({
 			return userSiteManagerSites.includes(site);
 		}
 
+		return false;
+	};
+
+	const canModifyPersonDetails = () => {
+		if (hasHigherRole()) return true;
 		return false;
 	};
 
@@ -194,30 +235,43 @@ const RoleAction: React.FC<RoleActionProps> = ({
 			return;
 		}
 
+		// Check if user has permission to modify person details
+		if (!canModifyPersonDetails()) {
+			setError('אין לך הרשאות מתאימות לעריכת פרטי המשתמש');
+			return;
+		}
+
 		setLoading(true);
 		setError('');
 
 		try {
-			const token = localStorage.getItem('login_token');
-			const payload = {
+			
+			// Update person details
+			const detailsPayload = {
+				name: personDetails.name,
+				manager: personDetails.manager || undefined,
+				email: personDetails.email || undefined,
+				site: personDetails.site,
+			};
+
+			await updatePersonDetails(person.id, detailsPayload);
+
+
+			// Update roles
+			const rolesPayload = {
 				roles: selectedRoles.map((role) => ({
 					name: role,
 					opts: role === 'siteManager' ? siteManagerSites : undefined,
 				})),
 			};
 
-			await axios.put(`/api/users/${person.id}/roles`, payload, {
-				headers: {
-					Authorization: `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			});
+			await axios.put(`/api/users/${person.id}/roles`, rolesPayload );
 
 			onSuccess?.();
 			onClose();
 		} catch (err: any) {
-			console.error('Error updating roles:', err);
-			setError(err.response?.data || 'עדכון התפקידים נכשל');
+			console.error('Error updating person:', err);
+			setError(err.response?.data || 'עדכון פרטי המשתמש נכשל');
 		} finally {
 			setLoading(false);
 		}
@@ -251,7 +305,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 					<CloseIcon />
 				</IconButton>
 				<Typography variant="h6" component="h2" sx={{ textAlign: 'right' }}>
-					{person.name} - ניהול תפקידים
+					{person.name} - עדכון פרטים
 				</Typography>
 			</Box>
 			{error && (
@@ -260,6 +314,78 @@ const RoleAction: React.FC<RoleActionProps> = ({
 				</Alert>
 			)}
 			<Stack spacing={3}>
+				{canModifyPersonDetails() && (
+					<Box>
+						<Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'right' }}>
+							פרטי משתמש
+						</Typography>
+						<Stack spacing={2}>
+							<TextField
+								label="שם"
+								value={personDetails.name}
+								onChange={(e) => setPersonDetails(prev => ({ ...prev, name: e.target.value }))}
+								fullWidth
+								required
+							/>
+
+							<TextField
+								label="אימייל"
+								value={personDetails.email}
+								onChange={(e) => setPersonDetails(prev => ({ ...prev, email: e.target.value }))}
+								fullWidth
+							/>
+
+							<FormControl fullWidth>
+								<InputLabel>אתר</InputLabel>
+								<Select
+									sx={{
+										'& .MuiSelect-select': {
+											textAlign: 'right',
+										},
+									}}
+									value={personDetails.site}
+									label="אתר"
+									onChange={(e) => setPersonDetails(prev => ({ ...prev, site: e.target.value }))}
+								>
+									{SITE_OPTIONS.map((site) => (
+										<MenuItem
+											key={site}
+											value={site}
+											style={{ textAlign: 'right' }}
+										>
+											{hebrewSiteNames[site]}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+
+							<FormControl fullWidth>
+								<InputLabel>(רשות) מנהל</InputLabel>
+								<Select
+									sx={{
+										'& .MuiSelect-select': {
+											textAlign: 'right',
+										},
+									}}
+									value={personDetails.manager}
+									label="(רשות) מנהל"
+									onChange={(e) => setPersonDetails(prev => ({ ...prev, manager: e.target.value }))}
+									disabled={managersLoading}
+								>
+									<MenuItem value="">
+										<em>אין מנהל</em>
+									</MenuItem>
+									{managers.map((manager) => (
+										<MenuItem key={manager.userId} value={manager.userId}>
+											{manager.name} ({hebrewSiteNames[manager.site as keyof typeof hebrewSiteNames]})
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+						</Stack>
+					</Box>
+				)}
+
 				<Box>
 					<Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'right' }}>
 						תפקידים
@@ -288,7 +414,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 						))}
 					</FormGroup>
 				</Box>
-				{/* Site Manager Sites Selection */}
+				
 				{hasSiteManagerRole && (
 					<Box>
 						<Divider sx={{ my: 2 }} />
@@ -322,7 +448,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 				)}
 				<Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
 					<Button variant="contained" onClick={handleSubmit} disabled={loading}>
-						{loading ? 'מעדכן...' : 'עדכן תפקידים'}
+						{loading ? 'מעדכן...' : 'עדכן פרטים ותפקידים'}
 					</Button>
 					<Button variant="outlined" onClick={handleClose}>
 						ביטול

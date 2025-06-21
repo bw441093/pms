@@ -23,7 +23,7 @@ export async function getPeopleData(userId: string) {
 
 	const [user, people] = (data as []).reduce(
 		(acc: Person[][], person: Person) => {
-			if (person.id === 'feb8bf9c-d2be-4f25-ad79-9d478af482a1') {
+			if (person.id === userId) {
 				acc[0].push(person);
 				return acc;
 			}
@@ -87,6 +87,24 @@ export async function updateReportStatus(
 		location,
 	});
 
+	return response.data;
+}
+
+export async function updatePersonDetails(
+	userId: string,
+	details: {
+		name?: string;
+		manager?: string;
+		site?: string;
+		email?: string;
+	}
+) {
+	const response = await apiClient.put(`/users/${userId}/details`, details);
+	return response.data;
+}
+
+export async function updatePersonRoles(userId: string, roles: { name: string; opts: string[] }[]) {
+	const response = await apiClient.put(`/users/${userId}/roles`, { roles });
 	return response.data;
 }
 

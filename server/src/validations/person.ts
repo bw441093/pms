@@ -51,3 +51,10 @@ export const updateMoveSchema = z.object({
 	originator: z.enum(['origin', 'target']),
 	status: z.boolean(),
 });
+
+export const updatePersonDetailsSchema = z.object({
+	name: z.string().optional(),
+	manager: z.string().optional(),
+	site: z.string().optional(),
+	email: z.string().email().optional(),
+});

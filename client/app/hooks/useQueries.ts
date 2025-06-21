@@ -12,6 +12,8 @@ import {
 	updatMoveStatus,
 	postMoveStatus,
 	updateReportStatus,
+	updatePersonDetails,
+	updatePersonRoles,
 } from '../clients/personsClient';
 
 export function usePeopleData(userId: string) {
@@ -157,3 +159,44 @@ export function useUpdateReportStatus() {
 		},
 	});
 }
+
+export function useUpdatePersonDetails() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			userId,
+			name,
+			manager,
+			site,
+			email,
+		}: {
+			userId: string;
+			name?: string;
+			manager?: string;
+			site?: string;
+			email?: string;
+		}) => updatePersonDetails(userId, { name, manager, site, email }),
+		onSuccess: () => {
+			// Invalidate people queries to refresh data after status update
+			queryClient.invalidateQueries({ queryKey: ['people'] });
+		},
+	});
+}
+
+export function useUpdatePersonRoles() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			userId,
+			roles,
+		}: {
+			userId: string;
+			roles: { name: string; opts: string[] }[];
+		}) => updatePersonRoles(userId, roles),
+		onSuccess: () => {
+			// Invalidate people queries to refresh data after status update
+			queryClient.invalidateQueries({ queryKey: ['people'] });
+		},
+	});
+}
+
