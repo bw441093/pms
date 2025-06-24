@@ -27,6 +27,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import AddPersonModal from './ActionModal/AddPersonModal';
 import { getPerson } from '../../../clients/personsClient';
 import type { Person } from '../../../types';
+import LogoutButton from '~/pages/logout/logout';
 
 const TopBar = () => {
 	const [drawerOpen, setDrawerOpen] = useState(false);
@@ -157,6 +158,8 @@ const TopBar = () => {
 						>
 							<MenuIcon />
 						</IconButton>
+
+						<LogoutButton />
 
 						<Typography
 							variant="h6"
