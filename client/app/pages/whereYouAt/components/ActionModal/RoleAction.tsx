@@ -26,6 +26,8 @@ import {
 	SITE_MANAGER_OPTIONS,
 	ROLE_OPTIONS,
 	SITE_OPTIONS,
+	SERVICE_TYPE_OPTIONS,
+	hebrewServiceTypeNames,
 } from '~/consts';
 import { getPerson } from '../../../../clients/personsClient';
 import { useUpdatePersonDetails } from '~/hooks/useQueries';
@@ -59,6 +61,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 		email: '',
 		manager: person.manager?.id || '',
 		site: person.site,
+		serviceType: person.serviceType,
 	});
 	const [managers, setManagers] = useState<Manager[]>([]);
 	const [managersLoading, setManagersLoading] = useState(false);
@@ -249,6 +252,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 					name: role,
 					opts: role === 'siteManager' ? siteManagerSites : [],
 				})) || [],
+				serviceType: personDetails.serviceType,
 			};
 
 			await updatePersonDetailsMutation.mutate(detailsPayload);
@@ -367,6 +371,21 @@ const RoleAction: React.FC<RoleActionProps> = ({
 									))}
 								</Select>
 							</FormControl>
+
+							<FormControl fullWidth>
+								<InputLabel>סוג שירות</InputLabel>
+								<Select
+									value={personDetails.serviceType}
+									onChange={(e) => setPersonDetails(prev => ({ ...prev, serviceType: e.target.value }))}
+								>
+									{SERVICE_TYPE_OPTIONS.map((serviceType) => (
+										<MenuItem key={serviceType} value={serviceType}>
+											{hebrewServiceTypeNames[serviceType]}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+							
 						</Stack>
 					</Box>
 				)}

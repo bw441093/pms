@@ -42,13 +42,14 @@ dayjs.extend(utc);
 
 export const postPersonHandler = async (req: Request, res: Response) => {
 	try {
-		const { email, name, manager, site, roles } = req.body as PostPerson;
+		const { email, name, manager, site, roles, serviceType } = req.body as PostPerson;
 		logger.info(`Creating user with email: ${email}`, {
 			email,
 			name,
 			manager,
 			site,
 			roles,
+			serviceType,
 		});
 
 		const existingUser = await findUserByEmail(email);
@@ -62,7 +63,7 @@ export const postPersonHandler = async (req: Request, res: Response) => {
 
 		logger.info(`Creating person with id: ${userId}`);
 		const promises = [
-			createPerson(userId, name, site, manager),
+			createPerson(userId, name, site, manager, serviceType),
 			...roles.map((role: any) => createRole(role.name, role.opts, userId)),
 		];
 		await Promise.all(promises);
@@ -269,11 +270,11 @@ export const updateAlertHandler = async (req: Request, res: Response) => {
 export const updatePersonDetailsHandler = async (req: Request, res: Response) => {
 	try {
 		const { id } = req.params as Id;
-		const { name, manager, site, email, roles } = req.body as UpdatePersonDetails;
+		const { name, manager, site, email, roles, serviceType } = req.body as UpdatePersonDetails;
 		logger.info(`Update person details for user: ${id}`);
 
 		console.log(req.body);
-		await updatePersonDetails(id, { name, manager, site });
+		await updatePersonDetails(id, { name, manager, site, serviceType });
 		if (email) await updateUserEmail(id, email);
 		if (roles) {
 			await deleteUserRoles(id);

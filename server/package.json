@@ -8,7 +8,9 @@
 		"dev": "tsx watch src/index.ts",
 		"seed:generate": "tsx src/db/generateTestData.ts generate",
 		"seed:clear": "tsx src/db/generateTestData.ts clear",
-		"seed:help": "tsx src/db/generateTestData.ts help"
+		"seed:help": "tsx src/db/generateTestData.ts help",		
+		"migrate:generate": "drizzle-kit generate",
+		"migrate:run": "tsx src/db/migrate.ts"
 	},
 	"author": "",
 	"license": "ISC",

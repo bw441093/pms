@@ -86,6 +86,7 @@ export async function updatePersonDetails(
 		site?: string;
 		email?: string;
 		roles?: { name: string; opts: string[] }[];
+		serviceType?: string;
 	}
 ) {
 	const response = await apiClient.put(`/users/${userId}/details`, details);
@@ -97,7 +98,8 @@ export async function addNewPerson(
 		manager: string,
 		site: string,
 		email: string,
-		roles: { name: string; opts: string[] }[]
+		roles: { name: string; opts: string[] }[],
+		serviceType: string
 	) {
 	const response = await apiClient.post('/users', {
 		name,
@@ -105,6 +107,7 @@ export async function addNewPerson(
 		site,
 		email,
 		roles,
+		serviceType,
 	});
 	return response.data;
 }
