@@ -31,7 +31,7 @@ export default function WhereYouAt() {
 			setExpandedCardId(null);
 		}
 	};
-
+	console.log(sortedPeople);
 	return (
 		<Stack direction="column" alignItems="center" minWidth="40vw" gap={2}>
 			<TopBar />
@@ -39,8 +39,6 @@ export default function WhereYouAt() {
 				<PersonCard
 					person={sortedPeople.user}
 					isUser
-					expanded={true} // User card is always expanded
-					onExpandChange={() => { }} // No-op for user card
 				/>
 			)}
 
@@ -51,8 +49,6 @@ export default function WhereYouAt() {
 						key={person.id}
 						person={person}
 						permissions={permissions}
-						expanded={expandedCardId === person.id}
-						onExpandChange={(expanded: boolean) => handleCardExpand(person.id, expanded)}
 					/>
 				))}
 		</Stack>

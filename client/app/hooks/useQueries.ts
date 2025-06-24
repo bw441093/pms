@@ -8,6 +8,7 @@ import {
 	updateReportStatus,
 	updatePersonDetails,
 	addNewPerson,
+	getPerson,
 } from '../clients/personsClient';
 
 export function usePeopleData(userId: string) {
@@ -137,5 +138,30 @@ export function useUpdatePersonDetails() {
 			// Invalidate people queries to refresh data after status update
 			queryClient.invalidateQueries({ queryKey: ['people'] });
 		},
+	});
+}
+
+export function useUserData(userId: string) {
+	return useQuery({
+		queryKey: ['user', userId],
+		queryFn: () => getPerson(userId),
+		enabled: !!userId,
+	});
+}
+
+export function useUserDataWithManager(userId: string) {
+	return useQuery({
+		queryKey: ['userWithManager', userId],
+		queryFn: async () => {
+			const user = await getPerson(userId);
+			console.log("user");
+			console.log(user);
+			if (user?.manager?.id) {
+				const manager = await getPerson(user.manager.id);
+				return { ...user, manager: { ...user.manager, name: manager?.name || '' } };
+			}
+			return user;
+		},
+		enabled: !!userId,
 	});
 }

@@ -190,10 +190,17 @@ export async function generatePersons(users: any[], roles: any[]) {
 }
 
 export async function generateTransactions(persons: any[], count: number = 50) {
-	console.log(`📋 Generating ${count} transactions...`);
+	console.log(`📋 Generating up to ${count} transactions (one per user due to unique constraint)...`);
 
-	for (let i = 0; i < count; i++) {
-		const person = getRandomElement(persons);
+	// If count is less than number of persons, pick random persons
+	let selectedPersons: any[];
+	if (count < persons.length) {
+		selectedPersons = getRandomElements(persons, count);
+	} else {
+		selectedPersons = persons;
+	}
+
+	for (const person of selectedPersons) {
 		const origin = getRandomElement(SAMPLE_ORIGINS);
 		const target = getRandomElement(SAMPLE_TARGETS);
 
@@ -233,17 +240,21 @@ export async function generateSpecificScenarios() {
 	// Scenario 2: Multiple pending transactions
 	const pendingPersons = getRandomElements(persons, 5);
 	for (const person of pendingPersons) {
-		await db.insert(TransactionsTable).values({
-			id: uuidv4(),
-			origin: 'mbt',
-			target: 'kir',
-			originConfirmation: false,
-			targetConfirmation: false,
-			field: 'site',
-			createdAt: new Date(),
-			status: 'pending',
-			userId: person.id,
-		});
+		// Check if a transaction already exists for this user
+		const existing = await db.select().from(TransactionsTable).where(eq(TransactionsTable.userId, person.id));
+		if (existing.length === 0) {
+			await db.insert(TransactionsTable).values({
+				id: uuidv4(),
+				origin: 'mbt',
+				target: 'kir',
+				originConfirmation: false,
+				targetConfirmation: false,
+				field: 'site',
+				createdAt: new Date(),
+				status: 'pending',
+				userId: person.id,
+			});
+		}
 	}
 
 	// Scenario 3: Persons on leave

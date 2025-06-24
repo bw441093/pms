@@ -12,10 +12,13 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { ThemeProvider } from '@mui/material/styles';
+import theme from './theme';
 
 import type { Route } from './+types/root';
 import './app.css';
 import { SocketContext } from './contexts/SocketContext';
+import BottomNavBar from './components/BottomNavBar/BottomNavBar';
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -61,9 +64,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function AppLayout({ children }: { children: React.ReactNode }) {
+	const location = useLocation();
+	const showNavBar = location.pathname !== '/login';
 	return (
 		<div>
 			<main>{children}</main>
+			{showNavBar && <BottomNavBar />}
 		</div>
 	);
 }
@@ -122,13 +128,15 @@ export default function App() {
 	}
 	return (
 		<LocalizationProvider dateAdapter={AdapterDayjs}>
-			<QueryClientProvider client={queryClient}>
-				<SocketContext.Provider value={{ socket }}>
-					<AppLayout>
-					<Outlet />
-				</AppLayout>
-				</SocketContext.Provider>
-			</QueryClientProvider>
+			<ThemeProvider theme={theme}>
+				<QueryClientProvider client={queryClient}>
+					<SocketContext.Provider value={{ socket }}>
+						<AppLayout>
+							<Outlet />
+						</AppLayout>
+					</SocketContext.Provider>
+				</QueryClientProvider>
+			</ThemeProvider>
 		</LocalizationProvider>
 	);
 }

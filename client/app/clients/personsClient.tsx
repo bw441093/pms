@@ -13,6 +13,8 @@ export async function getPeopleData(userId: string) {
 		(acc: Person[][], person: Person) => {
 			if (person.id === userId) {
 				acc[0].push(person);
+				console.log('stam');
+				console.log(person);
 				return acc;
 			}
 			acc[1].push(person);
