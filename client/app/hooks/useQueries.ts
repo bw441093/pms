@@ -28,13 +28,15 @@ export function useAddNewPerson() {
 			site,
 			email,
 			roles,
+			serviceType,
 		}: {
 			name: string;
 			manager: string;
 			site: string;
 			email: string;
 			roles: { name: string; opts: string[]  }[];
-		}) => addNewPerson(name, manager, site, email, roles),
+			serviceType: string;
+		}) => addNewPerson(name, manager, site, email, roles, serviceType),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['people'] });
 		},
@@ -121,6 +123,7 @@ export function useUpdatePersonDetails() {
 			site,
 			email,
 			roles,
+			serviceType,
 		}: {
 			userId: string;
 			name?: string;
@@ -128,7 +131,8 @@ export function useUpdatePersonDetails() {
 			site?: string;
 			email?: string;
 			roles?: { name: string; opts: string[] }[];
-		}) => updatePersonDetails(userId, { name, manager, site, email, roles }),
+			serviceType?: string;
+		}) => updatePersonDetails(userId, { name, manager, site, email, roles, serviceType }),
 		onSuccess: () => {
 			// Invalidate people queries to refresh data after status update
 			queryClient.invalidateQueries({ queryKey: ['people'] });

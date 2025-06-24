@@ -118,9 +118,10 @@ export const createPerson = async (
 	id: string,
 	name: string,
 	site: string,
-	manager?: string
+	manager?: string,
+	serviceType?: string
 ) => {
-	const updateData: any = { id, name, site };
+	const updateData: any = { id, name, site, serviceType };
 	if (manager) updateData.manager = manager;
 	const user = await db
 		.insert(PersonsTable)
@@ -200,6 +201,7 @@ export const updatePersonDetails = async (
 		name?: string;
 		manager?: string;
 		site?: string;
+		serviceType?: string;
 	}
 ) => {
 	const updateData: any = { updatedAt: new Date() };
@@ -207,7 +209,7 @@ export const updatePersonDetails = async (
 	if (updates.name !== undefined) updateData.name = updates.name;
 	if (updates.manager !== undefined) updateData.manager = updates.manager;
 	if (updates.site !== undefined) updateData.site = updates.site;
-
+	if (updates.serviceType !== undefined) updateData.serviceType = updates.serviceType;
 	const user = await db
 		.update(PersonsTable)
 		.set(updateData)

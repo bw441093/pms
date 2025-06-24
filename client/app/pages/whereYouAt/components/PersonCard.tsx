@@ -28,6 +28,7 @@ const defaultPerson: Person = {
 		id: '13123123',
 		name: 'Jane Doe',
 	},
+	serviceType: 'hova',
 	location: 'jerusalem',
 	reportStatus: 'home',
 	alertStatus: 'pending',
@@ -60,6 +61,7 @@ const PersonCard: React.FC<PersonCardProps> = ({
 		updatedAt,
 		transaction,
 		personRoles,
+		serviceType,
 	} = person;
 
 	const handleExpandClick = () => {

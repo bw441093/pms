@@ -148,6 +148,7 @@ export async function generatePersons(users: any[], roles: any[]) {
 			manager: null as string | null,
 			alertStatus: getRandomElement(['pending', 'good', 'bad'] as const),
 			reportStatus: getRandomElement(['present', 'absent', 'late', 'on_leave']),
+			serviceType: getRandomElement(['hova', 'keva', 'miluim', 'aatz', 'ps'] as const),
 			location: getRandomElement(SAMPLE_LOCATIONS),
 			updatedAt: getRandomDateInRange(30), // Random date within last 30 days
 		};

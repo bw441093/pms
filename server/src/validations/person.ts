@@ -28,6 +28,7 @@ export const postPersonSchema = z
 		manager: z.string().optional(),
 		site: z.string(),
 		email: z.string().email(),
+		serviceType: z.string(),
 	})
 	.merge(rolesSchema);
 
@@ -56,4 +57,5 @@ export const updatePersonDetailsSchema = z.object({
 	manager: z.string().optional(),
 	site: z.string().optional(),
 	email: z.string().email().optional(),
+	serviceType: z.string().optional(),
 }).merge(rolesSchema);

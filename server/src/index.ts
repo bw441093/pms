@@ -45,6 +45,7 @@ const injectData = async () => {
 		location: 'mbt',
 		alertStatus: 'good',
 		reportStatus: 'present',
+		serviceType: 'keva',
 	};
 
 	const role: typeof RolesTable.$inferInsert = {

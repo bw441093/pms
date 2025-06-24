@@ -1,4 +1,4 @@
-import type { Sites, Roles, Locations } from './types';
+import type { Sites, Roles, Locations, ServiceTypes } from './types';
 
 // List of admin user IDs
 export const ADMINS = ['admin1', 'admin2'];
@@ -37,6 +37,7 @@ export const ROLE_OPTIONS = [
 	'hrManager',
 	'admin',
 ] as const;
+export const SERVICE_TYPE_OPTIONS = ['hova', 'keva', 'miluim', 'aatz', 'ps'] as const;
 
 export const hebrewSiteNames: Record<Sites, string> = {
 	mbt: 'איילת השחר',
@@ -44,6 +45,14 @@ export const hebrewSiteNames: Record<Sites, string> = {
 	kir: 'ביה״ב',
 	mdt: 'רקיע',
 	other: 'אחר',
+};
+
+export const hebrewServiceTypeNames: Record<ServiceTypes, string> = {
+	hova: 'חובה',
+	keva: 'קבע',
+	miluim: 'מילואים',
+	aatz: 'אזרח עובד צה"ל',
+	ps: 'יועץ',
 };
 
 export const hebrewRoleNames: Record<Roles, string> = {

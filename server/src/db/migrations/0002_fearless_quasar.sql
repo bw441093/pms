@@ -1,0 +1,1 @@
+ALTER TABLE "persons" ADD COLUMN "serviceType" text NOT NULL;

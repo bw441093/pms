@@ -27,6 +27,8 @@ export const PersonsTable = pgTable('persons', {
 		.notNull(),
 	reportStatus: text().default('present').notNull(),
 	location: text().default('home').notNull(),
+	serviceType: text({ enum: ['hova', 'keva', 'miluim', 'aatz', 'ps'] })
+		.notNull(),
 	updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
 

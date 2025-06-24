@@ -26,6 +26,8 @@ import {
 	SITE_MANAGER_OPTIONS,
 	ROLE_OPTIONS,
 	hebrewRoleNames,
+	SERVICE_TYPE_OPTIONS,
+	hebrewServiceTypeNames,
 } from '~/consts';
 import { useAddNewPerson } from '~/hooks/useQueries';
 
@@ -53,6 +55,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 		manager: '',
 		roles: [] as string[],
 		siteManagerSite: '', // New field for site manager's specific site
+		serviceType: '',
 	});
 	const [managers, setManagers] = useState<Manager[]>([]);
 	const [loading, setLoading] = useState(false);
@@ -135,6 +138,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					name: role,
 					opts: role === 'siteManager' ? [formData.siteManagerSite] : [],
 				})),
+				serviceType: formData.serviceType,
 			};
 
 			await addNewPersonMutation.mutate(payload);
@@ -147,6 +151,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 				manager: '',
 				roles: [],
 				siteManagerSite: '',
+				serviceType: '',
 			});
 
 			onSuccess?.();
@@ -167,6 +172,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 			manager: '',
 			roles: [],
 			siteManagerSite: '',
+			serviceType: '',
 		});
 		setError('');
 		onClose();
@@ -286,6 +292,26 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 							{managers.map((manager) => (
 								<MenuItem key={manager.userId} value={manager.userId}>
 									{manager.name} ({manager.site})
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
+
+					<FormControl fullWidth required>
+						<InputLabel>סוג שירות</InputLabel>
+						<Select
+							sx={{
+								'& .MuiSelect-select': {
+									textAlign: 'right',
+								},
+							}}
+							value={formData.serviceType}
+							label="סוג שירות"
+							onChange={(e) => handleInputChange('serviceType', e.target.value)}
+						>
+							{SERVICE_TYPE_OPTIONS.map((serviceType) => (
+								<MenuItem key={serviceType} value={serviceType}>
+									{hebrewServiceTypeNames[serviceType]}
 								</MenuItem>
 							))}
 						</Select>
