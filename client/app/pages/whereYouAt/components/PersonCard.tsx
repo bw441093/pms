@@ -203,11 +203,10 @@ const PersonCard: React.FC<PersonCardProps> = ({
 						<Button
 							variant="contained"
 							disabled={alertStatus === 'good'}
-							color="error"
 							onClick={(e) => handleButtonClick('Alert', e)}
 							sx={{ 
 								borderRadius: 2,
-								bgcolor: theme.palette.custom.error,
+								bgcolor: alertStatus === 'good' ? theme.palette.custom.success : theme.palette.custom.error,
 								color: theme.palette.custom.gray1,
 								'&:hover': {
 									bgcolor: theme.palette.custom.gray5

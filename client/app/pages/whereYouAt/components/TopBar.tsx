@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
 	AppBar,
 	Toolbar,
@@ -14,6 +14,8 @@ import {
 	ListItemButton,
 	Stack,
 	Alert,
+	TextField,
+	InputAdornment,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
@@ -30,16 +32,41 @@ import AddPersonModal from './ActionModal/AddPersonModal';
 import { getPerson } from '../../../clients/personsClient';
 import type { Person } from '../../../types';
 import LogoutButton from '~/pages/logout/logout';
+import SearchIcon from '@mui/icons-material/Search';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import { useTheme } from '@mui/material/styles';
+import debounce from 'lodash/debounce';
+import FilterModal from './ActionModal/FilterModal';
 
-const TopBar = () => {
+interface TopBarProps {
+	onSearch: (searchTerm: string) => void;
+	onFiltersChange: (filters: { isManager: boolean; isSiteManager: boolean }) => void;
+}
+
+const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 	const [drawerOpen, setDrawerOpen] = useState(false);
 	const [addPersonModalOpen, setAddPersonModalOpen] = useState(false);
+	const [filterModalOpen, setFilterModalOpen] = useState(false);
+	const [filters, setFilters] = useState({
+		isManager: false,
+		isSiteManager: false,
+	});
 	const [currentUser, setCurrentUser] = useState<Person | null>(null);
 	const [userLoading, setUserLoading] = useState(true);
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
+	const theme = useTheme();
+	const [searchValue, setSearchValue] = useState('');
+
+	// Debounce the search callback
+	const debouncedSearch = useCallback(
+		debounce((term: string) => {
+			onSearch(term);
+		}, 300),
+		[onSearch]
+	);
 
 	// Get current user's information for authorization
 	useEffect(() => {
@@ -133,6 +160,25 @@ const TopBar = () => {
 
 	const handleArchive = () => {
 		navigate('/archive');
+	};
+
+	const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		const newValue = event.target.value;
+		setSearchValue(newValue);
+		debouncedSearch(newValue);
+	};
+
+	const handleFilterClick = () => {
+		setFilterModalOpen(true);
+	};
+
+	const handleFilterClose = () => {
+		setFilterModalOpen(false);
+	};
+
+	const handleFiltersChange = (newFilters: { isManager: boolean; isSiteManager: boolean }) => {
+		setFilters(newFilters);
+		onFiltersChange(newFilters);
 	};
 
 	const menuItems = [
@@ -273,6 +319,80 @@ const TopBar = () => {
 					console.log('המשתמש נוסף בהצלחה');
 				}}
 			/>
+
+			{/* Filter Modal */}
+			<FilterModal
+				open={filterModalOpen}
+				onClose={handleFilterClose}
+				filters={filters}
+				onFiltersChange={handleFiltersChange}
+			/>
+
+			<Stack 
+				direction="row" 
+				alignItems="center" 
+				spacing={2} 
+				width="90%"
+				px={2}
+			>
+				<IconButton 
+					onClick={handleFilterClick}
+					sx={{ 
+						backgroundColor: theme.palette.custom.gray4,
+						borderRadius: 2,
+						padding: '12px',
+						'&:hover': {
+							backgroundColor: theme.palette.custom.gray5,
+						},
+					}}
+				>
+					<FilterListIcon sx={{ color: theme.palette.custom.surfaceBright }} />
+				</IconButton>
+				<Box 
+					sx={{ 
+						flex: 1,
+						position: 'relative',
+					}}
+				>
+					<TextField
+						dir="rtl"
+						fullWidth
+						placeholder="חפש אנשים..."
+						value={searchValue}
+						onChange={handleSearchChange}
+						sx={{
+							'& .MuiOutlinedInput-root': {
+								backgroundColor: theme.palette.custom.gray4,
+								borderRadius: 3,
+								'& fieldset': {
+									border: 'none',
+								},
+								'&:hover fieldset': {
+									border: 'none',
+								},
+								'&.Mui-focused fieldset': {
+									border: 'none',
+								},
+							},
+							'& .MuiInputBase-input': {
+								color: theme.palette.custom.surfaceBright,
+								'&::placeholder': {
+									color: theme.palette.custom.outlineVariant,
+									opacity: 1,
+								},
+							},
+						}}
+						InputProps={{
+							startAdornment: (
+								<InputAdornment position="start">
+									<SearchIcon sx={{ color: theme.palette.custom.outlineVariant }} />
+								</InputAdornment>
+							),
+						}}
+					/>
+				</Box>
+
+			</Stack>
 		</>
 	);
 };
