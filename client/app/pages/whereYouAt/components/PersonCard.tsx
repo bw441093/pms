@@ -40,6 +40,7 @@ interface PersonCardProps {
 	isUser?: boolean;
 	permissions?: { name: string; opts: string[] }[];
 	expanded?: boolean;
+	disableExpand?: boolean;
 	onExpandChange?: (expanded: boolean) => void;
 }
 
@@ -48,6 +49,7 @@ const PersonCard: React.FC<PersonCardProps> = ({
 	permissions,
 	expanded = false,
 	onExpandChange,
+	disableExpand = false,
 }) => {
 	const [openModal, setOpenModal] = useState(false);
 	const [action, setAction] = useState('');
@@ -63,9 +65,9 @@ const PersonCard: React.FC<PersonCardProps> = ({
 		personRoles,
 		serviceType,
 	} = person;
-
+	
 	const handleExpandClick = () => {
-		if (onExpandChange) {
+		if (onExpandChange && !disableExpand) {
 			onExpandChange(!expanded);
 		}
 	};
