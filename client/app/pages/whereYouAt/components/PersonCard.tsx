@@ -94,7 +94,7 @@ const PersonCard: React.FC<PersonCardProps> = ({
 								sx={{
 									ml: 1.5,
 									borderRadius: '50%',
-									bgcolor: alertStatus !== 'good' || (transaction?.status !== 'resolved') ? 'error.main' : 'success.main',
+									bgcolor: alertStatus !== 'good' || (transaction?.status !== 'resolved') ? theme.palette.custom.error : theme.palette.custom.success,
 									minWidth: '14px',
 									flexShrink: 0
 								}}
@@ -158,31 +158,31 @@ const PersonCard: React.FC<PersonCardProps> = ({
 									: location}
 							</Typography>
 						</Stack>
-						<Stack direction="row" alignItems="center">	
-						<Box 
-								component="img" 
-								src={buildingIcon} 
-								sx={{ 
-									width: 21, 
-									height: 21, 
+						<Stack direction="row" alignItems="center">
+							<Box
+								component="img"
+								src={buildingIcon}
+								sx={{
+									width: 21,
+									height: 21,
 									marginInlineEnd: '1vw',
 									marginRight: '1vw',
 									marginBottom: '0.7vh',
 									verticalAlign: 'middle',
 									filter: `brightness(0) saturate(100%) invert(${theme.palette.mode === 'dark' ? 1 : 0})`
-								}} 
+								}}
 							/>
-						<Typography sx={{ marginInlineStart: '2vw', color: theme.palette.custom.surfaceBright, fontWeight: 500, fontSize: 18 }}>
-							{location in hebrewSiteNames
-								? hebrewSiteNames[location as keyof typeof hebrewSiteNames]
-								: location}
-						</Typography>
+							<Typography sx={{ marginInlineStart: '2vw', color: theme.palette.custom.surfaceBright, fontWeight: 500, fontSize: 18 }}>
+								{site in hebrewSiteNames
+									? hebrewSiteNames[site as keyof typeof hebrewSiteNames]
+									: site}
+							</Typography>
 						</Stack>
 					</Stack>
 
 					{/* Action buttons */}
-					<Stack 
-						direction="row" 
+					<Stack
+						direction="row"
 						width='100%'
 						sx={{
 							gap: '1vw',
@@ -202,9 +202,39 @@ const PersonCard: React.FC<PersonCardProps> = ({
 					>
 						<Button
 							variant="contained"
+							onClick={(e) => handleButtonClick('Move', e)}
+							sx={{
+								borderRadius: 2,
+								bgcolor: transaction?.status === 'pending' ? theme.palette.custom.error : theme.palette.custom.gray4,
+								color: transaction?.status === 'pending' ? theme.palette.custom.gray1 : theme.palette.custom.surfaceBright,
+								'&:hover': {
+									bgcolor: theme.palette.custom.gray5
+								},
+								fontSize: 16,
+								fontWeight: 500,
+								textTransform: 'none'
+							}}
+						>
+							שינוי אתר
+						</Button>
+
+						<Button
+							variant="contained"
+							onClick={(e) => handleButtonClick('Report', e)}
+							sx={{
+								borderRadius: 2,
+								fontSize: 16,
+								fontWeight: 500,
+								textTransform: 'none'
+							}}
+						>
+							שינוי דיווח
+						</Button>
+						<Button
+							variant="contained"
 							disabled={alertStatus === 'good'}
 							onClick={(e) => handleButtonClick('Alert', e)}
-							sx={{ 
+							sx={{
 								borderRadius: 2,
 								bgcolor: alertStatus === 'good' ? theme.palette.custom.success : theme.palette.custom.error,
 								color: theme.palette.custom.gray1,
@@ -217,35 +247,6 @@ const PersonCard: React.FC<PersonCardProps> = ({
 							}}
 						>
 							נכס"ל
-						</Button>
-						<Button
-							variant="contained"
-							onClick={(e) => handleButtonClick('Report', e)}
-							sx={{ 
-								borderRadius: 2,
-								fontSize: 16,
-								fontWeight: 500,
-								textTransform: 'none'
-							}}
-						>
-							שינוי דיווח
-						</Button>
-						<Button
-							variant="contained"
-							onClick={(e) => handleButtonClick('Move', e)}
-							sx={{ 
-								borderRadius: 2,
-								bgcolor:  transaction?.status === 'pending' ? theme.palette.custom.error : theme.palette.custom.gray4,
-								color: transaction?.status === 'pending' ? theme.palette.custom.gray1 : theme.palette.custom.outlineVariant,
-								'&:hover': {
-									bgcolor: theme.palette.custom.gray5
-								},
-								fontSize: 16,
-								fontWeight: 500,
-								textTransform: 'none'
-							}}
-						>
-							שינוי אתר
 						</Button>
 					</Stack>
 

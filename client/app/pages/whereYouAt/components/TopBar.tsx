@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
 	AppBar,
 	Toolbar,
@@ -59,6 +59,8 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 	const navigate = useNavigate();
 	const theme = useTheme();
 	const [searchValue, setSearchValue] = useState('');
+	const [isStuck, setIsStuck] = useState(false);
+	const searchBarRef = useRef<HTMLDivElement>(null);
 
 	// Debounce the search callback
 	const debouncedSearch = useCallback(
@@ -86,6 +88,24 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 		};
 
 		fetchCurrentUser();
+	}, []);
+
+	useEffect(() => {
+		const observer = new IntersectionObserver(
+			([entry]) => {
+				setIsStuck(!entry.isIntersecting);
+			},
+			{
+				threshold: 0,
+				rootMargin: '-1px 0px 0px 0px' // Trigger when exactly at top
+			}
+		);
+
+		if (searchBarRef.current) {
+			observer.observe(searchBarRef.current);
+		}
+
+		return () => observer.disconnect();
 	}, []);
 
 	const hasAdminAccess = () => {
@@ -328,11 +348,24 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 				onFiltersChange={handleFiltersChange}
 			/>
 
+			<div ref={searchBarRef} style={{ height: '1px', width: '100%', margin: 0, padding: 0 }} />
+
 			<Stack 
 				direction="row" 
 				alignItems="center" 
 				spacing={2} 
-				width="90%"
+				width="93%"
+				sx={{ 
+					position: 'sticky', 
+					top: 0, 
+					zIndex: 1000,
+					backgroundColor: isStuck ? theme.palette.custom.surfaceContainerLow : 'transparent',
+					py: isStuck ? 2 : 0,
+					mx: 'auto',
+					mt: -1,
+					borderColor: 'divider',
+					transition: 'all 0.1s ease-in-out',
+				}}
 				px={2}
 			>
 				<IconButton 
@@ -391,7 +424,6 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 						}}
 					/>
 				</Box>
-
 			</Stack>
 		</>
 	);
