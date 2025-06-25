@@ -10,6 +10,8 @@ import {
 	useNavigate,
 } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 import type { Route } from './+types/root';
 import './app.css';
@@ -119,13 +121,15 @@ export default function App() {
 		return <Outlet />;
 	}
 	return (
-		<QueryClientProvider client={queryClient}>
-			<SocketContext.Provider value={{ socket }}>
-				<AppLayout>
+		<LocalizationProvider dateAdapter={AdapterDayjs}>
+			<QueryClientProvider client={queryClient}>
+				<SocketContext.Provider value={{ socket }}>
+					<AppLayout>
 					<Outlet />
 				</AppLayout>
-			</SocketContext.Provider>
-		</QueryClientProvider>
+				</SocketContext.Provider>
+			</QueryClientProvider>
+		</LocalizationProvider>
 	);
 }
 

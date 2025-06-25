@@ -6,6 +6,7 @@ import userRouter from './personsRouter';
 import authenticate from '../middleware/authentication';
 import authorize from '../middleware/authorization';
 import exportExcelRouter from './excelExport';
+import snapshotRouter from './snapshotRouter';
 
 const router = Router();
 
@@ -20,5 +21,10 @@ router.use(
 	authorize(['hrManager', 'admin']),
 	exportExcelRouter
 );
-
+router.use(
+	'/snapshot',
+	authenticate(),
+	authorize(['hrManager', 'admin']),
+	snapshotRouter
+);
 export default router;

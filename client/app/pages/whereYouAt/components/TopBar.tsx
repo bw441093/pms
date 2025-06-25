@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import {
 	AppBar,
 	Toolbar,
@@ -17,6 +18,7 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
 import AlertIcon from '@mui/icons-material/Warning';
+import ArchiveIcon from '@mui/icons-material/Archive';
 import ExportIcon from '@mui/icons-material/Download';
 import HomeIcon from '@mui/icons-material/Home';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -37,6 +39,7 @@ const TopBar = () => {
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
 	const queryClient = useQueryClient();
+	const navigate = useNavigate();
 
 	// Get current user's information for authorization
 	useEffect(() => {
@@ -128,6 +131,10 @@ const TopBar = () => {
 		}
 	};
 
+	const handleArchive = () => {
+		navigate('/archive');
+	};
+
 	const menuItems = [
 		{
 			text: 'שלח התראה לכולם',
@@ -139,6 +146,12 @@ const TopBar = () => {
 			text: 'ייצוא משתמשים',
 			icon: <ExportIcon />,
 			onClick: handleExport,
+			disabled: loading,
+		},
+		{
+			text: 'ארכיון',
+			icon: <ArchiveIcon />,
+			onClick: handleArchive,
 			disabled: loading,
 		},
 	];
