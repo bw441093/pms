@@ -22,10 +22,7 @@ import AddIcon from '@mui/icons-material/Add';
 import AlertIcon from '@mui/icons-material/Warning';
 import ArchiveIcon from '@mui/icons-material/Archive';
 import ExportIcon from '@mui/icons-material/Download';
-import HomeIcon from '@mui/icons-material/Home';
-import SettingsIcon from '@mui/icons-material/Settings';
-import PersonIcon from '@mui/icons-material/Person';
-import InfoIcon from '@mui/icons-material/Info';
+import LogoutIcon from '@mui/icons-material/Logout';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 import AddPersonModal from './ActionModal/AddPersonModal';
@@ -200,6 +197,11 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 		onFiltersChange(newFilters);
 	};
 
+	const handleLogout = () => {
+		localStorage.removeItem('login_token');
+		navigate('/login', { replace: true });
+	};
+
 	const menuItems = [
 		{
 			text: 'שלח התראה לכולם',
@@ -217,6 +219,12 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 			text: 'ארכיון',
 			icon: <ArchiveIcon />,
 			onClick: handleArchive,
+			disabled: loading,
+		},
+		{
+			text: 'התנתקות',
+			icon: <LogoutIcon />,
+			onClick: handleLogout,
 			disabled: loading,
 		},
 	];
@@ -237,7 +245,7 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 							<MenuIcon />
 						</IconButton>
 
-						<LogoutButton />
+						{/* <LogoutButton /> */}
 
 						<Typography
 							variant="h6"

@@ -1,61 +1,63 @@
-import * as React from 'react';
-import { Box, IconButton, Paper } from '@mui/material';
-import HomeIcon from '@mui/icons-material/Home';
+import { BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
+import { useLocation, useNavigate } from 'react-router-dom';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import HomeIcon from '@mui/icons-material/Home';
 import PersonIcon from '@mui/icons-material/Person';
-import { useNavigate, useLocation } from 'react-router';
-
-const navItems = [
-  { icon: <CalendarMonthIcon fontSize="large" />, path: '/calendar', key: 'calendar' },
-  { icon: <HomeIcon fontSize="large" />, path: '/', key: 'home' },
-  { icon: <PersonIcon fontSize="large" />, path: '/profile', key: 'profile' },
-];
+import { useTheme } from '@mui/material/styles';
 
 export default function BottomNavBar() {
-  const navigate = useNavigate();
-  const location = useLocation();
+	const location = useLocation();
+	const navigate = useNavigate();
+	const theme = useTheme();
 
-  return (
-    <Paper
-      sx={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1000,
-        bgcolor: '#fff',
-        borderRadius: '20px 20px 0 0',
-        boxShadow: '0 -2px 12px rgba(0,0,0,0.08)',
-        maxWidth: 420,
-        mx: 'auto',
-        py: 0.5,
-        px: 2,
-        display: 'flex',
-        justifyContent: 'center',
-      }}
-      elevation={6}
-    >
-      <Box display="flex" justifyContent="space-between" width="100%" maxWidth={340}>
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <IconButton
-              key={item.key}
-              onClick={() => navigate(item.path)}
-              sx={{
-                bgcolor: isActive ? '#e3f2fd' : 'transparent',
-                borderRadius: 2,
-                mx: 1,
-                p: 1.2,
-                color: isActive ? '#1976d2' : '#757575',
-                transition: 'background 0.2s, color 0.2s',
-              }}
-            >
-              {item.icon}
-            </IconButton>
-          );
-        })}
-      </Box>
-    </Paper>
-  );
+	return (
+		<Paper
+			sx={{
+				position: 'fixed',
+				bottom: 16,
+				left: '50%',
+				transform: 'translateX(-50%)',
+				width: '90%',
+				maxWidth: 400,
+				borderRadius: 3,
+				zIndex: 1000,
+				boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
+				backgroundColor: theme.palette.custom.gray1,
+        border: '1px solid',
+        borderColor: theme.palette.custom.gray5,
+			}}
+			elevation={3}
+		>
+			<BottomNavigation
+				value={location.pathname}
+				onChange={(_, newValue) => {
+					navigate(newValue);
+				}}
+				sx={{
+					borderRadius: 3,
+					height: 56,
+					backgroundColor: 'transparent',
+					'& .Mui-selected': {
+						color: `${theme.palette.custom.surfaceContainerLow} !important`,
+					},
+					'& .MuiBottomNavigationAction-root': {
+						color: theme.palette.custom.outlineVariant,
+					},
+				}}
+			>
+				<BottomNavigationAction
+					value="/calendar"
+					icon={<CalendarMonthIcon />}
+				/>
+				<BottomNavigationAction
+					value="/"
+					icon={<HomeIcon />}
+				/>
+				<BottomNavigationAction
+					value="/profile"
+					icon={<PersonIcon />}
+				/>
+			</BottomNavigation>
+		</Paper>
+	);
 } 
