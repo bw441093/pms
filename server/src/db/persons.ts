@@ -1,7 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 
 import { db } from './db';
-import { PersonsTable, PersonsToRoles, RolesTable } from './schema';
+import { PersonsTable, PersonsToSystemRoles, SystemRolesTable } from './schema';
 
 export const find = async () => {
 	const user = await db.query.PersonsTable.findMany({
@@ -11,7 +11,7 @@ export const find = async () => {
 					userId: false,
 				},
 			},
-			personRoles: {
+			personSystemRoles: {
 				columns: { userId: false, roleId: false },
 				with: {
 					role: true,
@@ -38,7 +38,7 @@ export const findPersonById = async (id: string) => {
 					userId: false,
 				},
 			},
-			personRoles: {
+			personSystemRoles: {
 				columns: { userId: false, roleId: false },
 				with: {
 					role: true,
@@ -52,7 +52,7 @@ export const findPersonById = async (id: string) => {
 			},
 		},
 	});
-	user?.personRoles;
+	user?.personSystemRoles;
 	return user;
 };
 
@@ -64,9 +64,9 @@ export const findManagers = async () => {
 			site: PersonsTable.site,
 		})
 		.from(PersonsTable)
-		.innerJoin(PersonsToRoles, eq(PersonsTable.id, PersonsToRoles.userId))
-		.innerJoin(RolesTable, eq(PersonsToRoles.roleId, RolesTable.id))
-		.where(eq(RolesTable.name, 'personnelManager'));
+		.innerJoin(PersonsToSystemRoles, eq(PersonsTable.id, PersonsToSystemRoles.userId))
+		.innerJoin(SystemRolesTable, eq(PersonsToSystemRoles.roleId, SystemRolesTable.id))
+		.where(eq(SystemRolesTable.name, 'personnelManager'));
 
 	return users;
 };

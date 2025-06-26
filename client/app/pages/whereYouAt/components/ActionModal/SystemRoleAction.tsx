@@ -21,18 +21,18 @@ import axios from 'axios';
 
 import type { Person } from '../../../../types';
 import {
-	hebrewRoleNames,
 	hebrewSiteNames,
 	SITE_MANAGER_OPTIONS,
-	ROLE_OPTIONS,
+	SYSTEM_ROLE_OPTIONS,
 	SITE_OPTIONS,
 	SERVICE_TYPE_OPTIONS,
 	hebrewServiceTypeNames,
+	hebrewSystemRoleNames,
 } from '~/consts';
 import { getPerson } from '../../../../clients/personsClient';
 import { useUpdatePersonDetails } from '~/hooks/useQueries';
 
-interface RoleActionProps {
+interface SystemRoleActionProps {
 	person: Person;
 	onClose: () => void;
 }
@@ -43,7 +43,7 @@ interface Manager {
 	site: string;
 }
 
-const RoleAction: React.FC<RoleActionProps> = ({
+const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 	person,
 	onClose,
 }) => {
@@ -74,8 +74,8 @@ const RoleAction: React.FC<RoleActionProps> = ({
 				if (userId) {
 					const user = await getPerson(userId);
 					setCurrentUser(user);
-					setSelectedRoles(person.personRoles?.map((pr) => pr.role.name) ?? []);
-					const siteManagerRole = person.personRoles?.find(
+					setSelectedRoles(person.personSystemRoles?.map((pr) => pr.role.name) ?? []);
+					const siteManagerRole = person.personSystemRoles?.find(
 						(pr) => pr.role.name === 'siteManager'
 					);
 					if (siteManagerRole && siteManagerRole.role.opts) {
@@ -109,35 +109,35 @@ const RoleAction: React.FC<RoleActionProps> = ({
 
 	// Authorization logic
 	const getCurrentUserRoles = () => {
-		if (!currentUser?.personRoles) return [];
-		return currentUser.personRoles.map((pr) => pr.role.name);
+		if (!currentUser?.personSystemRoles) return [];
+		return currentUser.personSystemRoles.map((pr) => pr.role.name);
 	};
 
 	const getCurrentUserSiteManagerSites = () => {
-		if (!currentUser?.personRoles) return [];
-		const siteManagerRole = currentUser.personRoles.find(
+		if (!currentUser?.personSystemRoles) return [];
+		const siteManagerRole = currentUser.personSystemRoles.find(
 			(pr) => pr.role.name === 'siteManager'
 		);
 		return siteManagerRole?.role.opts || [];
 	};
 
 	const hasHigherRole = () => {
-		const userRoles = getCurrentUserRoles();
+		const userSystemRoles = getCurrentUserRoles();
 		return (
-			userRoles.includes('personnelManager') ||
-			userRoles.includes('hrManager') ||
-			userRoles.includes('admin')
+			userSystemRoles.includes('personnelManager') ||
+			userSystemRoles.includes('hrManager') ||
+			userSystemRoles.includes('admin')
 		);
 	};
 
 	const canModifyRole = (role: string) => {
 		if (hasHigherRole()) return true;
 
-		const userRoles = getCurrentUserRoles();
+		const userSystemRoles = getCurrentUserRoles();
 		const userSiteManagerSites = getCurrentUserSiteManagerSites();
 
 		// Site managers can only modify siteManager roles for their sites
-		if (role === 'siteManager' && userRoles.includes('siteManager')) {
+		if (role === 'siteManager' && userSystemRoles.includes('siteManager')) {
 			// Check if the person being modified is in one of the current user's managed sites
 			return userSiteManagerSites.includes(person.site);
 		}
@@ -148,11 +148,11 @@ const RoleAction: React.FC<RoleActionProps> = ({
 	const canModifySite = (site: string) => {
 		if (hasHigherRole()) return true;
 
-		const userRoles = getCurrentUserRoles();
+		const userSystemRoles = getCurrentUserRoles();
 		const userSiteManagerSites = getCurrentUserSiteManagerSites();
 
 		// Site managers can only modify sites they manage
-		if (userRoles.includes('siteManager')) {
+		if (userSystemRoles.includes('siteManager')) {
 			return userSiteManagerSites.includes(site);
 		}
 
@@ -248,7 +248,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 				manager: personDetails.manager || undefined,
 				email: personDetails.email || undefined,
 				site: personDetails.site,
-				roles: selectedRoles.map((role) => ({
+				systemRoles: selectedRoles.map((role) => ({
 					name: role,
 					opts: role === 'siteManager' ? siteManagerSites : [],
 				})) || [],
@@ -395,7 +395,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 						תפקידים
 					</Typography>
 					<FormGroup sx={{ alignItems: 'flex-end' }}>
-						{ROLE_OPTIONS.map((role) => (
+						{SYSTEM_ROLE_OPTIONS.map((role) => (
 							<FormControlLabel
 								key={role}
 								control={
@@ -405,7 +405,7 @@ const RoleAction: React.FC<RoleActionProps> = ({
 										disabled={!canModifyRole(role)}
 									/>
 								}
-								label={hebrewRoleNames[role] || 'תפקיד לא ידוע'}
+								label={hebrewSystemRoleNames[role] || 'תפקיד לא ידוע'}
 								sx={{
 									flexDirection: 'row-reverse',
 									marginLeft: 0,
@@ -462,4 +462,4 @@ const RoleAction: React.FC<RoleActionProps> = ({
 		</Box>
 	);
 };
-export default RoleAction;
+export default SystemRoleAction;

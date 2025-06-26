@@ -63,9 +63,9 @@ const TopBar = () => {
 	}, []);
 
 	const hasAdminAccess = () => {
-		if (!currentUser?.personRoles) return false;
-		const userRoles = currentUser.personRoles.map((pr) => pr.role.name);
-		return userRoles.includes('hrManager') || userRoles.includes('admin');
+		if (!currentUser?.personSystemRoles) return false;
+		const userSystemRoles = currentUser.personSystemRoles.map((pr) => pr.role.name);
+		return userSystemRoles.includes('hrManager') || userSystemRoles.includes('admin');
 	};
 
 	const toggleDrawer = (open: Boolean) => {

@@ -6,8 +6,10 @@ import { logger } from './logger';
 import {
 	UsersTable,
 	PersonsTable,
-	RolesTable,
-	PersonsToRoles,
+	SystemRolesTable,
+	PersonsToSystemRoles,
+	PersonsToGroups,
+	GroupsTable,
 } from './db/schema';
 import './db/snapshot';
 import { db } from './db/db';
@@ -48,14 +50,25 @@ const injectData = async () => {
 		serviceType: 'keva',
 	};
 
-	const role: typeof RolesTable.$inferInsert = {
+	const role: typeof SystemRolesTable.$inferInsert = {
 		id: roleId,
 		name: 'admin',
 	};
 
-	const personToRole: typeof PersonsToRoles.$inferInsert = {
+	const personToRole: typeof PersonsToSystemRoles.$inferInsert = {
 		roleId: roleId,
 		userId: userId,
+	};
+
+	const group: typeof GroupsTable.$inferInsert = {
+		groupId: '123',
+		name: 'admin',
+	};
+
+	const personToGroup: typeof PersonsToGroups.$inferInsert = {
+		groupId: '123',
+		personId: userId,
+		groupRole: 'admin',
 	};
 
 	const dbCheck = await db.query.PersonsTable.findFirst({
@@ -64,8 +77,10 @@ const injectData = async () => {
 	if (!dbCheck) {
 		await db.insert(UsersTable).values(user);
 		await db.insert(PersonsTable).values(person);
-		await db.insert(RolesTable).values(role);
-		await db.insert(PersonsToRoles).values(personToRole);
+		await db.insert(SystemRolesTable).values(role);
+		await db.insert(PersonsToSystemRoles).values(personToRole);
+		await db.insert(GroupsTable).values(group);
+		await db.insert(PersonsToGroups).values(personToGroup);
 		logger.info('Injected objects into db');
 	}
 };

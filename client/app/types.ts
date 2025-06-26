@@ -1,6 +1,6 @@
-import type { SITE_OPTIONS, ROLE_OPTIONS, LOCATION_STATUSES, SERVICE_TYPE_OPTIONS } from "./consts";
+import type { SITE_OPTIONS, SYSTEM_ROLE_OPTIONS, LOCATION_STATUSES, SERVICE_TYPE_OPTIONS } from "./consts";
 
-export type Roles = typeof ROLE_OPTIONS[number];
+export type SystemRoles = typeof SYSTEM_ROLE_OPTIONS[number];
 
 export type Sites = typeof SITE_OPTIONS[number];
 
@@ -31,10 +31,10 @@ export type Person = {
 		createdAt: string;
 		status: string;
 	};
-	personRoles?: {
+	personSystemRoles?: {
 		role: {
 			id: string;
-			name: Roles;
+			name: SystemRoles;
 			opts: any;
 		};
 	}[];

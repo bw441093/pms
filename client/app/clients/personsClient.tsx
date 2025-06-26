@@ -87,7 +87,7 @@ export async function updatePersonDetails(
 		manager?: string;
 		site?: string;
 		email?: string;
-		roles?: { name: string; opts: string[] }[];
+		systemRoles?: { name: string; opts: string[] }[];
 		serviceType?: string;
 	}
 ) {
@@ -100,7 +100,7 @@ export async function addNewPerson(
 		manager: string,
 		site: string,
 		email: string,
-		roles: { name: string; opts: string[] }[],
+		systemRoles: { name: string; opts: string[] }[],
 		serviceType: string
 	) {
 	const response = await apiClient.post('/users', {
@@ -108,7 +108,7 @@ export async function addNewPerson(
 		manager,
 		site,
 		email,
-		roles,
+		systemRoles,
 		serviceType,
 	});
 	return response.data;

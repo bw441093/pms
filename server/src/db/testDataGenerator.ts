@@ -2,9 +2,11 @@ import { db } from './db';
 import {
 	UsersTable,
 	PersonsTable,
-	RolesTable,
-	PersonsToRoles,
+	SystemRolesTable,
+	PersonsToSystemRoles,
 	TransactionsTable,
+	GroupsTable,
+	PersonsToGroups,
 } from './schema';
 import { eq, or, desc } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -113,7 +115,7 @@ export async function generateUsers(count: number = 30) {
 	return users;
 }
 
-export async function generateRoles() {
+export async function generateSystemRoles() {
 	console.log('👥 Generating roles...');
 	const roles = [];
 
@@ -125,7 +127,7 @@ export async function generateRoles() {
 			opts: roleData.opts,
 		};
 
-		await db.insert(RolesTable).values(role);
+		await db.insert(SystemRolesTable).values(role);
 		roles.push(role);
 	}
 
@@ -179,7 +181,7 @@ export async function generatePersons(users: any[], roles: any[]) {
 		const personRoles = getRandomElements(roles, roleCount);
 
 		for (const role of personRoles) {
-			await db.insert(PersonsToRoles).values({
+			await db.insert(PersonsToSystemRoles).values({
 				userId: person.id,
 				roleId: role.id,
 			});
@@ -187,6 +189,54 @@ export async function generatePersons(users: any[], roles: any[]) {
 	}
 
 	return persons;
+}
+
+export async function generateGroups(persons: any[]) {
+	console.log('👥 Generating groups...');
+	const groups = [];
+
+	for (const person of persons) {
+		const groupId = uuidv4();
+		const group = {
+			groupId: groupId,
+			name: `Group ${groupId}`,
+			description: `Group for ${person.name}`,
+			createdAt: getRandomDateInRange(30),
+			updatedAt: getRandomDateInRange(30),
+		};
+		await db.insert(GroupsTable).values(group);
+		groups.push(group);
+	}
+
+	// Assign groups to persons
+	console.log('👥 Assigning groups to persons...');
+	// Create a Set to track unique person-group combinations
+	const assignedCombinations = new Set<string>();
+
+	for (const person of persons) {
+		try {
+			let groupId: string;
+			let combination: string;
+
+		// Keep trying until we find a unique combination
+		do {
+			groupId = getRandomElement(groups).groupId;
+			combination = `${person.id}-${groupId}`;
+		} while (assignedCombinations.has(combination));
+
+		assignedCombinations.add(combination);
+
+		await db.insert(PersonsToGroups).values({
+			personId: person.id,
+			groupId: groupId,
+				groupRole: getRandomElement(['admin', 'member'] as const),
+			});
+		} catch (error) {
+			console.error('❌ Error generating groups:', error);
+		}
+	}
+
+	return groups;
 }
 
 export async function generateTransactions(persons: any[], count: number = 50) {
@@ -274,8 +324,8 @@ export async function generateSpecificScenarios() {
 export async function clearDatabase() {
 	console.log('🧹 Clearing existing data...');
 	await db.delete(TransactionsTable);
-	await db.delete(PersonsToRoles);
-	await db.delete(RolesTable);
+	await db.delete(PersonsToSystemRoles);
+	await db.delete(SystemRolesTable);
 	await db.delete(PersonsTable);
 	await db.delete(UsersTable);
 }
@@ -301,8 +351,9 @@ export async function generateCompleteTestData(
 
 		// Generate data
 		const users = await generateUsers(userCount);
-		const roles = await generateRoles();
-		const persons = await generatePersons(users, roles);
+		const systemRoles = await generateSystemRoles();
+		const persons = await generatePersons(users, systemRoles);
+		const groups = await generateGroups(persons);
 		await generateTransactions(persons, transactionCount);
 
 		if (includeScenarios) {
@@ -312,7 +363,7 @@ export async function generateCompleteTestData(
 		console.log('✅ Test data generation completed successfully!');
 		console.log(`📊 Created:`);
 		console.log(`   - ${users.length} users`);
-		console.log(`   - ${roles.length} roles`);
+		console.log(`   - ${systemRoles.length} system roles`);
 		console.log(`   - ${persons.length} persons`);
 		console.log(`   - ${transactionCount} transactions`);
 		console.log(`   - Multiple role assignments`);
@@ -320,7 +371,7 @@ export async function generateCompleteTestData(
 			console.log(`   - Specific test scenarios`);
 		}
 
-		return { users, roles, persons };
+		return { users, systemRoles, persons };
 	} catch (error) {
 		console.error('❌ Error generating test data:', error);
 		throw error;
@@ -332,12 +383,12 @@ export async function getPersonsByRole(roleName: string) {
 	return await db
 		.select({
 			person: PersonsTable,
-			role: RolesTable,
+			role: SystemRolesTable,
 		})
 		.from(PersonsTable)
-		.innerJoin(PersonsToRoles, eq(PersonsTable.id, PersonsToRoles.userId))
-		.innerJoin(RolesTable, eq(PersonsToRoles.roleId, RolesTable.id))
-		.where(eq(RolesTable.name, roleName));
+		.innerJoin(PersonsToSystemRoles, eq(PersonsTable.id, PersonsToSystemRoles.userId))
+		.innerJoin(SystemRolesTable, eq(PersonsToSystemRoles.roleId, SystemRolesTable.id))
+		.where(eq(SystemRolesTable.name, roleName));
 }
 
 export async function getPersonsByManager(managerId: string) {

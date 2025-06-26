@@ -1,4 +1,4 @@
-import type { Sites, Roles, Locations, ServiceTypes } from './types';
+import type { Sites, SystemRoles, Locations, ServiceTypes } from './types';
 
 // List of admin user IDs
 export const ADMINS = ['admin1', 'admin2'];
@@ -31,7 +31,7 @@ export const LOCATION_STATUSES = [
 ] as const;
 export const SITE_OPTIONS = ['mbt', 'mfs', 'kir', 'mdt', 'other'] as const;
 export const SITE_MANAGER_OPTIONS = ['mbt', 'mfs', 'mdt', 'kir'] as const; // Only these sites can have site managers
-export const ROLE_OPTIONS = [
+export const SYSTEM_ROLE_OPTIONS = [
 	'siteManager',
 	'personnelManager',
 	'hrManager',
@@ -55,7 +55,7 @@ export const hebrewServiceTypeNames: Record<ServiceTypes, string> = {
 	ps: 'יועץ',
 };
 
-export const hebrewRoleNames: Record<Roles, string> = {
+export const hebrewSystemRoleNames: Record<SystemRoles, string> = {
 	siteManager: 'מנהל אתר',
 	personnelManager: 'מנהל כוח אדם',
 	hrManager: 'מנהל משאבי אנוש',

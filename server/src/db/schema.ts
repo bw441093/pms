@@ -60,23 +60,42 @@ export const TransactionsTable = pgTable(
 	})
 );
 
-export const RolesTable = pgTable('roles', {
+export const SystemRolesTable = pgTable('system_roles', {
 	id: uuid('role_id').defaultRandom().notNull().primaryKey(),
 	name: text().notNull(),
 	opts: json(),
 });
 
-export const PersonsToRoles = pgTable(
-	'persons_to_roles',
+export const PersonsToSystemRoles = pgTable(
+	'persons_to_system_roles',
 	{
 		userId: uuid('user_id')
 			.notNull()
 			.references(() => PersonsTable.id, { onDelete: 'cascade' }),
 		roleId: uuid('role_id')
 			.notNull()
-			.references(() => RolesTable.id, { onDelete: 'cascade' }),
+			.references(() => SystemRolesTable.id, { onDelete: 'cascade' }),
 	},
 	(t) => [primaryKey({ columns: [t.userId, t.roleId] })]
+);
+
+export const GroupsTable = pgTable('groups', {
+	groupId: uuid('group_id').defaultRandom().notNull().primaryKey(),
+	name: text().notNull(),
+});
+
+export const PersonsToGroups = pgTable(
+	'persons_to_groups',
+	{
+		personId: uuid('person_id')
+			.notNull()
+			.references(() => PersonsTable.id, { onDelete: 'cascade' }),
+		groupId: uuid('group_id')
+			.notNull()
+			.references(() => GroupsTable.groupId, { onDelete: 'cascade' }),
+		groupRole: text({ enum: ['admin', 'member'] }).notNull(),
+	},
+	(t) => [primaryKey({ columns: [t.personId, t.groupId] })]
 );
 
 // Relations
@@ -86,12 +105,12 @@ export const PersonsRelations = relations(PersonsTable, ({ one, many }) => ({
 		fields: [PersonsTable.manager],
 		references: [PersonsTable.id],
 	}),
-	personRoles: many(PersonsToRoles),
+	personSystemRoles: many(PersonsToSystemRoles),
 	transaction: one(TransactionsTable),
 }));
 
-export const RolesRelations = relations(RolesTable, ({ many }) => ({
-	PersonsToRoles: many(PersonsToRoles),
+export const SystemRolesRelations = relations(SystemRolesTable, ({ many }) => ({
+	PersonsToSystemRoles: many(PersonsToSystemRoles),
 }));
 
 export const TransactionRelations = relations(TransactionsTable, ({ one }) => ({
@@ -101,13 +120,28 @@ export const TransactionRelations = relations(TransactionsTable, ({ one }) => ({
 	}),
 }));
 
-export const PersonsToRolesRelations = relations(PersonsToRoles, ({ one }) => ({
-	role: one(RolesTable, {
-		fields: [PersonsToRoles.roleId],
-		references: [RolesTable.id],
+export const PersonsToSystemRolesRelations = relations(PersonsToSystemRoles, ({ one }) => ({
+	role: one(SystemRolesTable, {
+		fields: [PersonsToSystemRoles.roleId],
+		references: [SystemRolesTable.id],
 	}),
 	person: one(PersonsTable, {
-		fields: [PersonsToRoles.userId],
+		fields: [PersonsToSystemRoles.userId],
 		references: [PersonsTable.id],
+	}),
+}));
+
+export const GroupsRelations = relations(GroupsTable, ({ many }) => ({
+	personsToGroups: many(PersonsToGroups),
+}));
+
+export const PersonsToGroupsRelations = relations(PersonsToGroups, ({ one }) => ({
+	person: one(PersonsTable, {
+		fields: [PersonsToGroups.personId],
+		references: [PersonsTable.id],
+	}),
+	group: one(GroupsTable, {
+		fields: [PersonsToGroups.groupId],
+		references: [GroupsTable.groupId],
 	}),
 }));

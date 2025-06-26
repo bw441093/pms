@@ -3,9 +3,9 @@ import { db } from '../db/db';
 import { eq } from 'drizzle-orm';
 import { PersonsTable } from '../db/schema';
 import { logger } from '../logger';
-import type { Role } from '../types';
+import type { SystemRole } from '../types';
 
-export default function authorize(allowedRoles: Role[] = []) {
+export default function authorize(allowedRoles: SystemRole[] = []) {
 	return async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const userId = req.user;
@@ -13,7 +13,7 @@ export default function authorize(allowedRoles: Role[] = []) {
 			const user = await db.query.PersonsTable.findFirst({
 				where: eq(PersonsTable.id, userId),
 				with: {
-					personRoles: {
+					personSystemRoles: {
 						with: {
 							role: {
 								columns: {
@@ -37,7 +37,7 @@ export default function authorize(allowedRoles: Role[] = []) {
 				next();
 			}
 
-			const isUserAuthorized = user?.personRoles.some(({ role }) =>
+			const isUserAuthorized = user?.personSystemRoles.some(({ role }) =>
 				allowedRoles.find((allowedRole) => allowedRole === role.name)
 			);
 
