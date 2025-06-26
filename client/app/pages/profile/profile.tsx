@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Card, CardContent, Typography, Box, Divider, Stack, Button, IconButton, Modal } from '@mui/material';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -23,11 +23,24 @@ export default function ProfilePage() {
   const hasReport = Boolean(user.reportStatus && user.location);
 
   return (
-    <Box
-      pl={1}
-      pt={4}
-      pb={8}
-      width="95%"
+    <Stack
+      direction="column"
+      spacing={2}
+      sx={{
+        height: '100vh',
+        overflow: 'hidden',
+        pb: '80px',
+        px: 2,
+        backgroundColor: theme.palette.custom.gray1,
+        position: 'fixed',
+        top: '2vh',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        maxHeight: '100%',
+        overscrollBehavior: 'none',
+        touchAction: 'none',
+      }}
     >
       <Typography
         variant="h5"
@@ -62,7 +75,7 @@ export default function ProfilePage() {
           <CalendarMonthIcon fontSize="large" sx={{ scale: 0.7 }} />
         </Box>
         <Stack direction="row" flex={1} alignItems="center" gap={1}>
-          <Typography fontWeight={700} fontSize={22}>{user.name}</Typography>
+          <Typography fontWeight={700} fontSize={21}>{user.name}</Typography>
           <Box width={10} height={10} borderRadius={5} bgcolor="#1ecb4f" display="inline-block" />
         </Stack>
       </Stack>
@@ -166,6 +179,6 @@ export default function ProfilePage() {
           )}
         </Box>
       </Modal>
-    </Box>
+    </Stack>
   );
 } 

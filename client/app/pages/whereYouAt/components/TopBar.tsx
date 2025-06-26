@@ -34,6 +34,8 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import { useTheme } from '@mui/material/styles';
 import debounce from 'lodash/debounce';
 import FilterModal from './ActionModal/FilterModal';
+import { useAtomValue } from 'jotai';
+import { userAtom, hasAdminAccessAtom } from '../../../atoms/userAtom';
 
 interface TopBarProps {
 	onSearch: (searchTerm: string) => void;
@@ -48,8 +50,6 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 		isManager: false,
 		isSiteManager: false,
 	});
-	const [currentUser, setCurrentUser] = useState<Person | null>(null);
-	const [userLoading, setUserLoading] = useState(true);
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
 	const queryClient = useQueryClient();
@@ -59,6 +59,9 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 	const [isStuck, setIsStuck] = useState(false);
 	const searchBarRef = useRef<HTMLDivElement>(null);
 
+	const currentUser = useAtomValue(userAtom);
+	const hasAdminAccess = useAtomValue(hasAdminAccessAtom);
+
 	// Debounce the search callback
 	const debouncedSearch = useCallback(
 		debounce((term: string) => {
@@ -66,26 +69,6 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 		}, 300),
 		[onSearch]
 	);
-
-	// Get current user's information for authorization
-	useEffect(() => {
-		const fetchCurrentUser = async () => {
-			try {
-				const userId = localStorage.getItem('login_token');
-				if (userId) {
-					const user = await getPerson(userId);
-					setCurrentUser(user);
-				}
-			} catch (err) {
-				console.error('שגיאה בשליפת פרטי המשתמש', err);
-				setError('אירעה שגיאה בטעינת פרטי המשתמש');
-			} finally {
-				setUserLoading(false);
-			}
-		};
-
-		fetchCurrentUser();
-	}, []);
 
 	useEffect(() => {
 		const observer = new IntersectionObserver(
@@ -105,19 +88,13 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 		return () => observer.disconnect();
 	}, []);
 
-	const hasAdminAccess = () => {
-		if (!currentUser?.personRoles) return false;
-		const userRoles = currentUser.personRoles.map((pr) => pr.role.name);
-		return userRoles.includes('hrManager') || userRoles.includes('admin');
-	};
-
 	const toggleDrawer = (open: Boolean) => {
-		if (open && !hasAdminAccess()) {
+		if (open && !hasAdminAccess) {
 			setError('אין לך הרשאה לגשת לתפריט הזה');
 			return;
 		}
 		setDrawerOpen(!!open);
-		setError(''); // Clear any previous errors
+		setError('');
 	};
 
 	const handleAddPersonOpen = () => setAddPersonModalOpen(true);
@@ -240,7 +217,7 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 							color="inherit"
 							aria-label="menu"
 							onClick={() => toggleDrawer(!drawerOpen)}
-							disabled={userLoading}
+							disabled={!currentUser}
 						>
 							<MenuIcon />
 						</IconButton>

@@ -4,36 +4,14 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import HomeIcon from '@mui/icons-material/Home';
 import PersonIcon from '@mui/icons-material/Person';
 import { useTheme } from '@mui/material/styles';
-import { useEffect, useState } from 'react';
-import { getPerson } from '../../clients/personsClient';
+import { useAtomValue } from 'jotai';
+import { hasAdminAccessAtom } from '../../atoms/userAtom';
 
 export default function BottomNavBar() {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const theme = useTheme();
-	const [currentUser, setCurrentUser] = useState<any>(null);
-
-	useEffect(() => {
-		const fetchCurrentUser = async () => {
-			try {
-				const userId = localStorage.getItem('login_token');
-				if (userId) {
-					const user = await getPerson(userId);
-					setCurrentUser(user);
-				}
-			} catch (err) {
-				console.error('Error fetching user details:', err);
-			}
-		};
-
-		fetchCurrentUser();
-	}, []);
-
-	const hasAdminAccess = () => {
-		if (!currentUser?.personRoles) return false;
-		const userRoles = currentUser.personRoles.map((pr: any) => pr.role.name);
-		return userRoles.includes('hrManager') || userRoles.includes('admin');
-	};
+	const hasAdminAccess = useAtomValue(hasAdminAccessAtom);
 
 	return (
 		<Paper
@@ -74,7 +52,7 @@ export default function BottomNavBar() {
 					value="/calendar"
 					icon={<CalendarMonthIcon />}
 				/>
-				{hasAdminAccess() && (
+				{hasAdminAccess && (
 					<BottomNavigationAction
 						value="/"
 						icon={<HomeIcon />}

@@ -7,3 +7,11 @@ body {
 	padding: 0;
 	box-sizing: border-box;
 }
+
+/* Prevent scrolling on profile page */
+[data-route="/profile"] {
+	overflow: hidden !important;
+	position: fixed;
+	width: 100%;
+	height: 100%;
+}
