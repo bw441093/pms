@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PersonCard from './components/PersonCard';
 import { usePeopleData } from '../../hooks/useQueries';
-import TopBar from './components/TopBar';
+import HrTopBar from './components/HrTopBar';
 import { Stack } from '@mui/material';
 import type { Person } from '../../types';
 import { getPerson } from '~/clients/personsClient';
@@ -32,9 +32,11 @@ export default function WhereYouAt() {
 		if (!people || !currentUser) return people;
 
 		let filtered = [...people];
+		let isManagedByMeFiltered: Person[] = [];
+		let isInMySitefiltered: Person[] = [];
 
 		if (filters.isManager) {
-			filtered = filtered.filter((person) => {
+			isManagedByMeFiltered = filtered.filter((person) => {
 				const isManaged = person.manager?.id === currentUser.id;
 				return isManaged;
 			});
@@ -42,15 +44,23 @@ export default function WhereYouAt() {
 
 		// Filter people from sites that the current user manages
 		if (filters.isSiteManager && sitesManaged.length > 0) {
-			filtered = filtered.filter((person) => {
+			isInMySitefiltered = filtered.filter((person) => {
 				// Check if the person's site is in the list of sites managed by current user
 				const isSiteManaged = sitesManaged.includes(person.site);
 				return isSiteManaged;
 			});
 		}
 
-		return filtered;
+		const filteredSet = new Set([...isManagedByMeFiltered, ...isInMySitefiltered]);
+		return Array.from(filteredSet);
 	};
+
+	const searchPeople = useMemo(() => {
+		return (people: Person[], searchTerm: string) => {
+			if (!searchTerm) return people;
+			return people.filter(person => fuzzyMatch(person.name, searchTerm));
+		};
+	}, []); // This function never changes
 
 	const { data: sortedPeople, isLoading: peopleLoading } = usePeopleData(userId);
 
@@ -90,21 +100,17 @@ export default function WhereYouAt() {
 			const currentUser = await getPerson(userId);
 
 			if (currentUser.personRoles) {
-				// Reset filters and sites
 				let isManager = false;
 				let isSiteManager = false;
 				const newSitesManaged: string[] = [];
 
 				currentUser.personRoles.forEach((pr) => {
-					// Check for personnel manager role
 					if (pr.role.name === 'personnelManager') {
 						isManager = true;
 					}
 
-					// Check for site manager role and collect sites
 					if (pr.role.name === 'siteManager' && pr.role.opts) {
 						isSiteManager = true;
-						// pr.role.opts.sites should be an array of site codes
 						newSitesManaged.push(...pr.role.opts);
 					}
 				});
@@ -122,6 +128,7 @@ export default function WhereYouAt() {
 		},
 	});
 
+	// Memoize the filtered and searched results
 	const peopleToShow = useMemo(() => {
 		if (!sortedPeople?.people) return [];
 
@@ -132,7 +139,7 @@ export default function WhereYouAt() {
 
 		// Then apply manager/site filters
 		return filterPeople(filtered, currentUser || null, sitesManaged, filters);
-	}, [sortedPeople?.people, searchTerm, currentUser, filters, sitesManaged]);
+	}, [sortedPeople?.people, searchTerm, currentUser, filters, sitesManaged, filterPeople]);
 
 	return (
 		<Stack
@@ -143,9 +150,10 @@ export default function WhereYouAt() {
 				pb: '80px', // Add padding at the bottom to account for the fixed nav bar
 			}}
 		>
-			<TopBar
+			<HrTopBar
 				onSearch={handleSearch}
 				onFiltersChange={handleFiltersChange}
+				initialFilters={filters}
 			/>
 			<Stack spacing={1.5} sx={{ width: '95%', alignItems: 'center' }}>
 				{peopleToShow.map((person) => (

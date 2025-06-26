@@ -25,16 +25,17 @@ const FilterModal = ({ open, onClose, filters, onFiltersChange }: FilterModalPro
   // Temporary state for filters while modal is open
   const [tempFilters, setTempFilters] = useState(filters);
 
-  // Reset temp filters when modal opens
+  // Reset temp filters when modal opens or filters change
   useEffect(() => {
     setTempFilters(filters);
   }, [filters, open]);
 
   const handleFilterChange = (filterName: 'isManager' | 'isSiteManager') => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setTempFilters({
+    const newTempFilters = {
       ...tempFilters,
       [filterName]: event.target.checked,
-    });
+    };
+    setTempFilters(newTempFilters);
   };
 
   const handleCancel = () => {
@@ -43,7 +44,7 @@ const FilterModal = ({ open, onClose, filters, onFiltersChange }: FilterModalPro
   };
 
   const handleApply = () => {
-    onFiltersChange(tempFilters); // Apply the changes
+    onFiltersChange(tempFilters);
     onClose();
   };
 

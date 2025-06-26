@@ -23,6 +23,8 @@ import type { Route } from './+types/root';
 import './app.css';
 import { SocketContext } from './contexts/SocketContext';
 import BottomNavBar from './components/BottomNavBar/BottomNavBar';
+import TopBar from './components/TopBar/TopBar';
+import AppDrawer from './components/Drawer/AppDrawer';
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -69,11 +71,49 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 function AppLayout({ children }: { children: React.ReactNode }) {
 	const location = useLocation();
-	const showNavBar = location.pathname !== '/login';
+	const showBars = location.pathname !== '/login';
+	const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+
+	const handleMenuClick = () => {
+		setIsDrawerOpen(true);
+	};
+
+	const handleDrawerClose = () => {
+		setIsDrawerOpen(false);
+	};
+
+	const handleNotificationClick = () => {
+		// TODO: Implement notification handling
+		console.log('Notification clicked');
+	};
+
 	return (
-		<div>
-			<main>{children}</main>
-			{showNavBar && <BottomNavBar />}
+		<div style={{ 
+			height: '100vh', 
+			display: 'flex', 
+			flexDirection: 'column' 
+		}}>
+			{showBars && (
+				<>
+					<TopBar 
+						onMenuClick={handleMenuClick} 
+						onNotificationClick={handleNotificationClick} 
+					/>
+					<AppDrawer 
+						open={isDrawerOpen} 
+						onClose={handleDrawerClose} 
+					/>
+				</>
+			)}
+			<main style={{ 
+				flex: 1,
+				marginTop: showBars ? '56px' : 0, // Height of TopBar
+				marginBottom: showBars ? '56px' : 0, // Height of BottomNavBar
+				overflow: 'auto'
+			}}>
+				{children}
+			</main>
+			{showBars && <BottomNavBar />}
 		</div>
 	);
 }
