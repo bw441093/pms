@@ -10,7 +10,8 @@
 		"seed:clear": "tsx src/db/generateTestData.ts clear",
 		"seed:help": "tsx src/db/generateTestData.ts help",		
 		"migrate:generate": "drizzle-kit generate",
-		"migrate:run": "tsx src/db/migrate.ts"
+		"migrate:run": "tsx src/db/migrate.ts",
+		"db:reset": "tsx src/db/resetSchema.ts"
 	},
 	"author": "",
 	"license": "ISC",

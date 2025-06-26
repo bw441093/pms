@@ -148,7 +148,7 @@ export const getPersonByIdHandler = async (req: Request, res: Response) => {
 		const { id } = req.params as Id;
 		logger.info(`Fetch user: ${id}`);
 		const user = await findPersonById(id);
-
+		console.log(user);
 		logger.info('Done fetching user');
 		res.status(200).send(user);
 	} catch (err) {

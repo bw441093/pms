@@ -1,27 +1,5 @@
 {
-  "version": "7",
-  "dialect": "postgresql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1750291277218,
-      "tag": "0000_ancient_pretty_boy",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1750425193878,
-      "tag": "0001_wise_maria_hill",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1750785841581,
-      "tag": "0002_fearless_quasar",
-      "breakpoints": true
-    }
-  ]
-}
+  "version": "5",
+  "dialect": "pg",
+  "entries": []
+} 

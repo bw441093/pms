@@ -1,4 +1,3 @@
-import React, { useState, type SyntheticEvent } from 'react';
 import { Box, Modal, Typography } from '@mui/material';
 
 import type { Person } from '../../../../types';

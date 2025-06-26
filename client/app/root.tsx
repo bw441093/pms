@@ -12,10 +12,17 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { ThemeProvider } from '@mui/material/styles';
+import { Provider as JotaiProvider } from 'jotai';
+import { useAtom } from 'jotai';
+import { userAtom } from './atoms/userAtom';
+import { getPerson } from './clients/personsClient';
+import theme from './theme';
 
 import type { Route } from './+types/root';
 import './app.css';
 import { SocketContext } from './contexts/SocketContext';
+import BottomNavBar from './components/BottomNavBar/BottomNavBar';
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -61,30 +68,40 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function AppLayout({ children }: { children: React.ReactNode }) {
+	const location = useLocation();
+	const showNavBar = location.pathname !== '/login';
 	return (
 		<div>
 			<main>{children}</main>
+			{showNavBar && <BottomNavBar />}
 		</div>
 	);
 }
 
 const queryClient = new QueryClient();
 
-export default function App() {
+function AppContent() {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const [socket, setSocket] = React.useState<WebSocket | null>(null);
+	const [, setUser] = useAtom(userAtom);
 
 	React.useEffect(() => {
 		const token = localStorage.getItem('login_token');
 		if (!token && location.pathname !== '/login') {
 			navigate('/login', { replace: true });
+			return;
+		}
+
+		// Fetch user data if logged in
+		if (token) {
+			getPerson(token).then(setUser);
 		}
 
 		if ('Notification' in window && Notification.permission !== 'granted') {
 			Notification.requestPermission();
 		}
-	}, [location, navigate]);
+	}, [location, navigate, setUser]);
 
 	React.useEffect(() => {
 		const connectionString =
@@ -120,16 +137,27 @@ export default function App() {
 	if (location.pathname === '/login') {
 		return <Outlet />;
 	}
+
 	return (
 		<LocalizationProvider dateAdapter={AdapterDayjs}>
-			<QueryClientProvider client={queryClient}>
-				<SocketContext.Provider value={{ socket }}>
-					<AppLayout>
-					<Outlet />
-				</AppLayout>
-				</SocketContext.Provider>
-			</QueryClientProvider>
+			<ThemeProvider theme={theme}>
+				<QueryClientProvider client={queryClient}>
+					<SocketContext.Provider value={{ socket }}>
+						<AppLayout>
+							<Outlet />
+						</AppLayout>
+					</SocketContext.Provider>
+				</QueryClientProvider>
+			</ThemeProvider>
 		</LocalizationProvider>
+	);
+}
+
+export default function App() {
+	return (
+		<JotaiProvider>
+			<AppContent />
+		</JotaiProvider>
 	);
 }
 
