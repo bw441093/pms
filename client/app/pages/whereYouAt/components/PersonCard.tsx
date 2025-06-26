@@ -67,9 +67,9 @@ const PersonCard: React.FC<PersonCardProps> = ({
 			elevation={0}
 			sx={{
 				width: '95%',
-				bgcolor: 'transparent',
+				bgcolor: theme.palette.custom.gray2,
 				borderRadius: 5,
-				border: `2px solid ${theme.palette.custom.gray5}`,
+				border: `0.5px solid ${theme.palette.custom.gray5}`,
 			}}
 		>
 			<CardContent sx={{ p: 2, '&:last-child': { pb: 2 }, direction: 'rtl' }}>

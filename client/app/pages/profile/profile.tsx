@@ -25,7 +25,7 @@ export default function ProfilePage() {
   return (
     <Stack
       direction="column"
-      spacing={2}
+      spacing={1}
       sx={{
         height: '100vh',
         overflow: 'hidden',
@@ -34,6 +34,7 @@ export default function ProfilePage() {
         backgroundColor: theme.palette.custom.gray1,
         position: 'fixed',
         top: '2vh',
+        mt: '7vh',
         left: 0,
         right: 0,
         bottom: 0,
@@ -46,8 +47,7 @@ export default function ProfilePage() {
         variant="h5"
         align="center"
         fontWeight={700}
-        mb={2}
-        fontSize={{ xs: 22, sm: 28 }}
+        fontSize={18}
       >
         דיווח נוכחות
       </Typography>
@@ -79,7 +79,7 @@ export default function ProfilePage() {
           <Box width={10} height={10} borderRadius={5} bgcolor="#1ecb4f" display="inline-block" />
         </Stack>
       </Stack>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mt={2} mb={1}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mt={1} mb={1}>
         <Divider sx={{ mb: 1, width: '80%', borderColor: theme.palette.custom.gray5 }} />
         <Typography variant="subtitle2" color={theme.palette.custom.gray13} mb={1} fontSize={15} fontWeight={600}>
           מידע אישי

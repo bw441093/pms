@@ -1,1 +1,1 @@
-ALTER TABLE "persons" ADD COLUMN "serviceType" text NOT NULL;
+ALTER TABLE "persons" ADD COLUMN "serviceType" text DEFAULT 'hova' NOT NULL;
