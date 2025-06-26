@@ -4,11 +4,36 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import HomeIcon from '@mui/icons-material/Home';
 import PersonIcon from '@mui/icons-material/Person';
 import { useTheme } from '@mui/material/styles';
+import { useEffect, useState } from 'react';
+import { getPerson } from '../../clients/personsClient';
 
 export default function BottomNavBar() {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const theme = useTheme();
+	const [currentUser, setCurrentUser] = useState<any>(null);
+
+	useEffect(() => {
+		const fetchCurrentUser = async () => {
+			try {
+				const userId = localStorage.getItem('login_token');
+				if (userId) {
+					const user = await getPerson(userId);
+					setCurrentUser(user);
+				}
+			} catch (err) {
+				console.error('Error fetching user details:', err);
+			}
+		};
+
+		fetchCurrentUser();
+	}, []);
+
+	const hasAdminAccess = () => {
+		if (!currentUser?.personRoles) return false;
+		const userRoles = currentUser.personRoles.map((pr: any) => pr.role.name);
+		return userRoles.includes('hrManager') || userRoles.includes('admin');
+	};
 
 	return (
 		<Paper
@@ -23,8 +48,8 @@ export default function BottomNavBar() {
 				zIndex: 1000,
 				boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
 				backgroundColor: theme.palette.custom.gray1,
-        border: '1px solid',
-        borderColor: theme.palette.custom.gray5,
+				border: '1px solid',
+				borderColor: theme.palette.custom.gray5,
 			}}
 			elevation={3}
 		>
@@ -49,10 +74,12 @@ export default function BottomNavBar() {
 					value="/calendar"
 					icon={<CalendarMonthIcon />}
 				/>
-				<BottomNavigationAction
-					value="/"
-					icon={<HomeIcon />}
-				/>
+				{hasAdminAccess() && (
+					<BottomNavigationAction
+						value="/"
+						icon={<HomeIcon />}
+					/>
+				)}
 				<BottomNavigationAction
 					value="/profile"
 					icon={<PersonIcon />}

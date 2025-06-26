@@ -245,8 +245,6 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 							<MenuIcon />
 						</IconButton>
 
-						{/* <LogoutButton /> */}
-
 						<Typography
 							variant="h6"
 							component="div"
