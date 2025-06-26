@@ -32,23 +32,12 @@ export default function WhereYouAt() {
 		if (!people || !currentUser) return people;
 
 		let filtered = [...people];
-		console.log('Starting filter with:', {
-			peopleCount: filtered.length,
-			filters,
-			sitesManaged
-		});
-		console.log('sitesManaged', sitesManaged);
+
 		if (filters.isManager) {
 			filtered = filtered.filter((person) => {
 				const isManaged = person.manager?.id === currentUser.id;
-				console.log(`${person.name} manager check:`, {
-					personManagerId: person.manager?.id,
-					currentUserId: currentUser.id,
-					isManaged
-				});
 				return isManaged;
 			});
-			console.log('After manager filter:', filtered.length);
 		}
 
 		// Filter people from sites that the current user manages
@@ -56,14 +45,8 @@ export default function WhereYouAt() {
 			filtered = filtered.filter((person) => {
 				// Check if the person's site is in the list of sites managed by current user
 				const isSiteManaged = sitesManaged.includes(person.site);
-				console.log(`${person.name} site check:`, {
-					personSite: person.site,
-					sitesManaged,
-					isSiteManaged
-				});
 				return isSiteManaged;
 			});
-			console.log('After site filter:', filtered.length);
 		}
 
 		return filtered;
@@ -90,15 +73,6 @@ export default function WhereYouAt() {
 		return patternIdx === pattern.length;
 	};
 
-	// Filter people based on search term
-	const filteredPeople = useMemo(() => {
-		if (!searchTerm || !sortedPeople?.people) return sortedPeople?.people;
-
-		return sortedPeople.people.filter(person =>
-			fuzzyMatch(person.name, searchTerm)
-		);
-	}, [sortedPeople?.people, searchTerm]);
-
 	const handleSearch = useCallback((term: string) => {
 		setSearchTerm(term);
 	}, []);
@@ -117,7 +91,6 @@ export default function WhereYouAt() {
 
 			if (currentUser.personRoles) {
 				// Reset filters and sites
-				console.log('currentUser', currentUser);
 				let isManager = false;
 				let isSiteManager = false;
 				const newSitesManaged: string[] = [];
@@ -129,18 +102,11 @@ export default function WhereYouAt() {
 					}
 
 					// Check for site manager role and collect sites
-					console.log('pr.role.opts', pr.role.opts);
 					if (pr.role.name === 'siteManager' && pr.role.opts) {
 						isSiteManager = true;
 						// pr.role.opts.sites should be an array of site codes
 						newSitesManaged.push(...pr.role.opts);
 					}
-				});
-
-				console.log('User roles processed:', {
-					isManager,
-					isSiteManager,
-					newSitesManaged
 				});
 
 				// Update filters and sites

@@ -137,7 +137,6 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 			await queryClient.invalidateQueries({ queryKey: ['people'] });
 
 			setDrawerOpen(false);
-			console.log('All users alerted successfully');
 		} catch (err: any) {
 			console.error('Error alerting all users:', err);
 			setError(err.response?.data || 'נכשל ניסיון לשלוח התראה לכל המשתמשים');
@@ -350,14 +349,14 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 
 			<div ref={searchBarRef} style={{ height: '1px', width: '100%', margin: 0, padding: 0 }} />
 
-			<Stack 
-				direction="row" 
-				alignItems="center" 
-				spacing={2} 
+			<Stack
+				direction="row"
+				alignItems="center"
+				spacing={2}
 				width="93%"
-				sx={{ 
-					position: 'sticky', 
-					top: 0, 
+				sx={{
+					position: 'sticky',
+					top: 0,
 					zIndex: 1000,
 					backgroundColor: isStuck ? theme.palette.custom.surfaceContainerLow : 'transparent',
 					py: isStuck ? 2 : 0,
@@ -368,9 +367,9 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 				}}
 				px={2}
 			>
-				<IconButton 
+				<IconButton
 					onClick={handleFilterClick}
-					sx={{ 
+					sx={{
 						backgroundColor: theme.palette.custom.gray4,
 						borderRadius: 2,
 						padding: '12px',
@@ -381,8 +380,8 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 				>
 					<FilterListIcon sx={{ color: theme.palette.custom.surfaceBright }} />
 				</IconButton>
-				<Box 
-					sx={{ 
+				<Box
+					sx={{
 						flex: 1,
 						position: 'relative',
 					}}
@@ -415,12 +414,14 @@ const TopBar = ({ onSearch, onFiltersChange }: TopBarProps) => {
 								},
 							},
 						}}
-						InputProps={{
-							startAdornment: (
-								<InputAdornment position="start">
-									<SearchIcon sx={{ color: theme.palette.custom.outlineVariant }} />
-								</InputAdornment>
-							),
+						slotProps={{
+							input: {
+								startAdornment: (
+									<InputAdornment position="start">
+										<SearchIcon sx={{ color: theme.palette.custom.outlineVariant }} />
+									</InputAdornment>
+								),
+							},
 						}}
 					/>
 				</Box>
