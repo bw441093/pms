@@ -154,8 +154,6 @@ export function useUserDataWithManager(userId: string) {
 		queryKey: ['userWithManager', userId],
 		queryFn: async () => {
 			const user = await getPerson(userId);
-			console.log("user");
-			console.log(user);
 			if (user?.manager?.id) {
 				const manager = await getPerson(user.manager.id);
 				return { ...user, manager: { ...user.manager, name: manager?.name || '' } };

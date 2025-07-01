@@ -72,7 +72,6 @@ export const postPersonHandler = async (req: Request, res: Response) => {
 		res.status(200).send(userId);
 	} catch (err) {
 		logger.error(`Error inserting person, error: ${err}`);
-		console.log(err);
 		res.status(500).send('Error inserting person');
 	}
 };
@@ -148,7 +147,6 @@ export const getPersonByIdHandler = async (req: Request, res: Response) => {
 		const { id } = req.params as Id;
 		logger.info(`Fetch user: ${id}`);
 		const user = await findPersonById(id);
-		console.log(user);
 		logger.info('Done fetching user');
 		res.status(200).send(user);
 	} catch (err) {
@@ -272,8 +270,6 @@ export const updatePersonDetailsHandler = async (req: Request, res: Response) =>
 		const { id } = req.params as Id;
 		const { name, manager, site, email, roles, serviceType } = req.body as UpdatePersonDetails;
 		logger.info(`Update person details for user: ${id}`);
-
-		console.log(req.body);
 		await updatePersonDetails(id, { name, manager, site, serviceType });
 		if (email) await updateUserEmail(id, email);
 		if (roles) {
