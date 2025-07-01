@@ -13,7 +13,7 @@ export const idSchema = z.object({
 	id: z.string().uuid(),
 });
 
-export const rolesSchema = z.object({
+export const systemRolesSchema = z.object({
 	roles: z.array(
 		z.object({
 			name: z.string(),
@@ -30,7 +30,7 @@ export const postPersonSchema = z
 		email: z.string().email(),
 		serviceType: z.string(),
 	})
-	.merge(rolesSchema);
+	.merge(systemRolesSchema);
 
 export const updateStatusSchema = z.object({
 	status: z.string(),
@@ -58,4 +58,4 @@ export const updatePersonDetailsSchema = z.object({
 	site: z.string().optional(),
 	email: z.string().email().optional(),
 	serviceType: z.string().optional(),
-}).merge(rolesSchema);
+}).merge(systemRolesSchema);

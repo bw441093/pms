@@ -49,7 +49,7 @@ const MoveAction = ({
 			};
 
 			if (transaction) {
-				user.personRoles?.forEach(({ role }) => {
+				user.personSystemRoles?.forEach(({ role }) => {
 					if (userId === person.manager?.id)
 						newPermissions.isPersonnelManager = true;
 					if (role.name === 'hrManager' || role.name === 'admin')

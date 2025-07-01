@@ -64,7 +64,7 @@ export default function WhereYouAt() {
 
 	const { data: sortedPeople, isLoading: peopleLoading } = usePeopleData(userId);
 
-	const permissions = sortedPeople?.user?.personRoles?.map((pr) => ({ name: pr.role.name, opts: pr.role.opts }));
+	const permissions = sortedPeople?.user?.personSystemRoles?.map((pr) => ({ name: pr.role.name, opts: pr.role.opts }));
 
 	// Fuzzy search function
 	const fuzzyMatch = (text: string, pattern: string) => {
@@ -99,12 +99,12 @@ export default function WhereYouAt() {
 			if (!userId) return null;
 			const currentUser = await getPerson(userId);
 
-			if (currentUser.personRoles) {
+			if (currentUser.personSystemRoles) {
 				let isManager = false;
 				let isSiteManager = false;
 				const newSitesManaged: string[] = [];
 
-				currentUser.personRoles.forEach((pr) => {
+				currentUser.personSystemRoles.forEach((pr) => {
 					if (pr.role.name === 'personnelManager') {
 						isManager = true;
 					}

@@ -28,16 +28,16 @@ export function useAddNewPerson() {
 			manager,
 			site,
 			email,
-			roles,
+			systemRoles,
 			serviceType,
 		}: {
 			name: string;
 			manager: string;
 			site: string;
 			email: string;
-			roles: { name: string; opts: string[]  }[];
+			systemRoles: { name: string; opts: string[]  }[];
 			serviceType: string;
-		}) => addNewPerson(name, manager, site, email, roles, serviceType),
+		}) => addNewPerson(name, manager, site, email, systemRoles, serviceType),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['people'] });
 		},
@@ -123,7 +123,7 @@ export function useUpdatePersonDetails() {
 			manager,
 			site,
 			email,
-			roles,
+			systemRoles,
 			serviceType,
 		}: {
 			userId: string;
@@ -131,9 +131,9 @@ export function useUpdatePersonDetails() {
 			manager?: string;
 			site?: string;
 			email?: string;
-			roles?: { name: string; opts: string[] }[];
+			systemRoles?: { name: string; opts: string[] }[];
 			serviceType?: string;
-		}) => updatePersonDetails(userId, { name, manager, site, email, roles, serviceType }),
+		}) => updatePersonDetails(userId, { name, manager, site, email, systemRoles, serviceType }),
 		onSuccess: () => {
 			// Invalidate people queries to refresh data after status update
 			queryClient.invalidateQueries({ queryKey: ['people'] });
@@ -154,8 +154,6 @@ export function useUserDataWithManager(userId: string) {
 		queryKey: ['userWithManager', userId],
 		queryFn: async () => {
 			const user = await getPerson(userId);
-			console.log("user");
-			console.log(user);
 			if (user?.manager?.id) {
 				const manager = await getPerson(user.manager.id);
 				return { ...user, manager: { ...user.manager, name: manager?.name || '' } };

@@ -1,5 +1,55 @@
 {
-  "version": "5",
-  "dialect": "pg",
-  "entries": []
-} 
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1750291277218,
+      "tag": "0000_ancient_pretty_boy",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1750425193878,
+      "tag": "0001_wise_maria_hill",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1750785841581,
+      "tag": "0002_fearless_quasar",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1750973576395,
+      "tag": "0003_mixed_jack_murdock",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1751308740987,
+      "tag": "0004_shocking_lady_vermin",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1751310484233,
+      "tag": "0005_lazy_fantastic_four",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1751310907068,
+      "tag": "0006_lively_living_tribunal",
+      "breakpoints": true
+    }
+  ]
+}

@@ -70,9 +70,7 @@ export default function Archive() {
           <PersonCard
               key={person.id}
               person={person}
-              expanded={false}
-              onExpandChange={() => {}}
-              disableExpand
+              permissions={person.personSystemRoles}
           />
           ))
       )}

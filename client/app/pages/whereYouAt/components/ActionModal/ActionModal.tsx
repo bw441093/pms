@@ -4,7 +4,7 @@ import type { Person } from '../../../../types';
 import AlertAction from './AlertAction';
 import ReportAction from './ReportAction';
 import MoveAction from './ActionMove';
-import RoleAction from './RoleAction';
+import SystemRoleAction from './SystemRoleAction';
 
 const ActionModal = ({
 	person,
@@ -48,7 +48,7 @@ const ActionModal = ({
 				)}
 				{action === 'Move' && <MoveAction person={person} onClose={onClose} />}
 				{action === 'More' && (
-					<RoleAction
+					<SystemRoleAction
 						person={person}
 						onClose={onClose}
 					/>

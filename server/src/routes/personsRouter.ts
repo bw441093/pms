@@ -20,7 +20,7 @@ import {
 	idSchema,
 	postMoveSchema,
 	postPersonSchema,
-	rolesSchema,
+	systemRolesSchema,
 	updateMoveSchema,
 	updateStatusSchema,
 	updateAlertSchema,

@@ -7,6 +7,8 @@ import authenticate from '../middleware/authentication';
 import authorize from '../middleware/authorization';
 import exportExcelRouter from './excelExport';
 import snapshotRouter from './snapshotRouter';
+import groupsRouter from './groupsRouter';
+import eventsRouter from './eventsRouter';
 
 const router = Router();
 
@@ -27,4 +29,15 @@ router.use(
 	authorize(['hrManager', 'admin']),
 	snapshotRouter
 );
+router.use(
+	'/groups',
+	authenticate(),
+	groupsRouter
+);
+router.use(
+	'/events',
+	authenticate(),
+	eventsRouter
+);
+
 export default router;

@@ -24,8 +24,8 @@ import {
 	hebrewSiteNames,
 	SITE_OPTIONS,
 	SITE_MANAGER_OPTIONS,
-	ROLE_OPTIONS,
-	hebrewRoleNames,
+	SYSTEM_ROLE_OPTIONS,
+	hebrewSystemRoleNames,
 	SERVICE_TYPE_OPTIONS,
 	hebrewServiceTypeNames,
 } from '~/consts';
@@ -134,7 +134,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 				name: formData.name,
 				site: formData.site,
 				manager: formData.manager || '',
-				roles: formData.roles.map((role) => ({
+				systemRoles: formData.roles.map((role) => ({
 					name: role,
 					opts: role === 'siteManager' ? [formData.siteManagerSite] : [],
 				})),
@@ -322,7 +322,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 							תפקידים *
 						</Typography>
 						<FormGroup sx={{ alignItems: 'flex-end' }}>
-							{ROLE_OPTIONS.map((role) => (
+							{SYSTEM_ROLE_OPTIONS.map((role) => (
 								<FormControlLabel
 									key={role}
 									control={
@@ -331,7 +331,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 											onChange={() => handleRoleChange(role)}
 										/>
 									}
-									label={hebrewRoleNames[role] || 'תפקיד לא ידוע'}
+									label={hebrewSystemRoleNames[role] || 'תפקיד לא ידוע'}
 									sx={{
 										flexDirection: 'row-reverse',
 										marginLeft: 0,

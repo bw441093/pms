@@ -54,6 +54,8 @@ const PersonCard: React.FC<PersonCardProps> = ({
 		updatedAt,
 		transaction,
 		alertStatus,
+		personSystemRoles,
+		serviceType,
 	} = person;
 
 	const handleButtonClick = (action: string, event: SyntheticEvent) => {

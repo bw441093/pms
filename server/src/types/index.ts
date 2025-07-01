@@ -6,12 +6,12 @@ import type {
 	UpdateMove,
 	Login,
 	OTP,
-	UpdateRoles,
+	UpdateSystemRoles,
 	PostPerson,
 	Person,
 	UpdatePersonDetails,
 } from './person';
-import type { Role } from './role';
+import type { SystemRole } from './role';
 
 export type {
 	Id,
@@ -21,9 +21,9 @@ export type {
 	UpdateMove,
 	Login,
 	OTP,
-	UpdateRoles,
+	UpdateSystemRoles,
 	PostPerson,
 	Person,
-	Role,
+	SystemRole,
 	UpdatePersonDetails,
 };

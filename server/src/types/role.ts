@@ -1,1 +1,1 @@
-export type Role = 'siteManager' | 'personnelManager' | 'hrManager' | 'admin';
+export type SystemRole = 'siteManager' | 'personnelManager' | 'hrManager' | 'admin';

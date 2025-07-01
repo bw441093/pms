@@ -6,8 +6,11 @@ import { logger } from './logger';
 import {
 	UsersTable,
 	PersonsTable,
-	RolesTable,
-	PersonsToRoles,
+	SystemRolesTable,
+	PersonsToSystemRoles,
+	PersonsToGroups,
+	GroupsTable,
+	EventsTable,
 } from './db/schema';
 import './db/snapshot';
 import { db } from './db/db';
@@ -15,6 +18,7 @@ import { eq } from 'drizzle-orm';
 import http from 'http';
 import { WebSocketServer } from 'ws';
 import { setWss } from './websocket';
+import { uuid } from 'drizzle-orm/gel-core';
 
 const startServer = async () => {
 	const app: Express = await loadApp();
@@ -32,6 +36,9 @@ const startServer = async () => {
 const injectData = async () => {
 	const userId = 'feb8bf9c-d2be-4f25-ad79-9d478af482a1';
 	const roleId = '6f0757b0-c371-4bb4-bde9-d71dc394d85f';
+	const groupId1 = '00bd8fc0-1d07-4f51-835f-79de9fa275e8';
+	const groupId2 = '0236e4d0-7403-4288-a03a-7399f67c244d';
+	const eventId = '0236e4d0-7403-4288-a03a-7399f67c2ddd';
 
 	const user: typeof UsersTable.$inferInsert = {
 		id: userId,
@@ -48,24 +55,60 @@ const injectData = async () => {
 		serviceType: 'keva',
 	};
 
-	const role: typeof RolesTable.$inferInsert = {
+	const role: typeof SystemRolesTable.$inferInsert = {
 		id: roleId,
 		name: 'admin',
 	};
 
-	const personToRole: typeof PersonsToRoles.$inferInsert = {
+	const personToRole: typeof PersonsToSystemRoles.$inferInsert = {
 		roleId: roleId,
 		userId: userId,
+	};
+
+	const group1: typeof GroupsTable.$inferInsert = {
+		groupId: groupId1,
+		name: 'group1',
+		command: true,
+	};
+
+	const group2: typeof GroupsTable.$inferInsert = {
+		groupId: groupId2,
+		name: 'group2',
+		command: false,
+	};
+
+	const personToGroup: typeof PersonsToGroups.$inferInsert = {
+		groupId: groupId1,
+		personId: userId,
+		groupRole: 'admin',
+	};
+
+	const event: typeof EventsTable.$inferInsert = {
+		eventId: eventId,
+		entityId: groupId1,
+		entityType: 'group',
+		location: 'location',
+		startTime: new Date(),
+		endTime: new Date(),
+		title: 'title',
+		description: 'description',
+		mandatory: true,
+		insider: true,
 	};
 
 	const dbCheck = await db.query.PersonsTable.findFirst({
 		where: eq(PersonsTable.id, person.id),
 	});
+
 	if (!dbCheck) {
 		await db.insert(UsersTable).values(user);
 		await db.insert(PersonsTable).values(person);
-		await db.insert(RolesTable).values(role);
-		await db.insert(PersonsToRoles).values(personToRole);
+		await db.insert(SystemRolesTable).values(role);
+		await db.insert(PersonsToSystemRoles).values(personToRole);
+		await db.insert(GroupsTable).values(group1);
+		await db.insert(GroupsTable).values(group2);
+		await db.insert(PersonsToGroups).values(personToGroup);
+		await db.insert(EventsTable).values(event);
 		logger.info('Injected objects into db');
 	}
 };
