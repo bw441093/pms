@@ -42,3 +42,50 @@ export const findPersonRoleInGroups = async (personId: string, groupIds: string[
 	// Map to { groupId, groupRole }
 	return records.map(r => ({ groupId: r.groupId, groupRole: r.groupRole }));
 };
+
+export const findCommandGroupsByAdmin = async (personId: string) => {
+	// Find all groups where person is admin and group.command = true
+	const adminGroups = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => and(eq(ptg.personId, personId), eq(ptg.groupRole, 'admin')),
+		with: { group: true }
+	});
+	return adminGroups.filter(g => g.group.command).map(g => g.group);
+};
+
+export const findAllSubordinates = async (personId: string, visitedGroups = new Set<string>(), visitedPersons = new Set<string>()) => {
+	const result = new Set<string>();
+	// Step 1: Find all command groups where this person is admin
+	const commandGroups = await findCommandGroupsByAdmin(personId);
+
+	for (const group of commandGroups) {
+		if (visitedGroups.has(group.groupId)) continue;
+		visitedGroups.add(group.groupId);
+
+		// Step 2: Find all persons in this group
+		const persons = await db.query.PersonsToGroups.findMany({
+			where: (ptg) => eq(ptg.groupId, group.groupId),
+			with: { person: true }
+		});
+
+		for (const ptg of persons) {
+			const subId = ptg.person.id;
+			if (subId === personId) continue; // skip self
+			if (!visitedPersons.has(subId)) {
+				visitedPersons.add(subId);
+				result.add(subId);
+				// Step 3: Recursively find subordinates of this subordinate
+				const subSubordinates = await findAllSubordinates(subId, visitedGroups, visitedPersons);
+				for (const s of subSubordinates) result.add(s);
+			}
+		}
+	}
+	return Array.from(result);
+};
+
+export const findAllSubordinatePersons = async (personId: string) => {
+	const ids = await findAllSubordinates(personId);
+	if (ids.length === 0) return [];
+	return await db.query.PersonsTable.findMany({
+		where: (fields) => inArray(fields.id, ids)
+	});
+};

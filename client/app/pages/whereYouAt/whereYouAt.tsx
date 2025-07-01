@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PersonCard from './components/PersonCard';
-import { usePeopleData } from '../../hooks/useQueries';
+import { useCommandChainData, useSiteData } from '../../hooks/useQueries';
 import HrTopBar from './components/HrTopBar';
 import { Stack } from '@mui/material';
 import type { Person } from '../../types';
@@ -23,6 +23,10 @@ export default function WhereYouAt() {
 		setUserId(id);
 	}, []);
 
+	const { data: sortedPeopleCommandChain = [], isLoading: peopleLoadingCommandChain } = useCommandChainData(userId);
+	const { data: sortedPeopleSite = [], isLoading: peopleLoadingSite } = useSiteData(userId);
+	const permissions = (sortedPeopleCommandChain[0]?.personSystemRoles || []).map((pr: any) => ({ name: pr.role.name, opts: pr.role.opts }));
+
 	const filterPeople = (
 		people: Person[],
 		currentUser: Person | null,
@@ -31,40 +35,21 @@ export default function WhereYouAt() {
 	) => {
 		if (!people || !currentUser) return people;
 
-		let filtered = [...people];
 		let isManagedByMeFiltered: Person[] = [];
 		let isInMySitefiltered: Person[] = [];
 
 		if (filters.isManager) {
-			isManagedByMeFiltered = filtered.filter((person) => {
-				const isManaged = person.manager?.id === currentUser.id;
-				return isManaged;
-			});
+			isManagedByMeFiltered = sortedPeopleCommandChain;
 		}
 
 		// Filter people from sites that the current user manages
 		if (filters.isSiteManager && sitesManaged.length > 0) {
-			isInMySitefiltered = filtered.filter((person) => {
-				// Check if the person's site is in the list of sites managed by current user
-				const isSiteManaged = sitesManaged.includes(person.site);
-				return isSiteManaged;
-			});
+			isInMySitefiltered = sortedPeopleSite;
 		}
 
 		const filteredSet = new Set([...isManagedByMeFiltered, ...isInMySitefiltered]);
 		return Array.from(filteredSet);
 	};
-
-	const searchPeople = useMemo(() => {
-		return (people: Person[], searchTerm: string) => {
-			if (!searchTerm) return people;
-			return people.filter(person => fuzzyMatch(person.name, searchTerm));
-		};
-	}, []); // This function never changes
-
-	const { data: sortedPeople, isLoading: peopleLoading } = usePeopleData(userId);
-
-	const permissions = sortedPeople?.user?.personSystemRoles?.map((pr) => ({ name: pr.role.name, opts: pr.role.opts }));
 
 	// Fuzzy search function
 	const fuzzyMatch = (text: string, pattern: string) => {
@@ -104,7 +89,7 @@ export default function WhereYouAt() {
 				let isSiteManager = false;
 				const newSitesManaged: string[] = [];
 
-				currentUser.personSystemRoles.forEach((pr) => {
+				currentUser.personSystemRoles.forEach((pr: any) => {
 					if (pr.role.name === 'personnelManager') {
 						isManager = true;
 					}
@@ -130,16 +115,21 @@ export default function WhereYouAt() {
 
 	// Memoize the filtered and searched results
 	const peopleToShow = useMemo(() => {
-		if (!sortedPeople?.people) return [];
-
+		let basePeople: Person[] = [];
+		if (filters.isManager) {
+			basePeople = [...basePeople, ...sortedPeopleCommandChain];
+		}
+		if (filters.isSiteManager) {
+			basePeople = [...basePeople, ...sortedPeopleSite]; 
+		}
+		if (!basePeople) return [];
 		// First apply search filter
 		let filtered = searchTerm
-			? sortedPeople.people.filter(person => fuzzyMatch(person.name, searchTerm))
-			: sortedPeople.people;
-
-		// Then apply manager/site filters
+			? basePeople.filter((person: Person) => fuzzyMatch(person.name, searchTerm))
+			: basePeople;
+		// Then apply manager/site filters (union)
 		return filterPeople(filtered, currentUser || null, sitesManaged, filters);
-	}, [sortedPeople?.people, searchTerm, currentUser, filters, sitesManaged, filterPeople]);
+	}, [sortedPeopleCommandChain, sortedPeopleSite, searchTerm, currentUser, filters, sitesManaged]);
 
 	return (
 		<Stack
@@ -156,7 +146,7 @@ export default function WhereYouAt() {
 				initialFilters={filters}
 			/>
 			<Stack spacing={1.5} sx={{ width: '95%', alignItems: 'center' }}>
-				{peopleToShow.map((person) => (
+				{peopleToShow.map((person: Person) => (
 					<PersonCard
 						key={person.id}
 						person={person}

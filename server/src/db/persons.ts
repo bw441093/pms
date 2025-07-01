@@ -218,3 +218,23 @@ export const updatePersonDetails = async (
 
 	return user;
 };
+
+export const findSitePersons = async (userId: string) => {
+	// Get the user's siteManager roles and their opts (site names)
+	const roles = await db.query.PersonsToSystemRoles.findMany({
+		where: (ptsr) => eq(ptsr.userId, userId),
+		with: { role: true }
+	});
+	
+	// Collect all sites from all siteManager roles (in case of multiple)
+	const sites: string[] = roles
+		.filter(r => r.role.name === 'siteManager' && Array.isArray(r.role.opts))
+		.flatMap(r => r.role.opts as string[]);
+	
+	if (!sites.length) return [];
+
+	// Find all persons whose site is in the managed sites
+	return await db.query.PersonsTable.findMany({
+		where: (fields) => inArray(fields.site, sites)
+	});
+};

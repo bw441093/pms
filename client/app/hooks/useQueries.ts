@@ -9,16 +9,27 @@ import {
 	updatePersonDetails,
 	addNewPerson,
 	getPerson,
+	getSitePersons,
 } from '../clients/personsClient';
+import { getCommandChainPersons } from '../clients/groupsClient';
 
-export function usePeopleData(userId: string) {
+export function useCommandChainData(userId: string) {
+	console.log(userId);
 	return useQuery({
-		queryKey: ['people', userId],
-		queryFn: () => getPeopleData(userId),
+		queryKey: ['commandChain', userId],
+		queryFn: () => getCommandChainPersons(userId),
 		refetchInterval: 10000,
+		enabled: !!userId,
 	});
 }
 
+export function useSiteData(userId: string) {
+	return useQuery({
+		queryKey: ['site', userId],
+		queryFn: () => getSitePersons(userId),
+		enabled: !!userId,
+	});
+}
 
 export function useAddNewPerson() {
 	const queryClient = useQueryClient();
