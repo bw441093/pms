@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, inArray, and } from 'drizzle-orm';
 
 import { db } from './db';
 import { GroupsTable, PersonsToGroups } from './schema';
@@ -32,4 +32,13 @@ export const findPersonsByGroupId = async (groupId: string) => {
 		},
 	});
 	return personsToGroups.map(ptg => ptg.person);
+};
+
+export const findPersonRoleInGroups = async (personId: string, groupIds: string[]) => {
+	// Query all relevant PersonsToGroups records in one go
+	const records = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => and(eq(ptg.personId, personId), inArray(ptg.groupId, groupIds)),
+	});
+	// Map to { groupId, groupRole }
+	return records.map(r => ({ groupId: r.groupId, groupRole: r.groupRole }));
 };

@@ -82,6 +82,7 @@ export const PersonsToSystemRoles = pgTable(
 export const GroupsTable = pgTable('groups', {
 	groupId: uuid('group_id').defaultRandom().notNull().primaryKey(),
 	name: text().notNull(),
+	command: boolean().default(false).notNull(),
 });
 
 export const PersonsToGroups = pgTable(
@@ -98,8 +99,26 @@ export const PersonsToGroups = pgTable(
 	(t) => [primaryKey({ columns: [t.personId, t.groupId] })]
 );
 
-// Relations
+export const EventsTable = pgTable('events', {
+	eventId: uuid('event_id').defaultRandom().notNull(),
+	entityId: uuid('entity_id')
+		.notNull(),
+	entityType: text({ enum: ['person', 'group'] }).notNull(),
+	startTime: timestamp('start_time').notNull(),
+	endTime: timestamp('end_time').notNull(),
+	title: text().notNull(),
+	description: text().notNull(),
+	location: text().notNull(),
+	mandatory: boolean().notNull(),
+	insider: boolean().notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow().notNull(),
+},
+	(t) => [primaryKey({ columns: [t.entityId, t.eventId] })]
+);
 
+
+// Relations
 export const PersonsRelations = relations(PersonsTable, ({ one, many }) => ({
 	manager: one(PersonsTable, {
 		fields: [PersonsTable.manager],

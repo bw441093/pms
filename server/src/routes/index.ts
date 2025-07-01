@@ -8,6 +8,7 @@ import authorize from '../middleware/authorization';
 import exportExcelRouter from './excelExport';
 import snapshotRouter from './snapshotRouter';
 import groupsRouter from './groupsRouter';
+import eventsRouter from './eventsRouter';
 
 const router = Router();
 
@@ -32,6 +33,11 @@ router.use(
 	'/groups',
 	authenticate(),
 	groupsRouter
+);
+router.use(
+	'/events',
+	authenticate(),
+	eventsRouter
 );
 
 export default router;

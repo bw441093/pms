@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import authorize from '../middleware/authorization';
-import { getGroupsByPersonIdHandler, getGroupByIdHandler, getPersonsByGroupIdHandler } from '../handlers/groups';
+import { getGroupsByPersonIdHandler, getGroupByIdHandler, getPersonsByGroupIdHandler, getPersonRoleInGroupHandler } from '../handlers/groups';
 
 const router = Router();
 
@@ -28,6 +28,15 @@ router.get('/:groupId/persons', async (req, res) => {
 	} catch (error) {
 		console.error('Error getting persons by group ID:', error);
 		res.status(500).json({ error: 'Failed to get persons' });
+	}
+});
+
+router.get('/person/:personId/roles', async (req, res) => {
+	try {
+		await getPersonRoleInGroupHandler(req, res);
+	} catch (error) {
+		console.error('Error getting person role in group:', error);
+		res.status(500).json({ error: 'Failed to get person role in group' });
 	}
 });
 

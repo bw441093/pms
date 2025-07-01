@@ -1,0 +1,1 @@
+ALTER TABLE "groups" ADD COLUMN "command" boolean DEFAULT false NOT NULL;

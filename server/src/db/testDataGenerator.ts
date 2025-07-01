@@ -1,3 +1,4 @@
+import { group } from 'console';
 import { db } from './db';
 import {
 	UsersTable,
@@ -7,6 +8,7 @@ import {
 	TransactionsTable,
 	GroupsTable,
 	PersonsToGroups,
+	EventsTable,
 } from './schema';
 import { eq, or, desc } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -200,6 +202,7 @@ export async function generateGroups(persons: any[]) {
 		const group = {
 			groupId: groupId,
 			name: `Group ${groupId}`,
+			command: Math.random() > 0.5,
 			description: `Group for ${person.name}`,
 			createdAt: getRandomDateInRange(30),
 			updatedAt: getRandomDateInRange(30),
@@ -229,7 +232,7 @@ export async function generateGroups(persons: any[]) {
 		await db.insert(PersonsToGroups).values({
 			personId: person.id,
 			groupId: groupId,
-				groupRole: getRandomElement(['admin', 'member'] as const),
+			groupRole: getRandomElement(['admin', 'member'] as const),
 			});
 		} catch (error) {
 			console.error('❌ Error generating groups:', error);
@@ -238,6 +241,45 @@ export async function generateGroups(persons: any[]) {
 
 	return groups;
 }
+
+export async function generateEvents(persons: any[], groups: any[]) {
+	console.log('🎭 Generating events...');
+	const events = [];
+
+	for (const person of persons) {
+		const eventId = uuidv4();
+		const entityType = getRandomElement(['group', 'person'] as const);
+		let entityId: string;
+
+		if (entityType === 'group') {
+			entityId = getRandomElement(groups).groupId;
+		} else {
+			entityId = getRandomElement(persons).id;
+		}
+
+		const startTime = getRandomDateInRange(30);
+		const endTime = new Date(startTime);
+		endTime.setDate(endTime.getDate() + Math.floor(Math.random() * 7) + 1);
+
+		const event = {
+			eventId: eventId,
+			entityId: entityId,
+			entityType: entityType,
+			startTime: startTime,
+			endTime: endTime,
+			title: `Event ${eventId}`,
+			description: `Description for event ${eventId}`,
+			location: getRandomElement(SAMPLE_LOCATIONS),
+			mandatory: Math.random() > 0.5,
+			insider: Math.random() > 0.5,
+			createdAt: getRandomDateInRange(30),
+			updatedAt: getRandomDateInRange(30)
+		}
+		await db.insert(EventsTable).values(event);
+		events.push(event);
+	}
+}
+
 
 export async function generateTransactions(persons: any[], count: number = 50) {
 	console.log(`📋 Generating up to ${count} transactions (one per user due to unique constraint)...`);
@@ -354,6 +396,7 @@ export async function generateCompleteTestData(
 		const systemRoles = await generateSystemRoles();
 		const persons = await generatePersons(users, systemRoles);
 		const groups = await generateGroups(persons);
+		await generateEvents(persons, groups);
 		await generateTransactions(persons, transactionCount);
 
 		if (includeScenarios) {

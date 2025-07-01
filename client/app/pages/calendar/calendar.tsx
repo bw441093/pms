@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { Calendar as BigCalendar, dateFnsLocalizer, type View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Card, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-import { he } from 'date-fns/locale';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Card, FormControl, InputLabel, Select, MenuItem, Box } from '@mui/material';
+import { he, id } from 'date-fns/locale';
 import TopBar from '../whereYouAt/components/TopBar';
 import { SITE_OPTIONS, hebrewSiteNames } from '../../consts'; // adjust path as needed
+import { getGroupsByPersonId, getPersonRoleInGroup } from '~/clients/groupsClient';
+import { getEventsByEntityId, createEvent, updateEvent, deleteEvent } from '~/clients/eventsClient';
 
 const locales = {
   'he': he,
@@ -28,6 +30,7 @@ interface Event {
   place?: string;
   isMandatory?: boolean;
   isInsider?: boolean;
+  entityId?: string;
 }
 
 export default function Calendar() {
@@ -44,25 +47,67 @@ export default function Calendar() {
     isMandatory: false,
     isInsider: false
   });
+  const [groups, setGroups] = useState<any[]>([]);
+  const [adminGroups, setAdminGroups] = useState<any[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load events from localStorage on component mount
-    const savedEvents = localStorage.getItem('calendarEvents');
-    if (savedEvents) {
-      const parsedEvents = JSON.parse(savedEvents).map((event: any) => ({
-        ...event,
-        start: new Date(event.start),
-        end: new Date(event.end)
-      }));
-      setEvents(parsedEvents);
-    }
+    const id = localStorage.getItem('login_token') || '';
+    // Fetch groups for current user
+    const fetchUserGroups = async () => {
+      try {
+        const response = await getGroupsByPersonId(id);
+        const groupsData = response; // adjust as needed
+        setGroups(groupsData);
+        const groupRoles = await getPersonRoleInGroup(id, groupsData.map((group: any) => group.groupId));
+        const adminGroupsData = groupRoles.filter((role: any) => role.groupRole === 'admin');
+        setAdminGroups(adminGroupsData);
+      } catch (error) {
+        console.error('Error fetching user groups:', error);
+      }
+    };
+
+    fetchUserGroups();
   }, []);
 
-  const handleSaveEvents = () => {
-    localStorage.setItem('calendarEvents', JSON.stringify(events));
-  };
+  // Fetch events when selectedGroup changes
+  useEffect(() => {
+    const fetchEvents = async () => {
+      if (!selectedGroup) {
+        setEvents([]);
+        return;
+      }
+      try {
+        const eventsData = await getEventsByEntityId(selectedGroup, 'group');
+        // Map server events to local Event interface
+        const mappedEvents = eventsData.map((event: any) => ({
+          id: event.eventId,
+          title: event.title,
+          start: new Date(event.startTime),
+          end: new Date(event.endTime),
+          description: event.description,
+          place: event.location,
+          isMandatory: event.mandatory,
+          isInsider: event.insider,
+          entityId: event.entityId,
+        }));
+        setEvents(mappedEvents);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        setEvents([]);
+      }
+    };
+    if (selectedGroup) {
+      fetchEvents();
+    } else {
+      setEvents([]);
+    }
+  }, [selectedGroup]);
 
   const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
+    if (!(selectedGroup && adminGroups.some(ag => ag.groupId === selectedGroup))) {
+        return;
+    }
     setNewEvent({
       title: '',
       start,
@@ -79,26 +124,59 @@ export default function Calendar() {
     setOpenDialog(true);
   };
 
-  const handleSaveEvent = () => {
+  const handleSaveEvent = async () => {
     if (!newEvent.title) return;
-
-    if (selectedEvent) {
-      // Update existing event
-      setEvents(events.map(event => 
-        event.id === selectedEvent.id 
-          ? { ...newEvent, id: selectedEvent.id } as Event
-          : event
-      ));
-    } else {
-      // Create new event
-      const event = {
-        ...newEvent,
-        id: Math.random().toString(36).substr(2, 9)
-      } as Event;
-      setEvents([...events, event]);
+    try {
+      const eventPayload = {
+        eventId: selectedEvent?.id,
+        entityId: selectedGroup,
+        entityType: 'group',
+        startTime:
+          newEvent.start
+            ? newEvent.start instanceof Date
+              ? newEvent.start
+              : new Date(newEvent.start)
+            : new Date(),
+        endTime:
+          newEvent.end
+            ? newEvent.end instanceof Date
+              ? newEvent.end
+              : new Date(newEvent.end)
+            : new Date(),
+        title: newEvent.title,
+        description: newEvent.description,
+        location: newEvent.place,
+        mandatory: newEvent.isMandatory,
+        insider: newEvent.isInsider,
+      };
+      if (selectedEvent) {
+        // Update existing event
+        const updated = await updateEvent(selectedEvent.id, eventPayload);
+        setEvents(events.map(event => event.id === selectedEvent.id ? {
+          ...updated,
+          id: updated.eventId,
+          start: new Date(updated.startTime),
+          end: new Date(updated.endTime),
+          place: updated.location,
+          isMandatory: updated.mandatory,
+          isInsider: updated.insider,
+        } : event));
+      } else {
+        // Create new event
+        const created = await createEvent(eventPayload);
+        setEvents([...events, {
+          ...created,
+          id: created.eventId,
+          start: new Date(created.startTime),
+          end: new Date(created.endTime),
+          place: created.location,
+          isMandatory: created.mandatory,
+          isInsider: created.insider,
+        }]);
+      }
+    } catch (error) {
+      console.error('Error saving event:', error);
     }
-
-    handleSaveEvents();
     setOpenDialog(false);
     setNewEvent({
       title: '',
@@ -111,22 +189,50 @@ export default function Calendar() {
     });
   };
 
-  const handleDeleteEvent = () => {
+  const handleDeleteEvent = async () => {
     if (selectedEvent) {
-      setEvents(events.filter(event => event.id !== selectedEvent.id));
-      handleSaveEvents();
+      try {
+        await deleteEvent(selectedEvent.id);
+        setEvents(events.filter(event => event.id !== selectedEvent.id));
+      } catch (error) {
+        console.error('Error deleting event:', error);
+      }
     }
     setOpenDialog(false);
   };
+
+  // Filter events by selected group
+  const filteredEvents = selectedGroup
+    ? events.filter(event => event.entityId === selectedGroup)
+    : events;
 
   return (
     <Card sx={{ elevation: 2 }}>
       <div style={{ height: 'calc(100vh - 100px)' }}>
         <TopBar />
+        {/* Group Filter Dropdown */}
+        <Box display="flex" justifyContent="center" alignItems="center" width="100%" p={2}>
+          <FormControl sx={{ width: '400px', mb: 2 }}>
+            <InputLabel>בחר קבוצה</InputLabel>
+            <Select
+              value={selectedGroup || ''}
+              label="בחר קבוצה"
+              onChange={e => setSelectedGroup(e.target.value || null)}
+              sx={{ minWidth: 200 }}
+            >
+              <MenuItem value="">הצג הכל</MenuItem>
+              {groups.map(group => (
+                <MenuItem key={group.groupId} value={group.groupId}>
+                  {group.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
         <BigCalendar
             localizer={localizer}
             rtl={true}
-            events={events}
+            events={filteredEvents}
             startAccessor="start"
             endAccessor="end"
             style={{ height: '100%' }}
@@ -157,7 +263,9 @@ export default function Calendar() {
         // Add more props here for customization
       />
 
-        <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <Dialog 
+          open={openDialog}
+          onClose={() => setOpenDialog(false)}>
           <DialogTitle sx={{ direction: 'rtl' }}>
             {selectedEvent ? 'ערוך אירוע' : 'צור אירוע חדש'}
           </DialogTitle>

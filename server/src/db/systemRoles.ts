@@ -20,7 +20,6 @@ export const deleteUserSystemRoles = async (userId: string) => {
 		.from(PersonsToSystemRoles)
 		.where(eq(PersonsToSystemRoles.userId, userId));
 
-	console.log(roleIds);
 	await db.delete(SystemRolesTable).where(
 		inArray(SystemRolesTable.id, roleIds.map((r) => r.id))
 	);

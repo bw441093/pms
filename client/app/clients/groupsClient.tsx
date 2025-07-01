@@ -15,4 +15,12 @@ export async function getPersonsByGroupId(groupId: string) {
 	return response.data;
 }
 
+export async function getPersonRoleInGroup(personId: string, groupIds: string[]) {
+	const response = await apiClient.get(`/groups/person/${personId}/roles`, {
+		params: {
+			groupIds: groupIds.join(',')
+		}
+	});
+	return response.data;
+}
 
