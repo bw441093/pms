@@ -18,6 +18,7 @@ import {
 	updatePersonAlertStatus,
 	updateAlertStatus,
 	updatePersonDetails,
+	findSitePersons,
 } from '../db/persons';
 import { createSystemRole, deleteUserSystemRoles } from '../db/systemRoles';
 import {
@@ -303,5 +304,20 @@ export const alertAllUsersHandler = async (req: Request, res: Response) => {
 	} catch (err) {
 		logger.error(`Error alerting all users, error: ${err}`);
 		res.status(500).send('Error alerting all users');
+	}
+};
+
+export const getSitePersonsHandler = async (req: Request, res: Response) => {
+	try {
+		const { userId } = req.params;
+		if (!userId) {
+			res.status(400).send('User ID is required');
+			return;
+		}
+		const persons = await findSitePersons(userId);
+		res.status(200).send(persons);
+	} catch (error) {
+		console.error('Error getting site persons:', error);
+		res.status(500).send('Failed to get site persons');
 	}
 };

@@ -24,3 +24,8 @@ export async function getPersonRoleInGroup(personId: string, groupIds: string[])
 	return response.data;
 }
 
+export async function getCommandChainPersons(personId: string) {
+	const { data } = await apiClient.get(`/groups/person/${personId}/command-chain`);
+	return data;
+}
+

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import authorize from '../middleware/authorization';
-import { getGroupsByPersonIdHandler, getGroupByIdHandler, getPersonsByGroupIdHandler, getPersonRoleInGroupHandler } from '../handlers/groups';
+import { getGroupsByPersonIdHandler, getGroupByIdHandler, getPersonsByGroupIdHandler, getPersonRoleInGroupHandler, getCommandChainHandler } from '../handlers/groups';
 
 const router = Router();
 
@@ -37,6 +37,15 @@ router.get('/person/:personId/roles', async (req, res) => {
 	} catch (error) {
 		console.error('Error getting person role in group:', error);
 		res.status(500).json({ error: 'Failed to get person role in group' });
+	}
+});
+
+router.get('/person/:personId/command-chain', async (req, res) => {
+	try {
+		await getCommandChainHandler(req, res);
+	} catch (error) {
+		console.error('Error getting command chain:', error);
+		res.status(500).json({ error: 'Failed to get command chain' });
 	}
 });
 

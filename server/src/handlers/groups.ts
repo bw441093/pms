@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { findGroupsByPersonId, findGroupById, findPersonsByGroupId, findPersonRoleInGroups } from '../db/groups';
+import { findGroupsByPersonId, findGroupById, findPersonsByGroupId, findPersonRoleInGroups, findAllSubordinatePersons } from '../db/groups';
 
 export const getGroupsByPersonIdHandler = async (req: Request, res: Response) => {
 	try {
@@ -63,6 +63,20 @@ export const getPersonRoleInGroupHandler = async (req: Request, res: Response) =
 	} catch (error) {
 		console.error('Error getting person role in group:', error);
 		return res.status(500).json({ error: 'Failed to get person role in group' });
+	}
+};
+
+export const getCommandChainHandler = async (req: Request, res: Response) => {
+	try {
+		const { personId } = req.params;
+		if (!personId) {
+			return res.status(400).json({ error: 'Person ID is required' });
+		}
+		const subordinates = await findAllSubordinatePersons(personId);
+		return res.json(subordinates);
+	} catch (error) {
+		console.error('Error getting command chain:', error);
+		return res.status(500).json({ error: 'Failed to get command chain' });
 	}
 };
 

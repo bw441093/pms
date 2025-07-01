@@ -13,6 +13,10 @@ export const idSchema = z.object({
 	id: z.string().uuid(),
 });
 
+export const userIdSchema = z.object({
+	userId: z.string().uuid(),
+  });
+
 export const systemRolesSchema = z.object({
 	roles: z.array(
 		z.object({

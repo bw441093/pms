@@ -111,5 +111,11 @@ export async function addNewPerson(
 	});
 	return response.data;
 }
+
+export async function getSitePersons(userId: string) {
+	const { data } = await apiClient.get(`/users/site/${userId}`);
+	return data;
+}
+
 // Export the apiClient for use in other parts of the app
 export { apiClient };

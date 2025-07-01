@@ -14,6 +14,7 @@ import {
 	getPersonByIdHandler,
 	alertAllUsersHandler,
 	updatePersonDetailsHandler,
+	getSitePersonsHandler,
 } from '../handlers/persons';
 import authorize from '../middleware/authorization';
 import {
@@ -25,6 +26,7 @@ import {
 	updateStatusSchema,
 	updateAlertSchema,
 	updatePersonDetailsSchema,
+	userIdSchema,
 } from '../validations/person';
 
 const router = Router();
@@ -76,5 +78,6 @@ router.put(
 	validator({ params: idSchema, body: updatePersonDetailsSchema }),
 	updatePersonDetailsHandler
 );
+router.get('/site/:userId', validator({ params: userIdSchema }), getSitePersonsHandler);
 
 export default router;
