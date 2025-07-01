@@ -18,6 +18,7 @@ import { useAtom } from 'jotai';
 import { userAtom } from './atoms/userAtom';
 import { getPerson } from './clients/personsClient';
 import theme from './theme';
+import { useIsMobile } from './hooks/useQueries';
 
 import type { Route } from './+types/root';
 import './app.css';
@@ -73,6 +74,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 	const location = useLocation();
 	const showBars = location.pathname !== '/login';
 	const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+	const isMobile = useIsMobile();
 
 	const handleMenuClick = () => {
 		setIsDrawerOpen(true);
@@ -93,7 +95,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 			display: 'flex', 
 			flexDirection: 'column' 
 		}}>
-			{showBars && (
+			{showBars && isMobile && (
 				<>
 					<TopBar 
 						onMenuClick={handleMenuClick} 
@@ -107,13 +109,13 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 			)}
 			<main style={{ 
 				flex: 1,
-				marginTop: showBars ? '56px' : 0, // Height of TopBar
-				marginBottom: showBars ? '56px' : 0, // Height of BottomNavBar
+				marginTop: showBars && isMobile ? '56px' : 0, // Height of TopBar
+				marginBottom: showBars && isMobile ? '56px' : 0, // Height of BottomNavBar
 				overflow: 'auto'
 			}}>
 				{children}
 			</main>
-			{showBars && <BottomNavBar />}
+			{showBars && isMobile && <BottomNavBar />}
 		</div>
 	);
 }
@@ -125,6 +127,7 @@ function AppContent() {
 	const navigate = useNavigate();
 	const [socket, setSocket] = React.useState<WebSocket | null>(null);
 	const [, setUser] = useAtom(userAtom);
+	const isMobile = useIsMobile();
 
 	React.useEffect(() => {
 		const token = localStorage.getItem('login_token');
@@ -142,6 +145,26 @@ function AppContent() {
 			Notification.requestPermission();
 		}
 	}, [location, navigate, setUser]);
+
+	// Global redirect logic based on device type
+	React.useEffect(() => {
+		console.log('Global redirect check - pathname:', location.pathname, 'isMobile:', isMobile);
+		
+		// Skip redirect for login page
+		if (location.pathname === '/login') return;
+		
+		// Desktop users should be on /dashboard (redirect from any other page)
+		if (!isMobile && location.pathname !== '/dashboard') {
+			console.log('Redirecting desktop user to dashboard');
+			navigate('/dashboard', { replace: true });
+		}
+		
+		// Mobile users should be on / (redirect from dashboard)
+		if (isMobile && location.pathname === '/dashboard') {
+			console.log('Redirecting mobile user to main page');
+			navigate('/', { replace: true });
+		}
+	}, [isMobile, location.pathname, navigate]);
 
 	React.useEffect(() => {
 		const connectionString =

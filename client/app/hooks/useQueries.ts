@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMediaQuery, useTheme } from '@mui/material';
 
 import {
 	getPeopleData,
@@ -174,3 +175,14 @@ export function useUserDataWithManager(userId: string) {
 		enabled: !!userId,
 	});
 }
+
+// Add mobile detection hook
+export const useIsMobile = () => {
+	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+	
+	// Debug logging
+	console.log('useIsMobile:', isMobile, 'breakpoint:', theme.breakpoints.values.md);
+	
+	return isMobile;
+};

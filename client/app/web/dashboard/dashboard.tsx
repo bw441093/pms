@@ -1,38 +1,30 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
-import PersonCard from './components/PersonCard';
-import { useCommandChainData, useSiteData } from '../../hooks/useQueries';
-import { useIsMobile } from '../../hooks/useQueries';
-import HrTopBar from './components/HrTopBar';
-import { Stack } from '@mui/material';
+import { usePeopleData, useIsMobile } from '../../hooks/useQueries';
+import DesktopDashboard from './DesktopDashboard';
 import type { Person } from '../../types';
 import { getPerson } from '~/clients/personsClient';
 
-
-export default function WhereYouAt() {
+export default function DashboardPage() {
+	const navigate = useNavigate();
+	const isMobile = useIsMobile();
 	const [userId, setUserId] = useState('');
 	const [searchTerm, setSearchTerm] = useState('');
-	const queryClient = useQueryClient();
 	const [filters, setFilters] = useState({
 		isManager: false,
 		isSiteManager: false,
 	});
 	const [sitesManaged, setSitesManaged] = useState<string[]>([]);
-	const isMobile = useIsMobile();
-	const navigate = useNavigate();
 	
-	console.log('WhereYouAt component rendered, isMobile:', isMobile);
-	console.log('Current pathname:', window.location.pathname);
+	console.log('DashboardPage component rendered, isMobile:', isMobile);
+
+	// This component is only for desktop - mobile users are redirected globally
 
 	useEffect(() => {
 		const id = localStorage.getItem('login_token') || '';
 		setUserId(id);
 	}, []);
-
-	const { data: sortedPeopleCommandChain = [], isLoading: peopleLoadingCommandChain } = useCommandChainData(userId);
-	const { data: sortedPeopleSite = [], isLoading: peopleLoadingSite } = useSiteData(userId);
-	const permissions = (sortedPeopleCommandChain[0]?.personSystemRoles || []).map((pr: any) => ({ name: pr.role.name, opts: pr.role.opts }));
 
 	const filterPeople = (
 		people: Person[],
@@ -42,21 +34,33 @@ export default function WhereYouAt() {
 	) => {
 		if (!people || !currentUser) return people;
 
+		let filtered = [...people];
 		let isManagedByMeFiltered: Person[] = [];
 		let isInMySitefiltered: Person[] = [];
 
 		if (filters.isManager) {
-			isManagedByMeFiltered = sortedPeopleCommandChain;
+			isManagedByMeFiltered = filtered.filter((person) => {
+				const isManaged = person.manager?.id === currentUser.id;
+				return isManaged;
+			});
 		}
 
 		// Filter people from sites that the current user manages
 		if (filters.isSiteManager && sitesManaged.length > 0) {
-			isInMySitefiltered = sortedPeopleSite;
+			isInMySitefiltered = filtered.filter((person) => {
+				// Check if the person's site is in the list of sites managed by current user
+				const isSiteManaged = sitesManaged.includes(person.site);
+				return isSiteManaged;
+			});
 		}
 
 		const filteredSet = new Set([...isManagedByMeFiltered, ...isInMySitefiltered]);
 		return Array.from(filteredSet);
 	};
+
+	const { data: sortedPeople, isLoading: peopleLoading } = usePeopleData(userId);
+
+	const permissions = sortedPeople?.user?.personSystemRoles?.map((pr) => ({ name: pr.role.name, opts: pr.role.opts }));
 
 	// Fuzzy search function
 	const fuzzyMatch = (text: string, pattern: string) => {
@@ -96,7 +100,7 @@ export default function WhereYouAt() {
 				let isSiteManager = false;
 				const newSitesManaged: string[] = [];
 
-				currentUser.personSystemRoles.forEach((pr: any) => {
+				currentUser.personSystemRoles.forEach((pr) => {
 					if (pr.role.name === 'personnelManager') {
 						isManager = true;
 					}
@@ -122,47 +126,28 @@ export default function WhereYouAt() {
 
 	// Memoize the filtered and searched results
 	const peopleToShow = useMemo(() => {
-		let basePeople: Person[] = [];
-		if (filters.isManager) {
-			basePeople = [...basePeople, ...sortedPeopleCommandChain];
-		}
-		if (filters.isSiteManager) {
-			basePeople = [...basePeople, ...sortedPeopleSite]; 
-		}
-		if (!basePeople) return [];
+		if (!sortedPeople?.people) return [];
+
 		// First apply search filter
 		let filtered = searchTerm
-			? basePeople.filter((person: Person) => fuzzyMatch(person.name, searchTerm))
-			: basePeople;
-		// Then apply manager/site filters (union)
-		return filterPeople(filtered, currentUser || null, sitesManaged, filters);
-	}, [sortedPeopleCommandChain, sortedPeopleSite, searchTerm, currentUser, filters, sitesManaged]);
+			? sortedPeople.people.filter(person => fuzzyMatch(person.name, searchTerm))
+			: sortedPeople.people;
 
-	// This component is only for mobile - desktop users are redirected globally
+		// Then apply manager/site filters
+		return filterPeople(filtered, currentUser || null, sitesManaged, filters);
+	}, [sortedPeople?.people, searchTerm, currentUser, filters, sitesManaged, filterPeople]);
+
+	if (peopleLoading) {
+		return <div>Loading...</div>;
+	}
 
 	return (
-		<Stack
-			direction="column"
-			alignItems="center"
-			spacing={3}
-			sx={{
-				pb: '80px', // Add padding at the bottom to account for the fixed nav bar
-			}}
-		>
-			<HrTopBar
-				onSearch={handleSearch}
-				onFiltersChange={handleFiltersChange}
-				initialFilters={filters}
-			/>
-			<Stack spacing={1.5} sx={{ width: '95%', alignItems: 'center' }}>
-				{peopleToShow.map((person: Person) => (
-					<PersonCard
-						key={person.id}
-						person={person}
-						permissions={permissions}
-					/>
-				))}
-			</Stack>
-		</Stack>
+		<DesktopDashboard
+			people={peopleToShow}
+			onSearch={handleSearch}
+			onFiltersChange={handleFiltersChange}
+			initialFilters={filters}
+			permissions={permissions}
+		/>
 	);
-}
+} 
