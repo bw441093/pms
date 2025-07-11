@@ -1,4 +1,5 @@
 import { apiClient } from './personsClient';
+import type { GroupedPersons } from '../types';
 
 export async function getGroupsByPersonId(personId: string) {
 	const response = await apiClient.get(`/groups/person/${personId}`);
@@ -24,7 +25,8 @@ export async function getPersonRoleInGroup(personId: string, groupIds: string[])
 	return response.data;
 }
 
-export async function getCommandChainPersons(personId: string) {
+
+export async function getCommandChainPersons(personId: string): Promise<GroupedPersons> {
 	const { data } = await apiClient.get(`/groups/person/${personId}/command-chain`);
 	return data;
 }

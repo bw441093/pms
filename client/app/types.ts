@@ -39,3 +39,21 @@ export type Person = {
 		};
 	}[];
 };
+
+export type Group = {
+	groupId: string;
+	name: string;
+	command: boolean;
+};
+
+export type GroupedPersons = {
+	[groupId: string]: {
+		group: Group;
+		persons: Person[];
+	};
+};
+
+export type GroupedPersonItem = {
+	group: Group;
+	person: Person;
+};

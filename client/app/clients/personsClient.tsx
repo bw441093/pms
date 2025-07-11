@@ -117,5 +117,10 @@ export async function getSitePersons(userId: string) {
 	return data;
 }
 
+export async function getDirectReports(userId: string) {
+	const { data } = await apiClient.get(`/users/${userId}/direct-reports`);
+	return data;
+}
+
 // Export the apiClient for use in other parts of the app
 export { apiClient };

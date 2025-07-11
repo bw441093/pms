@@ -18,28 +18,38 @@ import {
 	TextField,
 	InputAdornment,
 	Button,
-	Checkbox,
-	FormControlLabel,
+	Dialog,
+	DialogTitle,
+	DialogContent,
+	DialogActions,
+	Alert,
+	Snackbar,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SettingsIcon from '@mui/icons-material/Settings';
+import GroupsIcon from '@mui/icons-material/Groups';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import HomeIcon from '@mui/icons-material/Home';
+import WarningIcon from '@mui/icons-material/Warning';
 import { useTheme } from '@mui/material/styles';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Person } from '../../types';
 import { hebrewLocationNames, hebrewSiteNames } from '../../consts';
-import ActionModal from '../../pages/whereYouAt/components/ActionModal/ActionModal';
-import AddPersonModal from '../../pages/whereYouAt/components/ActionModal/AddPersonModal';
+import ActionModal from '../../mobile/pages/whereYouAt/components/ActionModal/ActionModal';
+import AddPersonModal from '../../mobile/pages/whereYouAt/components/ActionModal/AddPersonModal';
+import { handleAlertAll as alertAllUsers } from '../../utils/alertUtils';
+import FilterModal from '../../utils/FilterModal';
+import { applyFiltersAndSearch, type FilterOptions } from '../../utils/filterUtils';
 
 interface DesktopDashboardProps {
 	people: Person[];
 	onSearch: (searchTerm: string) => void;
-	onFiltersChange: (filters: { isManager: boolean; isSiteManager: boolean }) => void;
-	initialFilters?: { isManager: boolean; isSiteManager: boolean };
+	onFiltersChange: (filters: FilterOptions) => void;
+	initialFilters?: FilterOptions;
 	permissions?: { name: string; opts: string[] }[];
 }
 
@@ -52,16 +62,22 @@ const DesktopDashboard: React.FC<DesktopDashboardProps> = ({
 }) => {
 	const theme = useTheme();
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const [searchTerm, setSearchTerm] = useState('');
 	const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
 	const [actionType, setActionType] = useState('');
 	const [modalOpen, setModalOpen] = useState(false);
 	const [addPersonModalOpen, setAddPersonModalOpen] = useState(false);
-	const [showFilters, setShowFilters] = useState(false);
-	const [filters, setFilters] = useState(initialFilters || {
+	const [filterModalOpen, setFilterModalOpen] = useState(false);
+	const [filters, setFilters] = useState<FilterOptions>(initialFilters || {
 		isManager: false,
 		isSiteManager: false,
+		isDirectManager: false,
 	});
+	const [alertConfirmOpen, setAlertConfirmOpen] = useState(false);
+	const [alertLoading, setAlertLoading] = useState(false);
+	const [alertMessage, setAlertMessage] = useState('');
+	const [alertSeverity, setAlertSeverity] = useState<'success' | 'error'>('success');
 
 	const statistics = useMemo(() => {
 		const total = people.length;
@@ -108,13 +124,41 @@ const DesktopDashboard: React.FC<DesktopDashboardProps> = ({
 	};
 
 	const handleFilterClick = () => {
-		setShowFilters(!showFilters);
+		setFilterModalOpen(true);
 	};
 
-	const handleFilterChange = (filterKey: keyof typeof filters) => {
-		const newFilters = { ...filters, [filterKey]: !filters[filterKey] };
+	const handleFiltersChange = (newFilters: FilterOptions) => {
 		setFilters(newFilters);
 		onFiltersChange(newFilters);
+	};
+
+	const handleAlertAllClick = () => {
+		setAlertConfirmOpen(true);
+	};
+
+	const handleAlertAllConfirm = async () => {
+		setAlertLoading(true);
+		setAlertConfirmOpen(false);
+		
+		const result = await alertAllUsers(queryClient);
+		
+		if (result.success) {
+			setAlertMessage('התראה נשלחה בהצלחה לכל המשתמשים');
+			setAlertSeverity('success');
+		} else {
+			setAlertMessage(result.error || 'אירעה שגיאה בשליחת ההתראה');
+			setAlertSeverity('error');
+		}
+		
+		setAlertLoading(false);
+	};
+
+	const handleAlertAllCancel = () => {
+		setAlertConfirmOpen(false);
+	};
+
+	const handleAlertClose = () => {
+		setAlertMessage('');
 	};
 
 	const getStatusColor = (reportStatus: string, alertStatus: string) => {
@@ -146,39 +190,21 @@ const DesktopDashboard: React.FC<DesktopDashboardProps> = ({
 			flex: 1,
 			backgroundColor: theme.palette.custom.gray1,
 			border: `1px solid ${theme.palette.custom.gray5}`,
-			borderRadius: 2,
+			borderRadius: 4,
 			boxShadow: 'none',
 		}}>
-			<CardContent sx={{ p: 3, textAlign: 'right', direction: 'rtl' }}>
+			<CardContent sx={{ textAlign: 'right', direction: 'rtl', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 1}}>
 				<Typography 
 					variant="body2" 
-					color="text.secondary" 
+					color={theme.palette.custom.outline}
 					sx={{ 
 						fontSize: 14, 
-						mb: 2,
 						fontWeight: 500,
 					}}
 				>
 					{title}
 				</Typography>
-				<Stack direction="row" alignItems="center" justifyContent="space-between">
-					{percentage !== undefined && (
-						<Typography 
-							variant="body2" 
-							sx={{ 
-								fontSize: 14, 
-								fontWeight: 600,
-								color: '#fff',
-								backgroundColor: color,
-								px: 1.5,
-								py: 0.5,
-								borderRadius: 1,
-								minWidth: 'fit-content',
-							}}
-						>
-							{percentage}%
-						</Typography>
-					)}
+				<Stack direction="row" alignItems="center" justifyContent="flex-start" gap={1}>
 					<Typography 
 						variant="h4" 
 						sx={{ 
@@ -189,6 +215,23 @@ const DesktopDashboard: React.FC<DesktopDashboardProps> = ({
 					>
 						{value}
 					</Typography>
+					{percentage !== undefined && (
+						<Typography 
+							variant="body2" 
+							sx={{ 
+								fontSize: 14, 
+								fontWeight: 600,
+								color: theme.palette.custom.surfaceContainerHighest,
+								backgroundColor: color,
+								px: 1.5,
+								py: 0.5,
+								borderRadius: 1,
+								minWidth: 'fit-content',
+							}}
+						>
+							{percentage}%
+						</Typography>
+					)}
 				</Stack>
 			</CardContent>
 		</Card>
@@ -205,25 +248,26 @@ const DesktopDashboard: React.FC<DesktopDashboardProps> = ({
 					borderBottom: `1px solid ${theme.palette.custom.gray5}`,
 				}}>
 					<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+		
+							<Button
+								startIcon={<PersonAddIcon />}
+								variant="outlined"
+								onClick={() => setAddPersonModalOpen(true)}
+								sx={{ 
+									borderRadius: 2,
+									borderColor: theme.palette.custom.gray5,
+									color: theme.palette.custom.gray13,
+									'&:hover': {
+										borderColor: theme.palette.custom.gray13,
+										backgroundColor: theme.palette.custom.gray2,
+									}
+								}}
+							>
+								הוסף משתמש
+							</Button>
 						<Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.custom.gray13 }}>
 							שליטה בכח אדם
 						</Typography>
-						<Button
-							startIcon={<PersonAddIcon />}
-							variant="outlined"
-							onClick={() => setAddPersonModalOpen(true)}
-							sx={{ 
-								borderRadius: 2,
-								borderColor: theme.palette.custom.gray5,
-								color: theme.palette.custom.gray13,
-								'&:hover': {
-									borderColor: theme.palette.custom.gray13,
-									backgroundColor: theme.palette.custom.gray2,
-								}
-							}}
-						>
-							הוסף משתמש
-						</Button>
 					</Stack>
 
 					{/* Statistics Cards Row */}
@@ -234,28 +278,28 @@ const DesktopDashboard: React.FC<DesktopDashboardProps> = ({
 							color={theme.palette.custom.gray13}
 						/>
 						<StatCard 
-							title="אנשים עדיווחו" 
-							value={statistics.present} 
+							title="אנשים שדיווחו" 
+							value={statistics.present}
 							percentage={statistics.presentPercentage}
-							color={theme.palette.custom.success}
+							color={theme.palette.custom.paleGreen}
 						/>
 						<StatCard 
 							title="אנשים שלא דיווחו" 
 							value={statistics.absent} 
 							percentage={statistics.absentPercentage}
-							color={theme.palette.custom.error}
+							color={theme.palette.custom.paleRed}
 						/>
 						<StatCard 
 							title="אנשים במעבר אחר" 
 							value={statistics.late} 
 							percentage={10}
-							color="#FFA726"
+							color={theme.palette.custom.paleYellow}
 						/>
 						<StatCard 
-							title="נכח״ל" 
+							title="נכס״ל" 
 							value={`${statistics.available}/${statistics.total}`} 
 							percentage={statistics.availablePercentage}
-							color={theme.palette.custom.success}
+							color={theme.palette.custom.paleGreen}
 						/>
 					</Stack>
 				</Box>
@@ -264,64 +308,70 @@ const DesktopDashboard: React.FC<DesktopDashboardProps> = ({
 				<Box sx={{ p: 3 }}>
 
 							{/* Search and Filters */}
-				<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-					<TextField
-						placeholder="חפש משתמשים..."
-						value={searchTerm}
-						onChange={handleSearch}
-						size="small"
-						sx={{ 
-							minWidth: 300,
-							'& .MuiOutlinedInput-root': {
-								backgroundColor: theme.palette.custom.gray2,
-							},
-						}}
-						InputProps={{
-							startAdornment: (
-								<InputAdornment position="start">
-									<SearchIcon />
-								</InputAdornment>
-							),
-						}}
-					/>
+				<Stack direction="row" sx={{ mb: 3, justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
 					<Button
-						startIcon={<FilterListIcon />}
-						variant="outlined"
-						onClick={handleFilterClick}
-						sx={{ borderRadius: 2 }}
+						startIcon={<WarningIcon />}
+						variant="contained"
+						onClick={handleAlertAllClick}
+						disabled={alertLoading}
+						sx={{ 
+							borderRadius: 2,
+							backgroundColor: theme.palette.custom.error,
+							color: 'white',
+							'&:hover': {
+								backgroundColor: '#d32f2f',
+							},
+							'&:disabled': {
+								backgroundColor: theme.palette.custom.gray5,
+							}
+						}}
 					>
-						פילטרים
+						הפעל נכס״ל
 					</Button>
+					
+					<Stack direction="row" spacing={2}>
+					<IconButton
+							onClick={handleFilterClick}
+							sx={{ borderRadius: 2, backgroundColor: theme.palette.custom.gray4, color: theme.palette.custom.surfaceContainerHighest}}
+						>
+							<FilterListIcon />
+						</IconButton>
+						<TextField
+							dir="rtl"
+							placeholder="חפש משתמשים..."
+							value={searchTerm}
+							onChange={handleSearch}
+							size="small"
+							sx={{ 
+								minWidth: 300,
+								'& .MuiOutlinedInput-root': {
+									backgroundColor: theme.palette.custom.gray4,
+									borderRadius: 2,
+									border: 'none',
+									'& fieldset': {
+										border: 'none',
+									},
+									'&:hover fieldset': {
+										border: 'none',
+									},
+									'&.Mui-focused fieldset': {
+										border: 'none',
+									},
+								},
+							}}
+							InputProps={{
+								endAdornment: (
+									<InputAdornment position="end">
+										<SearchIcon />
+									</InputAdornment>
+								),
+							}}
+						/>
+
+					</Stack>
 				</Stack>
 
-				{/* Filter Options */}
-				{showFilters && (
-					<Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-						<Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-							אפשרויות סינון
-						</Typography>
-						<Stack direction="row" spacing={3}>
-							<FormControlLabel
-								control={
-									<Checkbox
-										checked={filters.isManager}
-										onChange={() => handleFilterChange('isManager')}
-									/>
-								}
-								label="רק אנשים שאני מנהל"
-							/>
-							<FormControlLabel
-								control={
-									<Checkbox
-										checked={filters.isSiteManager}
-										onChange={() => handleFilterChange('isSiteManager')}
-									/>
-								}
-								label="רק אנשים מהאתרים שלי"
-							/>
-						</Stack>
-					</Paper>
-				)}
+
 
 
 
@@ -434,7 +484,7 @@ const DesktopDashboard: React.FC<DesktopDashboardProps> = ({
 			{/* Navigation Sidebar */}
 			<Box sx={{ 
 				width: 280, 
-				backgroundColor: theme.palette.custom.gray2, 
+				backgroundColor: theme.palette.custom.gray4, 
 				borderLeft: `1px solid ${theme.palette.custom.gray5}`,
 				display: 'flex',
 				flexDirection: 'column',
@@ -454,27 +504,30 @@ const DesktopDashboard: React.FC<DesktopDashboardProps> = ({
 				{/* Navigation Items */}
 				<Box sx={{ flex: 1, p: 2 }}>
 					<Stack spacing={1}>
-						{/* Personnel Control */}
 						<Box
 							onClick={() => navigate('/dashboard')}
 							sx={{
 								display: 'flex',
 								alignItems: 'center',
-								justifyContent: 'space-between',
-								p: 2,
+								justifyContent: 'flex-end',
+								p: 1,
+								pr: 2,
+								gap: 1,
 								borderRadius: 2,
-								backgroundColor: theme.palette.custom.gray4,
+								backgroundColor: theme.palette.custom.gray5,
 								cursor: 'pointer',
 								'&:hover': {
 									backgroundColor: theme.palette.custom.gray5,
 								},
-								border: `2px solid ${theme.palette.custom.gray13}`,
+								'&:active': {
+									backgroundColor: theme.palette.custom.gray5,
+								},
 							}}
 						>
-							<Typography sx={{ fontWeight: 600, fontSize: 16 }}>
+							<Typography sx={{ fontWeight: 500, fontSize: 16 }}>
 								שליטה בכח אדם
 							</Typography>
-							<SettingsIcon sx={{ color: theme.palette.custom.gray13 }} />
+							<GroupsIcon sx={{ color: theme.palette.custom.gray13, fontSize: 18 }} />
 						</Box>
 
 						{/* Duties/Shifts */}
@@ -483,12 +536,16 @@ const DesktopDashboard: React.FC<DesktopDashboardProps> = ({
 							sx={{
 								display: 'flex',
 								alignItems: 'center',
-								justifyContent: 'space-between',
-								p: 2,
+								justifyContent: 'flex-end',
+								p: 1,
+								pr: 2,
+								gap: 1,
 								borderRadius: 2,
-								backgroundColor: theme.palette.custom.gray4,
 								cursor: 'pointer',
 								'&:hover': {
+									backgroundColor: theme.palette.custom.gray5,
+								},
+								'&:active': {
 									backgroundColor: theme.palette.custom.gray5,
 								},
 							}}
@@ -505,12 +562,16 @@ const DesktopDashboard: React.FC<DesktopDashboardProps> = ({
 							sx={{
 								display: 'flex',
 								alignItems: 'center',
-								justifyContent: 'space-between',
-								p: 2,
+								justifyContent: 'flex-end',
+								p: 1,
+								pr: 2,
+								gap: 1,
 								borderRadius: 2,
-								backgroundColor: theme.palette.custom.gray4,
 								cursor: 'pointer',
 								'&:hover': {
+									backgroundColor: theme.palette.custom.gray5,
+								},
+								'&:selected': {
 									backgroundColor: theme.palette.custom.gray5,
 								},
 							}}
@@ -523,6 +584,75 @@ const DesktopDashboard: React.FC<DesktopDashboardProps> = ({
 					</Stack>
 				</Box>
 			</Box>
+
+			{/* Alert Confirmation Dialog */}
+			<Dialog
+				open={alertConfirmOpen}
+				onClose={handleAlertAllCancel}
+				maxWidth="sm"
+				fullWidth
+			>
+				<DialogTitle sx={{ textAlign: 'right', fontWeight: 700 }}>
+					אישור שליחת התראה
+				</DialogTitle>
+				<DialogContent sx={{ textAlign: 'right' }}>
+					<Typography>
+						האם אתה בטוח שברצונך לשלוח התראה לכל המשתמשים במערכת?
+					</Typography>
+					<Typography sx={{ mt: 2, color: theme.palette.custom.outline }}>
+						פעולה זו תשלח הודעה לכל המשתמשים הרשומים במערכת ותבקש מהם לעדכן את סטטוס הדיווח שלהם.
+					</Typography>
+				</DialogContent>
+				<DialogActions sx={{ p: 2, gap: 1 }}>
+					<Button 
+						onClick={handleAlertAllCancel}
+						sx={{ 
+							borderRadius: 2,
+							color: theme.palette.custom.gray13,
+						}}
+					>
+						ביטול
+					</Button>
+					<Button 
+						onClick={handleAlertAllConfirm}
+						variant="contained"
+						disabled={alertLoading}
+						sx={{ 
+							borderRadius: 2,
+							backgroundColor: theme.palette.custom.error,
+							'&:hover': {
+								backgroundColor: '#d32f2f',
+							}
+						}}
+					>
+						{alertLoading ? 'שולח...' : 'אישור'}
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			{/* Alert Snackbar */}
+			<Snackbar
+				open={!!alertMessage}
+				autoHideDuration={6000}
+				onClose={handleAlertClose}
+				anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+			>
+				<Alert 
+					severity={alertSeverity} 
+					onClose={handleAlertClose}
+					sx={{ borderRadius: 2 }}
+				>
+					{alertMessage}
+				</Alert>
+			</Snackbar>
+
+			{/* Filter Modal */}
+			<FilterModal
+				open={filterModalOpen}
+				onClose={() => setFilterModalOpen(false)}
+				filters={filters}
+				onFiltersChange={handleFiltersChange}
+			/>
 		</Box>
 	);
 };

@@ -23,9 +23,10 @@ import { useIsMobile } from './hooks/useQueries';
 import type { Route } from './+types/root';
 import './app.css';
 import { SocketContext } from './contexts/SocketContext';
-import BottomNavBar from './components/BottomNavBar/BottomNavBar';
-import TopBar from './components/TopBar/TopBar';
-import AppDrawer from './components/Drawer/AppDrawer';
+import { NavBarProvider } from './contexts/NavBarContext';
+import BottomNavBar from './mobile/components/BottomNavBar/BottomNavBar';
+import TopBar from './mobile/components/TopBar/TopBar';
+import AppDrawer from './mobile/components/Drawer/AppDrawer';
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -36,7 +37,7 @@ export const links: Route.LinksFunction = () => [
 	},
 	{
 		rel: 'stylesheet',
-		href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
+		href: 'https://fonts.googleapis.com/css2?family=Assistant:wght@200;300;400;500;600;700;800&display=swap',
 	},
 	// PWA manifest
 	{ rel: 'manifest', href: '/manifest.json', crossOrigin: 'use-credentials' },
@@ -49,7 +50,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 		<html lang="en">
 			<head>
 				<meta charSet="utf-8" />
-				<meta name="viewport" content="width=device-width, initial-scale=1" />
+				<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 				<meta name="theme-color" content="#1976d2" />
 				<meta
 					name="description"
@@ -111,7 +112,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 				flex: 1,
 				marginTop: showBars && isMobile ? '56px' : 0, // Height of TopBar
 				marginBottom: showBars && isMobile ? '56px' : 0, // Height of BottomNavBar
-				overflow: 'auto'
+				overflow: 'auto',
+				minHeight: 0, // Allows flex shrinking
+				position: 'relative', // For better positioning context
 			}}>
 				{children}
 			</main>
@@ -148,20 +151,16 @@ function AppContent() {
 
 	// Global redirect logic based on device type
 	React.useEffect(() => {
-		console.log('Global redirect check - pathname:', location.pathname, 'isMobile:', isMobile);
-		
 		// Skip redirect for login page
 		if (location.pathname === '/login') return;
 		
 		// Desktop users should be on /dashboard (redirect from any other page)
 		if (!isMobile && location.pathname !== '/dashboard') {
-			console.log('Redirecting desktop user to dashboard');
 			navigate('/dashboard', { replace: true });
 		}
 		
 		// Mobile users should be on / (redirect from dashboard)
 		if (isMobile && location.pathname === '/dashboard') {
-			console.log('Redirecting mobile user to main page');
 			navigate('/', { replace: true });
 		}
 	}, [isMobile, location.pathname, navigate]);
@@ -206,9 +205,11 @@ function AppContent() {
 			<ThemeProvider theme={theme}>
 				<QueryClientProvider client={queryClient}>
 					<SocketContext.Provider value={{ socket }}>
-						<AppLayout>
-							<Outlet />
-						</AppLayout>
+						<NavBarProvider>
+							<AppLayout>
+								<Outlet />
+							</AppLayout>
+						</NavBarProvider>
 					</SocketContext.Provider>
 				</QueryClientProvider>
 			</ThemeProvider>

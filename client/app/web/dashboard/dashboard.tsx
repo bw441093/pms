@@ -1,64 +1,41 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
-import { usePeopleData, useIsMobile } from '../../hooks/useQueries';
+import { usePeopleData, useCommandChainData, useSiteData, useDirectReportsData } from '../../hooks/useQueries';
 import DesktopDashboard from './DesktopDashboard';
 import type { Person } from '../../types';
 import { getPerson } from '~/clients/personsClient';
+import { applyFiltersAndSearch, type FilterOptions } from '../../utils/filterUtils';
 
 export default function DashboardPage() {
 	const navigate = useNavigate();
-	const isMobile = useIsMobile();
 	const [userId, setUserId] = useState('');
 	const [searchTerm, setSearchTerm] = useState('');
-	const [filters, setFilters] = useState({
+	const [filters, setFilters] = useState<FilterOptions>({
 		isManager: false,
 		isSiteManager: false,
+		isDirectManager: false,
 	});
 	const [sitesManaged, setSitesManaged] = useState<string[]>([]);
 	
-	console.log('DashboardPage component rendered, isMobile:', isMobile);
-
-	// This component is only for desktop - mobile users are redirected globally
-
 	useEffect(() => {
 		const id = localStorage.getItem('login_token') || '';
 		setUserId(id);
 	}, []);
 
-	const filterPeople = (
-		people: Person[],
-		currentUser: Person | null,
-		sitesManaged: string[],
-		filters: { isManager: boolean; isSiteManager: boolean }
-	) => {
-		if (!people || !currentUser) return people;
-
-		let filtered = [...people];
-		let isManagedByMeFiltered: Person[] = [];
-		let isInMySitefiltered: Person[] = [];
-
-		if (filters.isManager) {
-			isManagedByMeFiltered = filtered.filter((person) => {
-				const isManaged = person.manager?.id === currentUser.id;
-				return isManaged;
-			});
-		}
-
-		// Filter people from sites that the current user manages
-		if (filters.isSiteManager && sitesManaged.length > 0) {
-			isInMySitefiltered = filtered.filter((person) => {
-				// Check if the person's site is in the list of sites managed by current user
-				const isSiteManaged = sitesManaged.includes(person.site);
-				return isSiteManaged;
-			});
-		}
-
-		const filteredSet = new Set([...isManagedByMeFiltered, ...isInMySitefiltered]);
-		return Array.from(filteredSet);
-	};
-
 	const { data: sortedPeople, isLoading: peopleLoading } = usePeopleData(userId);
+	const { data: groupedCommandChainData = {}, isLoading: commandChainLoading } = useCommandChainData(userId);
+	const { data: sortedPeopleSite = [], isLoading: siteLoading } = useSiteData(userId);
+	const { data: sortedPeopleDirectReports = [], isLoading: directReportsLoading } = useDirectReportsData(userId);
+
+	// Extract flat array from grouped command chain data
+	const commandChainPeople = useMemo(() => {
+		const people: Person[] = [];
+		Object.values(groupedCommandChainData).forEach(({ persons }) => {
+			people.push(...persons);
+		});
+		return people;
+	}, [groupedCommandChainData]);
 
 	const permissions = sortedPeople?.user?.personSystemRoles?.map((pr) => ({ name: pr.role.name, opts: pr.role.opts }));
 
@@ -83,7 +60,7 @@ export default function DashboardPage() {
 		setSearchTerm(term);
 	}, []);
 
-	const handleFiltersChange = useCallback((newFilters: { isManager: boolean; isSiteManager: boolean }) => {
+	const handleFiltersChange = useCallback((newFilters: FilterOptions) => {
 		setFilters(newFilters);
 	}, []);
 
@@ -98,11 +75,13 @@ export default function DashboardPage() {
 			if (currentUser.personSystemRoles) {
 				let isManager = false;
 				let isSiteManager = false;
+				let isDirectManager = false;
 				const newSitesManaged: string[] = [];
 
 				currentUser.personSystemRoles.forEach((pr) => {
 					if (pr.role.name === 'personnelManager') {
 						isManager = true;
+						isDirectManager = true; // Personnel managers can also see direct reports
 					}
 
 					if (pr.role.name === 'siteManager' && pr.role.opts) {
@@ -115,7 +94,8 @@ export default function DashboardPage() {
 				setFilters(prev => ({
 					...prev,
 					isManager,
-					isSiteManager
+					isSiteManager,
+					isDirectManager
 				}));
 				setSitesManaged(newSitesManaged);
 			}
@@ -128,16 +108,20 @@ export default function DashboardPage() {
 	const peopleToShow = useMemo(() => {
 		if (!sortedPeople?.people) return [];
 
-		// First apply search filter
-		let filtered = searchTerm
-			? sortedPeople.people.filter(person => fuzzyMatch(person.name, searchTerm))
-			: sortedPeople.people;
+		// Use the new filtering system
+		return applyFiltersAndSearch(
+			sortedPeople.people,
+			commandChainPeople,
+			sortedPeopleSite,
+			sortedPeopleDirectReports,
+			searchTerm,
+			currentUser || null,
+			sitesManaged,
+			filters
+		);
+	}, [sortedPeople?.people, commandChainPeople, sortedPeopleSite, sortedPeopleDirectReports, searchTerm, currentUser, filters, sitesManaged]);
 
-		// Then apply manager/site filters
-		return filterPeople(filtered, currentUser || null, sitesManaged, filters);
-	}, [sortedPeople?.people, searchTerm, currentUser, filters, sitesManaged, filterPeople]);
-
-	if (peopleLoading) {
+	if (peopleLoading || commandChainLoading || siteLoading || directReportsLoading) {
 		return <div>Loading...</div>;
 	}
 
