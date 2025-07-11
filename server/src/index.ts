@@ -13,6 +13,7 @@ import {
 	EventsTable,
 } from './db/schema';
 import './db/snapshot';
+import './db/autoReport';
 import { db } from './db/db';
 import { eq } from 'drizzle-orm';
 import http from 'http';
