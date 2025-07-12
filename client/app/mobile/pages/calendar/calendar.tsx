@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Calendar as BigCalendar, dateFnsLocalizer, type View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Card, FormControl, InputLabel, Select, MenuItem, Box } from '@mui/material';
-import { he, id } from 'date-fns/locale';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Card, FormControl, InputLabel, Select, MenuItem, Box, Typography, ButtonGroup, IconButton, Stack } from '@mui/material';
+import { he } from 'date-fns/locale';
+import { motion, AnimatePresence } from 'framer-motion';
 import TopBar from '../whereYouAt/components/TopBar';
 import { SITE_OPTIONS, hebrewSiteNames } from '../../../consts'; // adjust path as needed
 import { getGroupsByPersonId, getPersonRoleInGroup } from '~/clients/groupsClient';
 import { getEventsByEntityId, createEvent, updateEvent, deleteEvent } from '~/clients/eventsClient';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 const locales = {
   'he': he,
@@ -33,11 +36,105 @@ interface Event {
   entityId?: string;
 }
 
+const variants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? 1000 : -1000,
+    opacity: 0
+  }),
+  center: {
+    zIndex: 1,
+    x: 0,
+    opacity: 1
+  },
+  exit: (direction: number) => ({
+    zIndex: 0,
+    x: direction < 0 ? 1000 : -1000,
+    opacity: 0
+  })
+};
+
+interface CalendarHeaderProps {
+  date: Date;
+  view: View;
+  onView: (view: View) => void;
+  onNavigate: (direction: number) => void;
+  views: View[];
+}
+
+const CalendarHeader = ({ date, view, onView, onNavigate, views }: CalendarHeaderProps) => {
+  const viewNames: { [key in View]?: string } = {
+    month: 'חודש',
+    week: 'שבוע',
+    day: 'יום',
+    agenda: 'סדר יום',
+  };
+
+  const getHeaderTitle = () => {
+    if (view === 'month') {
+      return format(date, 'MMMM yyyy ', { locale: he });
+    }
+    if (view === 'week') {
+      const start = startOfWeek(date);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      if (start.getMonth() === end.getMonth()) {
+        return `${format(start, 'd')} - ${format(end, 'd MMMM yyyy', { locale: he })}`;
+      }
+      return `${format(start, 'd MMMM')} - ${format(end, 'd MMMM yyyy', { locale: he })}`;
+    }
+    return format(date, 'eeee, d MMMM yyyy', { locale: he });
+  };
+  
+  return (
+    <Box display="flex" justifyContent="space-between" alignItems="center" p={2} sx={{ direction: 'rtl' }}>
+      <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center" width="100%">
+      <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
+        {getHeaderTitle()}
+      </Typography>
+      <Stack direction="row">
+        {/* <ButtonGroup variant="outlined" aria-label="outlined button group" sx={{ borderRadius: '20px' }}>
+          <Button onClick={() => onNavigate(-1)}><ChevronRightIcon /></Button>
+          <Button onClick={() => onNavigate(0)}>היום</Button>
+          <Button onClick={() => onNavigate(1)}><ChevronLeftIcon /></Button>
+        </ButtonGroup> */}
+
+        <ButtonGroup variant="outlined" sx={{ width: '100%' }} dir="ltr">
+          {views.map((viewName) => (
+            <Button
+              key={viewName}
+              onClick={() => onView(viewName)}
+              sx={{
+                borderRadius: '20px',
+                backgroundColor: view === viewName ? 'primary.main' : 'inherit',
+                color: view === viewName ? 'white' : 'inherit',
+                '&:hover': {
+                    backgroundColor: view === viewName ? 'primary.dark' : 'rgba(0,0,0,0.04)'
+                }
+              }}
+            >
+              {viewNames[viewName]}
+            </Button>
+          ))}
+        </ButtonGroup>
+        </Stack>
+      </Stack>
+    </Box>
+  )
+}
+
 export default function Calendar() {
   const [events, setEvents] = useState<Event[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [calendarView, setCalendarView] = useState<View>('week');
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const [[key, direction], setPage] = useState([0, 0]);
+  const [displayDate, setDisplayDate] = useState(new Date());
+  const isAnimating = useRef(false);
+  const [isLongPress, setIsLongPress] = useState(false);
+  const longPressTimeout = useRef<NodeJS.Timeout | null>(null);
+  
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: '',
     start: new Date(),
@@ -50,6 +147,58 @@ export default function Calendar() {
   const [groups, setGroups] = useState<any[]>([]);
   const [adminGroups, setAdminGroups] = useState<any[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+
+  const getNewDate = (dir: number) => {
+    const newDate = new Date(displayDate);
+    const period = dir > 0 ? 1 : -1;
+
+    if (calendarView === 'month') {
+      newDate.setMonth(newDate.getMonth() + period);
+    } else if (calendarView === 'week') {
+      newDate.setDate(newDate.getDate() + period * 7);
+    } else if (calendarView === 'day') {
+      newDate.setDate(newDate.getDate() + period);
+    }
+    return newDate;
+  };
+
+  const paginate = (newDirection: number) => {
+    if (isAnimating.current) return;
+    isAnimating.current = true;
+    
+    setPage([key + newDirection, newDirection]);
+    const newDate = getNewDate(newDirection);
+    setDisplayDate(newDate);
+    setCurrentDate(newDate);
+
+    setTimeout(() => {
+      isAnimating.current = false;
+    }, 600); // Should match transition duration
+  };
+
+  const swipeConfidenceThreshold = 10000;
+  const swipePower = (offset: number, velocity: number) => {
+    return Math.abs(offset) * velocity;
+  };
+
+  const handlePressStart = () => {
+    longPressTimeout.current = setTimeout(() => {
+      setIsLongPress(true);
+    }, 500); // 500ms delay for long press
+  };
+
+  const handlePressEnd = () => {
+    if (longPressTimeout.current) {
+      clearTimeout(longPressTimeout.current);
+    }
+    if (isLongPress) {
+        // Delay resetting to prevent drag from firing on release
+        setTimeout(() => setIsLongPress(false), 50);
+    } else {
+        setIsLongPress(false);
+    }
+  };
+
 
   useEffect(() => {
     const id = localStorage.getItem('login_token') || '';
@@ -206,12 +355,37 @@ export default function Calendar() {
     ? events.filter(event => event.entityId === selectedGroup)
     : events;
 
+  // Create separate event data for next calendar
+  const getEventsForDate = (date: Date) => {
+    // For now, return the same events since we don't have date-specific filtering
+    // In a real implementation, you might filter events by date range
+    return filteredEvents;
+  };
+
+  // Prevent all page scrolling when calendar is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    const root = document.getElementById('root');
+    if (root) root.style.overflow = 'hidden';
+    // Prevent touch scroll
+    const preventDefault = (e: TouchEvent) => e.preventDefault();
+    document.addEventListener('touchmove', preventDefault, { passive: false });
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      if (root) root.style.overflow = '';
+      document.removeEventListener('touchmove', preventDefault);
+    };
+  }, []);
+
   return (
-    <Card sx={{ elevation: 2 }}>
-      <div style={{ height: 'calc(100vh - 100px)' }}>
+      <Stack
+        style={{ height: '100vh', overflow: 'hidden', fontFamily: 'Assistant, sans-serif', scrollbarWidth: 'none', scrollbarColor: 'transparent transparent' }}
+      >
         {/* Group Filter Dropdown */}
-        <Box display="flex" justifyContent="center" alignItems="center" width="100%" p={2}>
-          <FormControl sx={{ width: '400px', mb: 2 }}>
+        <Box display="flex" justifyContent="center" alignItems="center" p={2}>
+          <FormControl sx={{ width: '90%', mt: 2}} >
             <InputLabel>בחר קבוצה</InputLabel>
             <Select
               value={selectedGroup || ''}
@@ -228,39 +402,110 @@ export default function Calendar() {
             </Select>
           </FormControl>
         </Box>
-        <BigCalendar
-            localizer={localizer}
-            rtl={true}
-            events={filteredEvents}
-            startAccessor="start"
-            endAccessor="end"
-            style={{ height: '100%' }}
-            defaultView={calendarView}
-            onView={setCalendarView}
-            views={['week', 'month', 'day', 'agenda']}
+        
+        <CalendarHeader 
+            date={displayDate}
             view={calendarView}
-            onSelectEvent={handleSelectEvent}
-            onSelectSlot={handleSelectSlot}
-            selectable
-            defaultDate={new Date()}
-            scrollToTime={new Date()}
-            culture="he" // Important for Hebrew locale display
-            messages={{
-            today: 'היום',
-            previous: 'הקודם',
-            next: 'הבא',
-            month: 'חודש',
-            week: 'שבוע',
-            day: 'יום',
-            agenda: 'סדר יום',
-            date: 'תאריך',
-            time: 'שעה',
-            event: 'אירוע',
-            noEventsInRange: 'אין אירועים בטווח זה.',
-            showMore: (total: number) => `+ עוד ${total}`,
-        }}
-        // Add more props here for customization
-      />
+            views={['week', 'month', 'day']}
+            onView={setCalendarView}
+            onNavigate={(direction: number) => {
+              if (direction === 0) { // today
+                const today = new Date();
+                const dir = today > displayDate ? 1 : -1;
+                if (format(today, 'yyyy-MM-dd') !== format(displayDate, 'yyyy-MM-dd')) {
+                    setPage([key + dir, dir]);
+                    setDisplayDate(today);
+                    setCurrentDate(today);
+                }
+              } else {
+                paginate(direction)
+              }
+            }}
+        />
+
+        {/* Calendar Container with Framer Motion */}
+        <div 
+          className="calendar-container"
+          style={{
+            height: '70%',
+            marginLeft: '2vw',
+            marginRight: '2vw',
+            overflow: 'hidden',
+            position: 'relative',
+          }}
+        >
+          <AnimatePresence custom={direction} mode="wait" initial={false}>
+            <motion.div
+              key={key}
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ type: "tween", duration: .2, ease: "easeInOut" }}
+              drag={isLongPress ? false : "x"}
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={1}
+              onDragEnd={(e, { offset, velocity }) => {
+                if (isLongPress) return;
+                const swipe = swipePower(offset.x, velocity.x);
+
+                if (swipe < -swipeConfidenceThreshold) {
+                  paginate(1);
+                } else if (swipe > swipeConfidenceThreshold) {
+                  paginate(-1);
+                }
+              }}
+              onMouseDown={handlePressStart}
+              onMouseUp={handlePressEnd}
+              onTouchStart={handlePressStart}
+              onTouchEnd={handlePressEnd}
+              style={{
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+              }}
+            >
+              <BigCalendar
+                  toolbar={false}
+                  localizer={localizer}
+                  rtl={true}
+                  events={getEventsForDate(displayDate)}
+                  startAccessor="start"
+                  endAccessor="end"
+                  style={{ height: '70%', fontFamily: 'Assistant, sans-serif', background: 'white' }}
+                  defaultView={calendarView}
+                  onView={setCalendarView}
+                  views={['week', 'month', 'day', 'agenda']}
+                  view={calendarView}
+                  date={displayDate}
+                  onNavigate={(newDate) => {
+                    if (newDate > displayDate) paginate(1);
+                    else paginate(-1);
+                  }}
+                  onSelectEvent={handleSelectEvent}
+                  onSelectSlot={handleSelectSlot}
+                  selectable
+                  scrollToTime={new Date()}
+                  culture="he"
+                  messages={{
+                  today: 'היום',
+                  previous: 'הקודם',
+                  next: 'הבא',
+                  month: 'חודש',
+                  week: 'שבוע',
+                  day: 'יום',
+                  agenda: 'סדר יום',
+                  date: 'תאריך',
+                  time: 'שעה',
+                  event: 'אירוע',
+                  noEventsInRange: 'אין אירועים בטווח זה.',
+                  showMore: (total: number) => `+ עוד ${total}`,
+              }}
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
         <Dialog 
           open={openDialog}
@@ -386,7 +631,6 @@ export default function Calendar() {
             </Button>
           </DialogActions>
         </Dialog>
-      </div>
-    </Card>
+      </Stack>
   );
 }
