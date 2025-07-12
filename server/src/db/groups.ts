@@ -84,8 +84,45 @@ export const findAllSubordinates = async (personId: string, visitedGroups = new 
 
 export const findAllSubordinatePersons = async (personId: string) => {
 	const ids = await findAllSubordinates(personId);
-	if (ids.length === 0) return [];
-	return await db.query.PersonsTable.findMany({
-		where: (fields) => inArray(fields.id, ids)
+	if (ids.length === 0) return {};
+	
+	// Get all persons with their group memberships and transactions, but only for command groups
+	const personsWithGroups = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => inArray(ptg.personId, ids),
+		with: {
+			person: {
+				with: {
+					transaction: true,
+				},
+			},
+			group: true,
+		},
 	});
+
+	// Group persons by their command groups only
+	const groupedPersons: Record<string, { group: any; persons: any[] }> = {};
+	
+	for (const ptg of personsWithGroups) {
+		const group = ptg.group;
+		// Only include groups where command is true
+		if (!group.command) continue;
+		
+		const groupId = ptg.groupId;
+		const person = ptg.person;
+		
+		if (!groupedPersons[groupId]) {
+			groupedPersons[groupId] = {
+				group: group,
+				persons: []
+			};
+		}
+		
+		// Avoid duplicate persons in the same group
+		const personExists = groupedPersons[groupId].persons.some(p => p.id === person.id);
+		if (!personExists) {
+			groupedPersons[groupId].persons.push(person);
+		}
+	}
+	
+	return groupedPersons;
 };

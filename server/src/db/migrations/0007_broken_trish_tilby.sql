@@ -1,0 +1,1 @@
+ALTER TABLE "persons" ALTER COLUMN "serviceType" SET DEFAULT 'hova';

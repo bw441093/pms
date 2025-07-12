@@ -29,9 +29,54 @@ export interface CustomPalette {
   lightBlue: string;
   error: string;
   success: string;
+  paleGreen: string;
+  paleRed: string;
+  paleYellow: string;
 }
 
 const theme = createTheme({
+  typography: {
+    fontFamily: '"Assistant", Arial, sans-serif',
+    h1: {
+      fontFamily: '"Assistant", Arial, sans-serif',
+    },
+    h2: {
+      fontFamily: '"Assistant", Arial, sans-serif',
+    },
+    h3: {
+      fontFamily: '"Assistant", Arial, sans-serif',
+    },
+    h4: {
+      fontFamily: '"Assistant", Arial, sans-serif',
+    },
+    h5: {
+      fontFamily: '"Assistant", Arial, sans-serif',
+    },
+    h6: {
+      fontFamily: '"Assistant", Arial, sans-serif',
+    },
+    body1: {
+      fontFamily: '"Assistant", Arial, sans-serif',
+    },
+    body2: {
+      fontFamily: '"Assistant", Arial, sans-serif',
+    },
+    button: {
+      fontFamily: '"Assistant", Arial, sans-serif',
+    },
+    caption: {
+      fontFamily: '"Assistant", Arial, sans-serif',
+    },
+    overline: {
+      fontFamily: '"Assistant", Arial, sans-serif',
+    },
+    subtitle1: {
+      fontFamily: '"Assistant", Arial, sans-serif',
+    },
+    subtitle2: {
+      fontFamily: '"Assistant", Arial, sans-serif',
+    },
+  },
   palette: {
     custom: {
       gray1: '#FFFFFF', // text
@@ -52,6 +97,9 @@ const theme = createTheme({
       lightBlue: '#CAD9FF',
       error: '#E94444',
       success: '#0FCE75',
+      paleGreen: '#D1EBD2',
+      paleRed: '#FFAEAE',
+      paleYellow: '#FFEAAE',
     },
   },
 });

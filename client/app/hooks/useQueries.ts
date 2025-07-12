@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMediaQuery, useTheme } from '@mui/material';
 
 import {
 	getPeopleData,
@@ -10,12 +11,13 @@ import {
 	addNewPerson,
 	getPerson,
 	getSitePersons,
+	getDirectReports,
 } from '../clients/personsClient';
 import { getCommandChainPersons } from '../clients/groupsClient';
+import type { GroupedPersons } from '../types';
 
 export function useCommandChainData(userId: string) {
-	console.log(userId);
-	return useQuery({
+	return useQuery<GroupedPersons>({
 		queryKey: ['commandChain', userId],
 		queryFn: () => getCommandChainPersons(userId),
 		refetchInterval: 10000,
@@ -27,6 +29,23 @@ export function useSiteData(userId: string) {
 	return useQuery({
 		queryKey: ['site', userId],
 		queryFn: () => getSitePersons(userId),
+		enabled: !!userId,
+	});
+}
+
+export function useDirectReportsData(userId: string) {
+	return useQuery({
+		queryKey: ['directReports', userId],
+		queryFn: () => getDirectReports(userId),
+		enabled: !!userId,
+	});
+}
+
+export function usePeopleData(userId: string) {
+	return useQuery({
+		queryKey: ['people', userId],
+		queryFn: () => getPeopleData(userId),
+		refetchInterval: 10000,
 		enabled: !!userId,
 	});
 }
@@ -174,3 +193,9 @@ export function useUserDataWithManager(userId: string) {
 		enabled: !!userId,
 	});
 }
+
+// Add mobile detection hook
+export const useIsMobile = () => {
+	const theme = useTheme();
+	return useMediaQuery(theme.breakpoints.down('md'));
+};

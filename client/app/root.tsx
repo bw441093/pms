@@ -18,13 +18,15 @@ import { useAtom } from 'jotai';
 import { userAtom } from './atoms/userAtom';
 import { getPerson } from './clients/personsClient';
 import theme from './theme';
+import { useIsMobile } from './hooks/useQueries';
 
 import type { Route } from './+types/root';
 import './app.css';
 import { SocketContext } from './contexts/SocketContext';
-import BottomNavBar from './components/BottomNavBar/BottomNavBar';
-import TopBar from './components/TopBar/TopBar';
-import AppDrawer from './components/Drawer/AppDrawer';
+import { NavBarProvider } from './contexts/NavBarContext';
+import BottomNavBar from './mobile/components/BottomNavBar/BottomNavBar';
+import TopBar from './mobile/components/TopBar/TopBar';
+import AppDrawer from './mobile/components/Drawer/AppDrawer';
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -35,7 +37,7 @@ export const links: Route.LinksFunction = () => [
 	},
 	{
 		rel: 'stylesheet',
-		href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
+		href: 'https://fonts.googleapis.com/css2?family=Assistant:wght@200;300;400;500;600;700;800&display=swap',
 	},
 	// PWA manifest
 	{ rel: 'manifest', href: '/manifest.json', crossOrigin: 'use-credentials' },
@@ -48,7 +50,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 		<html lang="en">
 			<head>
 				<meta charSet="utf-8" />
-				<meta name="viewport" content="width=device-width, initial-scale=1" />
+				<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 				<meta name="theme-color" content="#1976d2" />
 				<meta
 					name="description"
@@ -73,6 +75,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 	const location = useLocation();
 	const showBars = location.pathname !== '/login';
 	const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+	const isMobile = useIsMobile();
 
 	const handleMenuClick = () => {
 		setIsDrawerOpen(true);
@@ -93,7 +96,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 			display: 'flex', 
 			flexDirection: 'column' 
 		}}>
-			{showBars && (
+			{showBars && isMobile && (
 				<>
 					<TopBar 
 						onMenuClick={handleMenuClick} 
@@ -107,13 +110,15 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 			)}
 			<main style={{ 
 				flex: 1,
-				marginTop: showBars ? '56px' : 0, // Height of TopBar
-				marginBottom: showBars ? '56px' : 0, // Height of BottomNavBar
-				overflow: 'auto'
+				marginTop: showBars && isMobile ? '56px' : 0, // Height of TopBar
+				marginBottom: showBars && isMobile ? '56px' : 0, // Height of BottomNavBar
+				overflow: 'auto',
+				minHeight: 0, // Allows flex shrinking
+				position: 'relative', // For better positioning context
 			}}>
 				{children}
 			</main>
-			{showBars && <BottomNavBar />}
+			{showBars && isMobile && <BottomNavBar />}
 		</div>
 	);
 }
@@ -125,6 +130,7 @@ function AppContent() {
 	const navigate = useNavigate();
 	const [socket, setSocket] = React.useState<WebSocket | null>(null);
 	const [, setUser] = useAtom(userAtom);
+	const isMobile = useIsMobile();
 
 	React.useEffect(() => {
 		const token = localStorage.getItem('login_token');
@@ -142,6 +148,22 @@ function AppContent() {
 			Notification.requestPermission();
 		}
 	}, [location, navigate, setUser]);
+
+	// Global redirect logic based on device type
+	React.useEffect(() => {
+		// Skip redirect for login page
+		if (location.pathname === '/login') return;
+		
+		// Desktop users should be on /dashboard (redirect from any other page)
+		if (!isMobile && location.pathname !== '/dashboard') {
+			navigate('/dashboard', { replace: true });
+		}
+		
+		// Mobile users should be on / (redirect from dashboard)
+		if (isMobile && location.pathname === '/dashboard') {
+			navigate('/', { replace: true });
+		}
+	}, [isMobile, location.pathname, navigate]);
 
 	React.useEffect(() => {
 		const connectionString =
@@ -183,9 +205,11 @@ function AppContent() {
 			<ThemeProvider theme={theme}>
 				<QueryClientProvider client={queryClient}>
 					<SocketContext.Provider value={{ socket }}>
-						<AppLayout>
-							<Outlet />
-						</AppLayout>
+						<NavBarProvider>
+							<AppLayout>
+								<Outlet />
+							</AppLayout>
+						</NavBarProvider>
 					</SocketContext.Provider>
 				</QueryClientProvider>
 			</ThemeProvider>
