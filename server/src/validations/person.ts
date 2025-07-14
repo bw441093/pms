@@ -33,8 +33,13 @@ export const postPersonSchema = z
 		site: z.string(),
 		email: z.string().email(),
 		serviceType: z.string(),
+		systemRoles: z.array(
+			z.object({
+				name: z.string(),
+				opts: z.array(z.string()).optional(),
+			})
+		),
 	})
-	.merge(systemRolesSchema);
 
 export const updateStatusSchema = z.object({
 	status: z.string(),

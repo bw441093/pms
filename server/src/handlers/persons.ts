@@ -43,13 +43,13 @@ dayjs.extend(utc);
 
 export const postPersonHandler = async (req: Request, res: Response) => {
 	try {
-		const { email, name, manager, site, roles, serviceType } = req.body as PostPerson;
+		const { email, name, manager, site, systemRoles, serviceType } = req.body as PostPerson;
 		logger.info(`Creating user with email: ${email}`, {
 			email,
 			name,
 			manager,
 			site,
-			roles,
+			systemRoles,
 			serviceType,
 		});
 
@@ -65,7 +65,7 @@ export const postPersonHandler = async (req: Request, res: Response) => {
 		logger.info(`Creating person with id: ${userId}`);
 		const promises = [
 			createPerson(userId, name, site, manager, serviceType),
-			...roles.map((role: any) => createSystemRole(role.name, role.opts, userId)),
+			...systemRoles.map((role: any) => createSystemRole(role.name, role.opts, userId)),
 		];
 		await Promise.all(promises);
 
