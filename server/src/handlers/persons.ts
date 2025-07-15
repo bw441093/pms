@@ -21,6 +21,7 @@ import {
 	findSitePersons,
 } from '../db/persons';
 import { createSystemRole, deleteUserSystemRoles } from '../db/systemRoles';
+import { addPersonToGroup, findCommandGroupsByAdmin, createGroup } from '../db/groups';
 import {
 	completeTransaction,
 	createTransaction,
@@ -43,7 +44,7 @@ dayjs.extend(utc);
 
 export const postPersonHandler = async (req: Request, res: Response) => {
 	try {
-		const { email, name, manager, site, systemRoles, serviceType } = req.body as PostPerson;
+		const { email, name, manager, site, systemRoles, serviceType, selectedGroupId, newGroupName } = req.body as PostPerson;
 		logger.info(`Creating user with email: ${email}`, {
 			email,
 			name,
@@ -51,7 +52,19 @@ export const postPersonHandler = async (req: Request, res: Response) => {
 			site,
 			systemRoles,
 			serviceType,
+			selectedGroupId,
+			newGroupName,
 		});
+
+		// Debug logging for group fields
+		logger.info(`Debug - selectedGroupId: ${selectedGroupId}, newGroupName: ${newGroupName}`);
+		logger.info(`Debug - selectedGroupId type: ${typeof selectedGroupId}, newGroupName type: ${typeof newGroupName}`);
+		
+		// Check for string "undefined" values and convert to actual undefined
+		const cleanSelectedGroupId = selectedGroupId === 'undefined' ? undefined : selectedGroupId;
+		const cleanNewGroupName = newGroupName === 'undefined' ? undefined : newGroupName;
+		
+		logger.info(`Debug - cleaned selectedGroupId: ${cleanSelectedGroupId}, cleaned newGroupName: ${cleanNewGroupName}`);
 
 		const existingUser = await findUserByEmail(email);
 		if (existingUser) {
@@ -68,6 +81,69 @@ export const postPersonHandler = async (req: Request, res: Response) => {
 			...systemRoles.map((role: any) => createSystemRole(role.name, role.opts, userId)),
 		];
 		await Promise.all(promises);
+
+		// If the person has a manager, add them to the manager's command groups
+		if (manager) {
+			logger.info(`Adding person ${userId} to manager's command groups`);
+			try {
+				const managerCommandGroups = await findCommandGroupsByAdmin(manager);
+				const groupPromises = managerCommandGroups.map(group => 
+					addPersonToGroup(userId, group.groupId, 'member')
+				);
+				await Promise.all(groupPromises);
+				logger.info(`Added person to ${managerCommandGroups.length} command groups`);
+			} catch (err) {
+				logger.error(`Error adding person to manager's groups: ${err}`);
+				// Don't fail the entire operation if group assignment fails
+			}
+		}
+
+		// Handle group assignment for personnelManager role
+		const hasPersonnelManagerRole = systemRoles.some((role: any) => role.name === 'personnelManager');
+		if (hasPersonnelManagerRole) {
+			logger.info(`Handling group assignment for personnelManager: ${userId}`);
+			logger.info(`Debug - selectedGroupId: "${cleanSelectedGroupId}", newGroupName: "${cleanNewGroupName}"`);
+			
+			// Normalize empty strings to undefined
+			const normalizedSelectedGroupId = cleanSelectedGroupId && cleanSelectedGroupId.trim() !== '' ? cleanSelectedGroupId : undefined;
+			const normalizedNewGroupName = cleanNewGroupName && cleanNewGroupName.trim() !== '' ? cleanNewGroupName : undefined;
+			
+			logger.info(`Debug - normalized selectedGroupId: "${normalizedSelectedGroupId}", normalized newGroupName: "${normalizedNewGroupName}"`);
+			
+			try {
+				let groupId: string;
+				
+				if (normalizedSelectedGroupId) {
+					// User selected an existing group
+					groupId = normalizedSelectedGroupId;
+					logger.info(`Adding personnelManager ${userId} as admin to existing group: ${groupId}`);
+				} else if (normalizedNewGroupName) {
+					// User wants to create a new group
+					logger.info(`Creating new command group: ${normalizedNewGroupName} for personnelManager: ${userId}`);
+					const newGroup = await createGroup(normalizedNewGroupName, true); // command = true
+					if (!newGroup) {
+						logger.error(`Failed to create new group: ${normalizedNewGroupName}`);
+						res.status(500).send('Failed to create new group');
+						return;
+					}
+					groupId = newGroup.groupId;
+					logger.info(`Created new group ${groupId} with name: ${normalizedNewGroupName}`);
+				} else {
+					// This should not happen if frontend validation is correct
+					logger.error(`PersonnelManager ${userId} has no group selection or new group name`);
+					res.status(400).send('PersonnelManager must either select an existing group or provide a new group name');
+					return;
+				}
+				
+				// Add the person as admin to the selected/created group
+				await addPersonToGroup(userId, groupId, 'admin');
+				logger.info(`Added personnelManager ${userId} as admin to group: ${groupId}`);
+				
+			} catch (err) {
+				logger.error(`Error handling group assignment for personnelManager: ${err}`);
+				// Don't fail the entire operation if group assignment fails
+			}
+		}
 
 		logger.info(`Finished creating person with id: ${userId}`);
 		res.status(200).send(userId);
@@ -269,8 +345,19 @@ export const updateAlertHandler = async (req: Request, res: Response) => {
 export const updatePersonDetailsHandler = async (req: Request, res: Response) => {
 	try {
 		const { id } = req.params as Id;
-		const { name, manager, site, email, roles, serviceType } = req.body as UpdatePersonDetails;
+		const { name, manager, site, email, roles, serviceType, selectedGroupId, newGroupName } = req.body as UpdatePersonDetails;
 		logger.info(`Update person details for user: ${id}`);
+		
+		// Debug logging for group fields
+		logger.info(`Debug - UpdatePersonDetails selectedGroupId: ${selectedGroupId}, newGroupName: ${newGroupName}`);
+		logger.info(`Debug - UpdatePersonDetails selectedGroupId type: ${typeof selectedGroupId}, newGroupName type: ${typeof newGroupName}`);
+		
+		// Check for string "undefined" values and convert to actual undefined
+		const cleanSelectedGroupId = selectedGroupId === 'undefined' ? undefined : selectedGroupId;
+		const cleanNewGroupName = newGroupName === 'undefined' ? undefined : newGroupName;
+		
+		logger.info(`Debug - UpdatePersonDetails cleaned selectedGroupId: ${cleanSelectedGroupId}, cleaned newGroupName: ${cleanNewGroupName}`);
+		
 		await updatePersonDetails(id, { name, manager, site, serviceType });
 		if (email) await updateUserEmail(id, email);
 		if (roles) {
@@ -278,6 +365,53 @@ export const updatePersonDetailsHandler = async (req: Request, res: Response) =>
 
 			const promises = roles.map(({ name, opts }: { name: string; opts: string[] }) => createSystemRole(name, opts, id));
 			await Promise.all(promises);
+			
+			// Handle group assignment for personnelManager role
+			const hasPersonnelManagerRole = roles.some((role: any) => role.name === 'personnelManager');
+			if (hasPersonnelManagerRole) {
+				logger.info(`Handling group assignment for personnelManager in update: ${id}`);
+				logger.info(`Debug - Update selectedGroupId: "${cleanSelectedGroupId}", newGroupName: "${cleanNewGroupName}"`);
+				
+				// Normalize empty strings to undefined
+				const normalizedSelectedGroupId = cleanSelectedGroupId && cleanSelectedGroupId.trim() !== '' ? cleanSelectedGroupId : undefined;
+				const normalizedNewGroupName = cleanNewGroupName && cleanNewGroupName.trim() !== '' ? cleanNewGroupName : undefined;
+				
+				logger.info(`Debug - Update normalized selectedGroupId: "${normalizedSelectedGroupId}", normalized newGroupName: "${normalizedNewGroupName}"`);
+				
+				try {
+					let groupId: string;
+					
+					if (normalizedSelectedGroupId) {
+						// User selected an existing group
+						groupId = normalizedSelectedGroupId;
+						logger.info(`Adding personnelManager ${id} as admin to existing group: ${groupId}`);
+					} else if (normalizedNewGroupName) {
+						// User wants to create a new group
+						logger.info(`Creating new command group: ${normalizedNewGroupName} for personnelManager: ${id}`);
+						const newGroup = await createGroup(normalizedNewGroupName, true); // command = true
+						if (!newGroup) {
+							logger.error(`Failed to create new group: ${normalizedNewGroupName}`);
+							res.status(500).send('Failed to create new group');
+							return;
+						}
+						groupId = newGroup.groupId;
+						logger.info(`Created new group ${groupId} with name: ${normalizedNewGroupName}`);
+					} else {
+						// This should not happen if frontend validation is correct
+						logger.error(`PersonnelManager ${id} has no group selection or new group name in update`);
+						res.status(400).send('PersonnelManager must either select an existing group or provide a new group name');
+						return;
+					}
+					
+					// Add the person as admin to the selected/created group
+					await addPersonToGroup(id, groupId, 'admin');
+					logger.info(`Added personnelManager ${id} as admin to group: ${groupId}`);
+					
+				} catch (err) {
+					logger.error(`Error handling group assignment for personnelManager in update: ${err}`);
+					// Don't fail the entire operation if group assignment fails
+				}
+			}
 		}
 
 		logger.info(`Done updating person details for user: ${id}`);

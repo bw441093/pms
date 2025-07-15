@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import authorize from '../middleware/authorization';
-import { getGroupsByPersonIdHandler, getGroupByIdHandler, getPersonsByGroupIdHandler, getPersonRoleInGroupHandler, getCommandChainHandler } from '../handlers/groups';
+import { getGroupsByPersonIdHandler, getGroupByIdHandler, getPersonsByGroupIdHandler, getPersonRoleInGroupHandler, getCommandChainHandler, getSubordinateCommandGroupsHandler, checkGroupNameExistsHandler } from '../handlers/groups';
 
 const router = Router();
 
@@ -46,6 +46,24 @@ router.get('/person/:personId/command-chain', async (req, res) => {
 	} catch (error) {
 		console.error('Error getting command chain:', error);
 		res.status(500).json({ error: 'Failed to get command chain' });
+	}
+});
+
+router.get('/subordinate-command-groups/:managerId', async (req, res) => {
+	try {
+		await getSubordinateCommandGroupsHandler(req, res);
+	} catch (error) {
+		console.error('Error getting subordinate command groups:', error);
+		res.status(500).json({ error: 'Failed to get subordinate command groups' });
+	}
+});
+
+router.get('/check-name-exists/:name', async (req, res) => {
+	try {
+		await checkGroupNameExistsHandler(req, res);
+	} catch (error) {
+		console.error('Error checking group name exists:', error);
+		res.status(500).json({ error: 'Failed to check group name' });
 	}
 });
 

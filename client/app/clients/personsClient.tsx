@@ -87,6 +87,8 @@ export async function updatePersonDetails(
 		email?: string;
 		systemRoles?: { name: string; opts: string[] }[];
 		serviceType?: string;
+		selectedGroupId?: string;
+		newGroupName?: string;
 	}
 ) {
 	const response = await apiClient.put(`/users/${userId}/details`, details);
@@ -99,7 +101,9 @@ export async function addNewPerson(
 		site: string,
 		email: string,
 		systemRoles: { name: string; opts: string[] }[],
-		serviceType: string
+		serviceType: string,
+		selectedGroupId?: string,
+		newGroupName?: string
 	) {
 	const response = await apiClient.post('/users', {
 		name,
@@ -108,6 +112,8 @@ export async function addNewPerson(
 		email,
 		systemRoles,
 		serviceType,
+		selectedGroupId,
+		newGroupName,
 	});
 	return response.data;
 }

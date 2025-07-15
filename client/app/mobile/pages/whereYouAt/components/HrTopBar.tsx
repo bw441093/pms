@@ -50,6 +50,11 @@ const HrTopBar = ({ onSearch, onFiltersChange, initialFilters }: TopBarProps) =>
 
 	const currentUser = useAtomValue(userAtom);
 
+	// Check if user has hrManager or admin role
+	const canAddUsers = currentUser?.personSystemRoles?.some(pr => 
+		pr.role.name === 'hrManager' || pr.role.name === 'admin'
+	) ?? false;
+
 	const debouncedSearch = useCallback(
 		debounce((term: string) => {
 			onSearch(term);
@@ -119,28 +124,30 @@ const HrTopBar = ({ onSearch, onFiltersChange, initialFilters }: TopBarProps) =>
 						marginTop: '1vh !important'
 					}}
 				>
-										<Box 
-						sx={{ 
-							backgroundColor: '#000',
-							borderRadius: '5px',
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'center',
-							width: '24px',
-							height: '24px',
-						}}
-					>
-						<IconButton
-							size="small"
-							aria-label="הוסף משתמש"
-							onClick={handleAddPersonOpen}
+					{canAddUsers && (
+						<Box 
 							sx={{ 
-								color: 'white',
+								backgroundColor: '#000',
+								borderRadius: '5px',
+								display: 'flex',
+								alignItems: 'center',
+								justifyContent: 'center',
+								width: '24px',
+								height: '24px',
 							}}
 						>
-							<AddIcon sx={{ fontSize: '17px' }} />
-						</IconButton>
-					</Box>
+							<IconButton
+								size="small"
+								aria-label="הוסף משתמש"
+								onClick={handleAddPersonOpen}
+								sx={{ 
+									color: 'white',
+								}}
+							>
+								<AddIcon sx={{ fontSize: '17px' }} />
+							</IconButton>
+						</Box>
+					)}
 					<Typography
 						variant="h6"
 						component="div"
@@ -175,13 +182,15 @@ const HrTopBar = ({ onSearch, onFiltersChange, initialFilters }: TopBarProps) =>
 			)}
 
 			{/* Add Person Modal */}
-			<AddPersonModal
-				open={addPersonModalOpen}
-				onClose={handleAddPersonClose}
-				onSuccess={() => {
-					console.log('המשתמש נוסף בהצלחה');
-				}}
-			/>
+			{canAddUsers && (
+				<AddPersonModal
+					open={addPersonModalOpen}
+					onClose={handleAddPersonClose}
+					onSuccess={() => {
+						console.log('המשתמש נוסף בהצלחה');
+					}}
+				/>
+			)}
 
 			{/* Filter Modal */}
 			<FilterModal

@@ -1,7 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 
 import { db } from './db';
-import { PersonsTable, PersonsToSystemRoles, SystemRolesTable } from './schema';
+import { PersonsTable, PersonsToSystemRoles, SystemRolesTable, PersonsToGroups, GroupsTable } from './schema';
 
 export const find = async () => {
 	const user = await db.query.PersonsTable.findMany({
@@ -62,11 +62,13 @@ export const findManagers = async () => {
 			userId: PersonsTable.id,
 			name: PersonsTable.name,
 			site: PersonsTable.site,
+			groupId: GroupsTable.groupId,
+			groupName: GroupsTable.name,
 		})
 		.from(PersonsTable)
-		.innerJoin(PersonsToSystemRoles, eq(PersonsTable.id, PersonsToSystemRoles.userId))
-		.innerJoin(SystemRolesTable, eq(PersonsToSystemRoles.roleId, SystemRolesTable.id))
-		.where(eq(SystemRolesTable.name, 'personnelManager'));
+		.innerJoin(PersonsToGroups, eq(PersonsTable.id, PersonsToGroups.personId))
+		.innerJoin(GroupsTable, eq(PersonsToGroups.groupId, GroupsTable.groupId))
+		.where(and(eq(PersonsToGroups.groupRole, 'admin'), eq(GroupsTable.command, true)));
 
 	return users;
 };

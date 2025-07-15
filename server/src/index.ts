@@ -20,6 +20,7 @@ import http from 'http';
 import { WebSocketServer } from 'ws';
 import { setWss } from './websocket';
 import { uuid } from 'drizzle-orm/gel-core';
+import { seedDatabase } from './db/seed';
 
 const startServer = async () => {
 	const app: Express = await loadApp();
@@ -114,5 +115,6 @@ const injectData = async () => {
 	}
 };
 
-injectData(); // TBD - should be removed
+injectData();
+seedDatabase();
 startServer();

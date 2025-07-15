@@ -34,6 +34,14 @@ interface Manager {
 	userId: string;
 	name: string;
 	site: string;
+	groupName: string;
+	groupId: string;
+}
+
+interface Group {
+	groupId: string;
+	name: string;
+	command: boolean;
 }
 
 interface AddPersonModalProps {
@@ -55,8 +63,11 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 		roles: [] as string[],
 		siteManagerSite: '', // New field for site manager's specific site
 		serviceType: '',
+		selectedGroupId: '', // New field for personnelManager group selection
+		newGroupName: '', // New field for personnelManager new group creation
 	});
 	const [managers, setManagers] = useState<Manager[]>([]);
+	const [availableGroups, setAvailableGroups] = useState<Group[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
 	const addNewPersonMutation = useAddNewPerson();
@@ -66,6 +77,13 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 			fetchManagers();
 		}
 	}, [open]);
+
+	// Fetch available groups when manager changes (for personnelManager role)
+	useEffect(() => {
+		if (formData.roles.includes('personnelManager')) {
+			fetchAvailableGroups();
+		}
+	}, [formData.manager, formData.roles]);
 
 	const fetchManagers = async () => {
 		try {
@@ -79,6 +97,38 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 		} catch (err) {
 			console.error('Error fetching managers:', err);
 			setError('Failed to load managers');
+		}
+	};
+
+	const fetchAvailableGroups = async () => {
+		try {
+			const token = localStorage.getItem('login_token');
+			const managerId = formData.manager || 'none'; // Use 'none' for no manager
+			const response = await axios.get(`/api/groups/subordinate-command-groups/${managerId}`, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+			setAvailableGroups(response.data);
+		} catch (err) {
+			console.error('Error fetching available groups:', err);
+			setError('Failed to load available groups');
+		}
+	};
+
+	const checkGroupNameExists = async (groupName: string): Promise<boolean> => {
+		try {
+			const token = localStorage.getItem('login_token');
+			const response = await axios.get(`/api/groups/check-name-exists/${encodeURIComponent(groupName)}`, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+			return response.data.exists;
+		} catch (err) {
+			console.error('Error checking group name:', err);
+			setError('Failed to check group name');
+			return false;
 		}
 	};
 
@@ -100,10 +150,20 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 				? prev.siteManagerSite
 				: '';
 
+			// Clear group fields if personnelManager role is removed
+			const newSelectedGroupId = newRoles.includes('personnelManager')
+				? prev.selectedGroupId
+				: '';
+			const newNewGroupName = newRoles.includes('personnelManager')
+				? prev.newGroupName
+				: '';
+
 			return {
 				...prev,
 				roles: newRoles,
 				siteManagerSite: newSiteManagerSite,
+				selectedGroupId: newSelectedGroupId,
+				newGroupName: newNewGroupName,
 			};
 		});
 	};
@@ -124,6 +184,27 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 			return;
 		}
 
+		// Check if personnelManager role is selected but no group selection or new group name
+		if (formData.roles.includes('personnelManager')) {
+			if (!formData.selectedGroupId && !formData.newGroupName) {
+				setError('מנהל כוח אדם חייב לבחור קבוצה קיימת או להזין שם לקבוצה חדשה');
+				return;
+			}
+			if (formData.selectedGroupId && formData.newGroupName) {
+				setError('אנא בחר קבוצה קיימת או הזן שם לקבוצה חדשה, לא שניהם');
+				return;
+			}
+
+			// Check if the new group name already exists
+			if (formData.newGroupName) {
+				const groupExists = await checkGroupNameExists(formData.newGroupName);
+				if (groupExists) {
+					setError(`שם הקבוצה "${formData.newGroupName}" כבר קיים במערכת. אנא בחר שם אחר.`);
+					return;
+				}
+			}
+		}
+
 		setLoading(true);
 		setError('');
 
@@ -138,7 +219,20 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					opts: role === 'siteManager' ? [formData.siteManagerSite] : [],
 				})),
 				serviceType: formData.serviceType,
+				// Only include group fields if personnelManager role is selected
+				...(formData.roles.includes('personnelManager') && {
+					...(formData.selectedGroupId && formData.selectedGroupId.trim() !== '' && {
+						selectedGroupId: formData.selectedGroupId
+					}),
+					...(formData.newGroupName && formData.newGroupName.trim() !== '' && {
+						newGroupName: formData.newGroupName
+					})
+				})
 			};
+
+			console.log('Debug - Sending payload:', payload);
+			console.log('Debug - selectedGroupId:', payload.selectedGroupId, 'type:', typeof payload.selectedGroupId);
+			console.log('Debug - newGroupName:', payload.newGroupName, 'type:', typeof payload.newGroupName);
 
 			await addNewPersonMutation.mutate(payload);
 
@@ -151,6 +245,8 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 				roles: [],
 				siteManagerSite: '',
 				serviceType: '',
+				selectedGroupId: '',
+				newGroupName: '',
 			});
 
 			onSuccess?.();
@@ -172,12 +268,15 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 			roles: [],
 			siteManagerSite: '',
 			serviceType: '',
+			selectedGroupId: '',
+			newGroupName: '',
 		});
 		setError('');
 		onClose();
 	};
 
 	const hasSiteManagerRole = formData.roles.includes('siteManager');
+	const hasPersonnelManagerRole = formData.roles.includes('personnelManager');
 
 	return (
 		<Modal
@@ -273,7 +372,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					</FormControl>
 
 					<FormControl fullWidth>
-						<InputLabel>(רשות) מנהל</InputLabel>
+						<InputLabel>(רשות) מפקד</InputLabel>
 						<Select
 							sx={{
 								'& .MuiSelect-select': {
@@ -281,16 +380,16 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 								},
 							}}
 							value={formData.manager}
-							label="(רשות) מנהל"
+							label="(רשות) מפקד"
 							inputProps={{ style: { textAlign: 'right' } }}
 							onChange={(e) => handleInputChange('manager', e.target.value)}
 						>
 							<MenuItem value="">
-								<em>אין מנהל</em>
+								<em>אין מפקד</em>
 							</MenuItem>
 							{managers.map((manager) => (
 								<MenuItem key={manager.userId} value={manager.userId}>
-									{manager.name} ({manager.site})
+									{manager.name} ({manager.site}) ({manager.groupName})
 								</MenuItem>
 							))}
 						</Select>
@@ -367,6 +466,65 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 								))}
 							</Select>
 						</FormControl>
+					)}
+
+					{/* Personnel Manager Group Selection */}
+					{hasPersonnelManagerRole && (
+						<>
+							{/* Show group selection dropdown only if no new group name is entered */}
+							{!formData.newGroupName && (
+								<FormControl fullWidth required>
+									<InputLabel>בחר קבוצה קיימת לפקד עליה</InputLabel>
+									<Select
+										sx={{
+											'& .MuiSelect-select': {
+												textAlign: 'right',
+											},
+										}}
+										value={formData.selectedGroupId}
+										label="בחר קבוצה קיימת לפקד עליה"
+										onChange={(e) => {
+											handleInputChange('selectedGroupId', e.target.value);
+											// Clear new group name when selecting existing group
+											if (e.target.value) {
+												handleInputChange('newGroupName', '');
+											}
+										}}
+									>
+										<MenuItem value="">
+											<em>בחר קבוצה או הזן שם חדש למטה</em>
+										</MenuItem>
+										{availableGroups.map((group) => (
+											<MenuItem key={group.groupId} value={group.groupId}>
+												{group.name}
+											</MenuItem>
+										))}
+									</Select>
+								</FormControl>
+							)}
+
+							{/* Show new group name field only if no existing group is selected */}
+							{!formData.selectedGroupId && (
+								<TextField
+									label="צור קבוצה חדשה לפקד עליה"
+									value={formData.newGroupName}
+									onChange={(e) => {
+										handleInputChange('newGroupName', e.target.value);
+										// Clear selected group when typing new group name
+										if (e.target.value) {
+											handleInputChange('selectedGroupId', '');
+										}
+									}}
+									fullWidth
+									required
+									placeholder="הזן שם לקבוצה חדשה או בחר קבוצה קיימת למעלה"
+								/>
+							)}
+
+							<Typography variant="caption" sx={{ textAlign: 'right', color: 'text.secondary' }}>
+								* חובה לבחור קבוצה קיימת או ליצור קבוצה חדשה
+							</Typography>
+						</>
 					)}
 
 					<Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>

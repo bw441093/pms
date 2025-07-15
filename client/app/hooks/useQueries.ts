@@ -60,6 +60,8 @@ export function useAddNewPerson() {
 			email,
 			systemRoles,
 			serviceType,
+			selectedGroupId,
+			newGroupName,
 		}: {
 			name: string;
 			manager: string;
@@ -67,7 +69,9 @@ export function useAddNewPerson() {
 			email: string;
 			systemRoles: { name: string; opts: string[]  }[];
 			serviceType: string;
-		}) => addNewPerson(name, manager, site, email, systemRoles, serviceType),
+			selectedGroupId?: string;
+			newGroupName?: string;
+		}) => addNewPerson(name, manager, site, email, systemRoles, serviceType, selectedGroupId, newGroupName),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['people'] });
 		},
@@ -155,6 +159,8 @@ export function useUpdatePersonDetails() {
 			email,
 			systemRoles,
 			serviceType,
+			selectedGroupId,
+			newGroupName,
 		}: {
 			userId: string;
 			name?: string;
@@ -163,7 +169,9 @@ export function useUpdatePersonDetails() {
 			email?: string;
 			systemRoles?: { name: string; opts: string[] }[];
 			serviceType?: string;
-		}) => updatePersonDetails(userId, { name, manager, site, email, systemRoles, serviceType }),
+			selectedGroupId?: string;
+			newGroupName?: string;
+		}) => updatePersonDetails(userId, { name, manager, site, email, systemRoles, serviceType, selectedGroupId, newGroupName }),
 		onSuccess: () => {
 			// Invalidate people queries to refresh data after status update
 			queryClient.invalidateQueries({ queryKey: ['people'] });

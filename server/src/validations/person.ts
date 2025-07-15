@@ -39,6 +39,8 @@ export const postPersonSchema = z
 				opts: z.array(z.string()).optional(),
 			})
 		),
+		selectedGroupId: z.string().optional(), // For personnelManager role - existing group selection
+		newGroupName: z.string().optional(), // For personnelManager role - new group creation
 	})
 
 export const updateStatusSchema = z.object({
@@ -67,4 +69,6 @@ export const updatePersonDetailsSchema = z.object({
 	site: z.string().optional(),
 	email: z.string().email().optional(),
 	serviceType: z.string().optional(),
+	selectedGroupId: z.string().optional(), // For personnelManager role - existing group selection
+	newGroupName: z.string().optional(), // For personnelManager role - new group creation
 }).merge(systemRolesSchema);

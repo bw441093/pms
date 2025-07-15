@@ -126,3 +126,68 @@ export const findAllSubordinatePersons = async (personId: string) => {
 	
 	return groupedPersons;
 };
+
+export const addPersonToGroup = async (personId: string, groupId: string, groupRole: 'admin' | 'member' = 'member') => {
+	const result = await db.insert(PersonsToGroups).values({
+		personId,
+		groupId,
+		groupRole,
+	}).returning({ personId: PersonsToGroups.personId, groupId: PersonsToGroups.groupId });
+	
+	return result[0];
+};
+
+export const createGroup = async (name: string, command: boolean = true) => {
+	const result = await db.insert(GroupsTable).values({
+		name,
+		command,
+	}).returning({ groupId: GroupsTable.groupId, name: GroupsTable.name });
+	
+	return result[0];
+};
+
+export const findGroupByName = async (name: string) => {
+	const result = await db.query.GroupsTable.findFirst({
+		where: eq(GroupsTable.name, name),
+	});
+	
+	return result;
+};
+
+export const findAllSubordinateCommandGroups = async (managerId: string) => {
+	// If no manager or 'none', return all command groups
+	if (!managerId || managerId === 'none') {
+		const allCommandGroups = await db.query.GroupsTable.findMany({
+			where: (groups) => eq(groups.command, true),
+		});
+		return allCommandGroups;
+	}
+	
+	// Find all subordinates of the manager
+	const subordinateIds = await findAllSubordinates(managerId);
+	
+	// Find all command groups where any subordinate is admin
+	if (subordinateIds.length === 0) {
+		return [];
+	}
+	
+	const subordinateAdminGroups = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => and(
+			inArray(ptg.personId, subordinateIds), 
+			eq(ptg.groupRole, 'admin')
+		),
+		with: { group: true }
+	});
+	
+	// Filter for command groups only and return unique groups
+	const commandGroups = subordinateAdminGroups
+		.filter(ptg => ptg.group.command)
+		.map(ptg => ptg.group);
+	
+	// Remove duplicates by groupId
+	const uniqueGroups = commandGroups.filter((group, index, self) => 
+		index === self.findIndex(g => g.groupId === group.groupId)
+	);
+	
+	return uniqueGroups;
+};

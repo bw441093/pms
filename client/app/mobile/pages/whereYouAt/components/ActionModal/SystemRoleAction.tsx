@@ -41,6 +41,14 @@ interface Manager {
 	userId: string;
 	name: string;
 	site: string;
+	groupId: string;
+	groupName: string;
+}
+
+interface Group {
+	groupId: string;
+	name: string;
+	command: boolean;
 }
 
 const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
@@ -54,6 +62,11 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 	const [currentUser, setCurrentUser] = useState<Person | null>(null);
 	const [userLoading, setUserLoading] = useState(true);
 	const updatePersonDetailsMutation = useUpdatePersonDetails();
+
+	// Personnel Manager group selection state
+	const [availableGroups, setAvailableGroups] = useState<Group[]>([]);
+	const [selectedGroupId, setSelectedGroupId] = useState('');
+	const [newGroupName, setNewGroupName] = useState('');
 
 	// Person details form state
 	const [personDetails, setPersonDetails] = useState({
@@ -94,16 +107,56 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 		fetchManagers();
 	}, []);
 
+	// Fetch available groups when manager changes or personnelManager role is selected
+	useEffect(() => {
+		if (selectedRoles.includes('personnelManager')) {
+			fetchAvailableGroups();
+		}
+	}, [personDetails.manager, selectedRoles]);
+
 	const fetchManagers = async () => {
 		try {
 			setManagersLoading(true);
 			const response = await axios.get('/api/users/managers');
+			console.log('response.data', response.data);
 			setManagers(response.data);
 		} catch (err) {
 			console.error('Error fetching managers:', err);
 			setError('Failed to load managers');
 		} finally {
 			setManagersLoading(false);
+		}
+	};
+
+	const fetchAvailableGroups = async () => {
+		try {
+			const token = localStorage.getItem('login_token');
+			const managerId = personDetails.manager || 'none'; // Use 'none' for no manager
+			const response = await axios.get(`/api/groups/subordinate-command-groups/${managerId}`, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+			setAvailableGroups(response.data);
+		} catch (err) {
+			console.error('Error fetching available groups:', err);
+			setError('Failed to load available groups');
+		}
+	};
+
+	const checkGroupNameExists = async (groupName: string): Promise<boolean> => {
+		try {
+			const token = localStorage.getItem('login_token');
+			const response = await axios.get(`/api/groups/check-name-exists/${encodeURIComponent(groupName)}`, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+			return response.data.exists;
+		} catch (err) {
+			console.error('Error checking group name:', err);
+			setError('Failed to check group name');
+			return false;
 		}
 	};
 
@@ -180,6 +233,12 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 				setSiteManagerSites([]);
 			}
 
+			// Clear group fields if personnelManager role is removed
+			if (role === 'personnelManager' && !newRoles.includes('personnelManager')) {
+				setSelectedGroupId('');
+				setNewGroupName('');
+			}
+
 			return newRoles;
 		});
 		setError(''); // Clear any previous errors
@@ -209,6 +268,27 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 		) {
 			setError('מנהל אתר חייב לבחור לפחות אתר אחד');
 			return;
+		}
+
+		// Validate personnelManager has group selection or new group name
+		if (selectedRoles.includes('personnelManager')) {
+			if (!selectedGroupId && !newGroupName) {
+				setError('מנהל כוח אדם חייב לבחור קבוצה קיימת או להזין שם לקבוצה חדשה');
+				return;
+			}
+			if (selectedGroupId && newGroupName) {
+				setError('אנא בחר קבוצה קיימת או הזן שם לקבוצה חדשה, לא שניהם');
+				return;
+			}
+
+			// Check if the new group name already exists
+			if (newGroupName) {
+				const groupExists = await checkGroupNameExists(newGroupName);
+				if (groupExists) {
+					setError(`שם הקבוצה "${newGroupName}" כבר קיים במערכת. אנא בחר שם אחר.`);
+					return;
+				}
+			}
 		}
 
 		// Check if user has permission to make these changes
@@ -253,7 +333,20 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 					opts: role === 'siteManager' ? siteManagerSites : [],
 				})) || [],
 				serviceType: personDetails.serviceType,
+				// Only include group fields if personnelManager role is selected
+				...(selectedRoles.includes('personnelManager') && {
+					...(selectedGroupId && selectedGroupId.trim() !== '' && {
+						selectedGroupId: selectedGroupId
+					}),
+					...(newGroupName && newGroupName.trim() !== '' && {
+						newGroupName: newGroupName
+					})
+				})
 			};
+
+			console.log('Debug - SystemRoleAction sending payload:', detailsPayload);
+			console.log('Debug - selectedGroupId:', detailsPayload.selectedGroupId, 'type:', typeof detailsPayload.selectedGroupId);
+			console.log('Debug - newGroupName:', detailsPayload.newGroupName, 'type:', typeof detailsPayload.newGroupName);
 
 			await updatePersonDetailsMutation.mutate(detailsPayload);
 
@@ -279,6 +372,8 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 			</Box>
 		);
 	}
+
+	const hasPersonnelManagerRole = selectedRoles.includes('personnelManager');
 
 	return (
 		<Box sx={{ width: '100%' }}>
@@ -349,7 +444,7 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 							</FormControl>
 
 							<FormControl fullWidth>
-								<InputLabel>(רשות) מנהל</InputLabel>
+								<InputLabel>(רשות) מפקד</InputLabel>
 								<Select
 									sx={{
 										'& .MuiSelect-select': {
@@ -357,16 +452,16 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 										},
 									}}
 									value={personDetails.manager}
-									label="(רשות) מנהל"
+									label="(רשות) מפקד"
 									onChange={(e) => setPersonDetails(prev => ({ ...prev, manager: e.target.value }))}
 									disabled={managersLoading}
 								>
 									<MenuItem value="">
-										<em>אין מנהל</em>
+										<em>אין מפקד</em>
 									</MenuItem>
 									{managers.map((manager) => (
 										<MenuItem key={manager.userId} value={manager.userId}>
-											{manager.name} ({hebrewSiteNames[manager.site as keyof typeof hebrewSiteNames]})
+											{manager.name} ({manager.site}) ({manager.groupName})
 										</MenuItem>
 									))}
 								</Select>
@@ -448,6 +543,70 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 								/>
 							))}
 						</FormGroup>
+					</Box>
+				)}
+
+				{hasPersonnelManagerRole && (
+					<Box>
+						<Divider sx={{ my: 2 }} />
+						<Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'right' }}>
+							קבוצות לניהול כוח אדם
+						</Typography>
+						<Stack spacing={2}>
+							{/* Show group selection dropdown only if no new group name is entered */}
+							{!newGroupName && (
+								<FormControl fullWidth required>
+									<InputLabel>בחר קבוצה קיימת</InputLabel>
+									<Select
+										sx={{
+											'& .MuiSelect-select': {
+												textAlign: 'right',
+											},
+										}}
+										value={selectedGroupId}
+										label="בחר קבוצה קיימת"
+										onChange={(e) => {
+											setSelectedGroupId(e.target.value);
+											// Clear new group name when selecting existing group
+											if (e.target.value) {
+												setNewGroupName('');
+											}
+										}}
+									>
+										<MenuItem value="">
+											<em>בחר קבוצה או הזן שם חדש למטה</em>
+										</MenuItem>
+										{availableGroups.map((group) => (
+											<MenuItem key={group.groupId} value={group.groupId}>
+												{group.name}
+											</MenuItem>
+										))}
+									</Select>
+								</FormControl>
+							)}
+
+							{/* Show new group name field only if no existing group is selected */}
+							{!selectedGroupId && (
+								<TextField
+									label="צור קבוצה חדשה"
+									value={newGroupName}
+									onChange={(e) => {
+										setNewGroupName(e.target.value);
+										// Clear selected group when typing new group name
+										if (e.target.value) {
+											setSelectedGroupId('');
+										}
+									}}
+									fullWidth
+									required
+									placeholder="הזן שם לקבוצה חדשה או בחר קבוצה קיימת למעלה"
+								/>
+							)}
+
+							<Typography variant="caption" sx={{ textAlign: 'right', color: 'text.secondary' }}>
+								* חובה לבחור קבוצה קיימת או ליצור קבוצה חדשה
+							</Typography>
+						</Stack>
 					</Box>
 				)}
 				<Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
