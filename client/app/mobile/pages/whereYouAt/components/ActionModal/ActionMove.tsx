@@ -52,8 +52,6 @@ const MoveAction = ({
 
 			if (transaction) {
 				user.personSystemRoles?.forEach(({ role }) => {
-					if (userId === person.manager?.id)
-						newPermissions.isPersonnelManager = true;
 					if (role.name === 'hrManager' || role.name === 'admin')
 						newPermissions.isHrManager = true;
 					if (role.name === 'siteManager') {
@@ -78,7 +76,7 @@ const MoveAction = ({
 		};
 
 		loadPermissions();
-	}, [person.manager, transaction]);
+	}, [transaction]);
 
 	const handleButtonClick = (event: SyntheticEvent) => {
 		event.stopPropagation();

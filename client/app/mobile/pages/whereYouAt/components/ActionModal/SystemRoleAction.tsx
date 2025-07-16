@@ -72,7 +72,6 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 	const [personDetails, setPersonDetails] = useState({
 		name: person.name,
 		email: '',
-		manager: person.manager?.id || '',
 		site: person.site,
 		serviceType: person.serviceType,
 	});
@@ -107,12 +106,12 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 		fetchManagers();
 	}, []);
 
-	// Fetch available groups when manager changes or personnelManager role is selected
+	// Fetch available groups when personnelManager role is selected
 	useEffect(() => {
 		if (selectedRoles.includes('personnelManager')) {
 			fetchAvailableGroups();
 		}
-	}, [personDetails.manager, selectedRoles]);
+	}, [selectedRoles]);
 
 	const fetchManagers = async () => {
 		try {
@@ -131,7 +130,7 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 	const fetchAvailableGroups = async () => {
 		try {
 			const token = localStorage.getItem('login_token');
-			const managerId = personDetails.manager || 'none'; // Use 'none' for no manager
+			const managerId = 'none'; // Use 'none' for no manager
 			const response = await axios.get(`/api/groups/subordinate-command-groups/${managerId}`, {
 				headers: {
 					Authorization: `Bearer ${token}`,
@@ -325,7 +324,6 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 			const detailsPayload = {
 				userId: person.id,
 				name: personDetails.name,
-				manager: personDetails.manager || undefined,
 				email: personDetails.email || undefined,
 				site: personDetails.site,
 				systemRoles: selectedRoles.map((role) => ({
@@ -438,30 +436,6 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 											style={{ textAlign: 'right' }}
 										>
 											{hebrewSiteNames[site]}
-										</MenuItem>
-									))}
-								</Select>
-							</FormControl>
-
-							<FormControl fullWidth>
-								<InputLabel>(רשות) מפקד</InputLabel>
-								<Select
-									sx={{
-										'& .MuiSelect-select': {
-											textAlign: 'right',
-										},
-									}}
-									value={personDetails.manager}
-									label="(רשות) מפקד"
-									onChange={(e) => setPersonDetails(prev => ({ ...prev, manager: e.target.value }))}
-									disabled={managersLoading}
-								>
-									<MenuItem value="">
-										<em>אין מפקד</em>
-									</MenuItem>
-									{managers.map((manager) => (
-										<MenuItem key={manager.userId} value={manager.userId}>
-											{manager.name} ({manager.site}) ({manager.groupName})
 										</MenuItem>
 									))}
 								</Select>

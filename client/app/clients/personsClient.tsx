@@ -82,7 +82,6 @@ export async function updatePersonDetails(
 	userId: string,
 	details: {
 		name?: string;
-		manager?: string;
 		site?: string;
 		email?: string;
 		systemRoles?: { name: string; opts: string[] }[];
@@ -97,7 +96,6 @@ export async function updatePersonDetails(
 
 export async function addNewPerson(
 		name: string,
-		manager: string,
 		site: string,
 		email: string,
 		systemRoles: { name: string; opts: string[] }[],
@@ -107,7 +105,6 @@ export async function addNewPerson(
 	) {
 	const response = await apiClient.post('/users', {
 		name,
-		manager,
 		site,
 		email,
 		systemRoles,

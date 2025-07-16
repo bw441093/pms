@@ -56,95 +56,78 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 	onSuccess,
 }) => {
 	const [formData, setFormData] = useState({
-		email: '',
 		name: '',
+		email: '',
 		site: '',
-		manager: '',
 		roles: [] as string[],
+		serviceType: 'hova',
 		siteManagerSite: '', // New field for site manager's specific site
-		serviceType: '',
+		availableGroups: [] as Group[],
 		selectedGroupId: '', // New field for personnelManager group selection
 		newGroupName: '', // New field for personnelManager new group creation
 	});
 	const [managers, setManagers] = useState<Manager[]>([]);
-	const [availableGroups, setAvailableGroups] = useState<Group[]>([]);
-	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
-	const addNewPersonMutation = useAddNewPerson();
+	const [loading, setLoading] = useState(false);
+
 	// Fetch managers when modal opens
 	useEffect(() => {
-		if (open) {
+		if (managers.length === 0) {
 			fetchManagers();
 		}
-	}, [open]);
+	}, [managers.length]);
 
 	// Fetch available groups when manager changes (for personnelManager role)
 	useEffect(() => {
 		if (formData.roles.includes('personnelManager')) {
 			fetchAvailableGroups();
 		}
-	}, [formData.manager, formData.roles]);
+	}, [formData.roles]);
 
 	const fetchManagers = async () => {
 		try {
-			const token = localStorage.getItem('login_token');
+			setLoading(true);
 			const response = await axios.get('/api/users/managers', {
 				headers: {
-					Authorization: `Bearer ${token}`,
+					Authorization: `Bearer ${localStorage.getItem('login_token')}`,
 				},
 			});
 			setManagers(response.data);
 		} catch (err) {
 			console.error('Error fetching managers:', err);
 			setError('Failed to load managers');
+		} finally {
+			setLoading(false);
 		}
 	};
 
 	const fetchAvailableGroups = async () => {
 		try {
-			const token = localStorage.getItem('login_token');
-			const managerId = formData.manager || 'none'; // Use 'none' for no manager
+			const managerId = 'none'; // Use 'none' for no manager
 			const response = await axios.get(`/api/groups/subordinate-command-groups/${managerId}`, {
 				headers: {
-					Authorization: `Bearer ${token}`,
+					Authorization: `Bearer ${localStorage.getItem('login_token')}`,
 				},
 			});
-			setAvailableGroups(response.data);
+			setFormData(prev => ({ ...prev, availableGroups: response.data }));
 		} catch (err) {
 			console.error('Error fetching available groups:', err);
 			setError('Failed to load available groups');
 		}
 	};
 
-	const checkGroupNameExists = async (groupName: string): Promise<boolean> => {
-		try {
-			const token = localStorage.getItem('login_token');
-			const response = await axios.get(`/api/groups/check-name-exists/${encodeURIComponent(groupName)}`, {
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			});
-			return response.data.exists;
-		} catch (err) {
-			console.error('Error checking group name:', err);
-			setError('Failed to check group name');
-			return false;
-		}
-	};
+	const addNewPersonMutation = useAddNewPerson();
 
 	const handleInputChange = (field: string, value: string | string[]) => {
-		setFormData((prev) => ({
-			...prev,
-			[field]: value,
-		}));
+		setFormData(prev => ({ ...prev, [field]: value }));
 	};
 
 	const handleRoleChange = (role: string) => {
-		setFormData((prev) => {
-			const newRoles = prev.roles.includes(role)
-				? prev.roles.filter((r) => r !== role)
-				: [...prev.roles, role];
+		const newRoles = formData.roles.includes(role)
+			? formData.roles.filter(r => r !== role)
+			: [...formData.roles, role];
 
+		setFormData(prev => {
 			// Clear siteManagerSite if siteManager role is removed
 			const newSiteManagerSite = newRoles.includes('siteManager')
 				? prev.siteManagerSite
@@ -169,82 +152,64 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 	};
 
 	const handleSubmit = async () => {
-		if (
-			!formData.email ||
-			!formData.name ||
-			!formData.site
-		) {
-			setError('אנא מלא את כל השדות חובה');
+		setError('');
+
+		if (!formData.name || !formData.email || !formData.site) {
+			setError('נא למלא את כל השדות הנדרשים');
 			return;
 		}
 
 		// Check if siteManager role is selected but no site is chosen
 		if (formData.roles.includes('siteManager') && !formData.siteManagerSite) {
-			setError('אנא בחר אתר לניהול עבור תפקיד מנהל האתר');
+			setError('נא לבחור אתר עבור מנהל אתר');
 			return;
 		}
 
 		// Check if personnelManager role is selected but no group selection or new group name
 		if (formData.roles.includes('personnelManager')) {
 			if (!formData.selectedGroupId && !formData.newGroupName) {
-				setError('מנהל כוח אדם חייב לבחור קבוצה קיימת או להזין שם לקבוצה חדשה');
+				setError('נא לבחור קבוצה קיימת או להזין שם קבוצה חדשה עבור מנהל כוח אדם');
 				return;
 			}
 			if (formData.selectedGroupId && formData.newGroupName) {
-				setError('אנא בחר קבוצה קיימת או הזן שם לקבוצה חדשה, לא שניהם');
+				setError('נא לבחור קבוצה קיימת או להזין שם קבוצה חדשה, לא שניהם');
 				return;
-			}
-
-			// Check if the new group name already exists
-			if (formData.newGroupName) {
-				const groupExists = await checkGroupNameExists(formData.newGroupName);
-				if (groupExists) {
-					setError(`שם הקבוצה "${formData.newGroupName}" כבר קיים במערכת. אנא בחר שם אחר.`);
-					return;
-				}
 			}
 		}
 
-		setLoading(true);
-		setError('');
-
 		try {
-			const payload = {
-				email: formData.email,
+			setLoading(true);
+			
+			// Create system roles array with proper structure
+			const systemRoles = formData.roles.map(role => ({
+				name: role,
+				opts: role === 'siteManager' ? [formData.siteManagerSite] : [],
+			}));
+
+			// Only include group fields if personnelManager role is selected
+			const groupFields = formData.roles.includes('personnelManager') ? {
+				selectedGroupId: formData.selectedGroupId || undefined,
+				newGroupName: formData.newGroupName || undefined,
+			} : {};
+
+			await addNewPersonMutation.mutateAsync({
 				name: formData.name,
+				email: formData.email,
 				site: formData.site,
-				manager: formData.manager || '',
-				systemRoles: formData.roles.map((role) => ({
-					name: role,
-					opts: role === 'siteManager' ? [formData.siteManagerSite] : [],
-				})),
+				systemRoles,
 				serviceType: formData.serviceType,
-				// Only include group fields if personnelManager role is selected
-				...(formData.roles.includes('personnelManager') && {
-					...(formData.selectedGroupId && formData.selectedGroupId.trim() !== '' && {
-						selectedGroupId: formData.selectedGroupId
-					}),
-					...(formData.newGroupName && formData.newGroupName.trim() !== '' && {
-						newGroupName: formData.newGroupName
-					})
-				})
-			};
-
-			console.log('Debug - Sending payload:', payload);
-			console.log('Debug - selectedGroupId:', payload.selectedGroupId, 'type:', typeof payload.selectedGroupId);
-			console.log('Debug - newGroupName:', payload.newGroupName, 'type:', typeof payload.newGroupName);
-
-			await addNewPersonMutation.mutate(payload);
+				...groupFields,
+			});
 
 			// Reset form
 			setFormData({
-				email: '',
 				name: '',
+				email: '',
 				site: '',
-				manager: '',
 				roles: [],
+				serviceType: 'hova',
 				siteManagerSite: '',
-				serviceType: '',
+				availableGroups: [],
 				selectedGroupId: '',
 				newGroupName: '',
 			});
@@ -252,26 +217,29 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 			onSuccess?.();
 			onClose();
 		} catch (err: any) {
-			console.error(':שגיאה ביצירת משתמש:', err);
-			setError(err.response?.data || 'יצירת האדם נכשלה');
+			console.error('Error adding person:', err);
+			if (err.response?.data?.includes?.('כבר קיים')) {
+				setError(err.response.data);
+			} else {
+				setError('שגיאה בהוספת האדם');
+			}
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	const handleClose = () => {
+	const handleCancel = () => {
 		setFormData({
-			email: '',
 			name: '',
+			email: '',
 			site: '',
-			manager: '',
 			roles: [],
+			serviceType: 'hova',
 			siteManagerSite: '',
-			serviceType: '',
+			availableGroups: [],
 			selectedGroupId: '',
 			newGroupName: '',
 		});
-		setError('');
 		onClose();
 	};
 
@@ -279,20 +247,14 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 	const hasPersonnelManagerRole = formData.roles.includes('personnelManager');
 
 	return (
-		<Modal
-			open={open}
-			onClose={handleClose}
-			aria-labelledby="add-person-modal-title"
-			aria-describedby="add-person-modal-description"
-		>
+		<Modal open={open} onClose={onClose}>
 			<Box
 				sx={{
 					position: 'absolute',
 					top: '50%',
 					left: '50%',
 					transform: 'translate(-50%, -50%)',
-					width: '90vw',
-					maxWidth: '500px',
+					width: { xs: '90%', sm: '80%', md: '60%', lg: '50%' },
 					bgcolor: 'background.paper',
 					border: '2px solid #000',
 					boxShadow: 24,
@@ -302,122 +264,84 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					overflow: 'auto',
 				}}
 			>
-				<Box
-					sx={{
-						display: 'flex',
-						justifyContent: 'space-between',
-						alignItems: 'center',
-						mb: 3,
-					}}
-				>
-					<IconButton onClick={handleClose}>
+				<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+					<Typography variant="h6">הוספת משתמש חדש</Typography>
+					<IconButton onClick={onClose}>
 						<CloseIcon />
 					</IconButton>
-					<Typography
-						id="add-person-modal-title"
-						variant="h6"
-						component="h2"
-						sx={{ textAlign: 'right' }}
-					>
-						הוספת משתמש חדש
-					</Typography>
 				</Box>
 
-				{error && (
-					<Alert severity="error" sx={{ mb: 2 }}>
-						{error}
-					</Alert>
-				)}
-
 				<Stack spacing={3}>
-					<TextField
-						label="אימייל"
-						type="email"
-						value={formData.email}
-						onChange={(e) => handleInputChange('email', e.target.value)}
-						required
-						fullWidth
-					/>
+					{error && (
+						<Alert severity="error" sx={{ textAlign: 'right' }}>
+							{error}
+						</Alert>
+					)}
 
 					<TextField
-						label="שם"
+						fullWidth
+						label="שם מלא"
+						variant="outlined"
 						value={formData.name}
 						onChange={(e) => handleInputChange('name', e.target.value)}
-						required
-						fullWidth
+						sx={{
+							'& .MuiInputLabel-root': { right: 14, left: 'auto', transformOrigin: 'top right' },
+							'& .MuiOutlinedInput-root': { textAlign: 'right' },
+						}}
 					/>
 
-					<FormControl fullWidth required>
-						<InputLabel>אתר</InputLabel>
+					<TextField
+						fullWidth
+						label="אימייל"
+						type="email"
+						variant="outlined"
+						value={formData.email}
+						onChange={(e) => handleInputChange('email', e.target.value)}
+						sx={{
+							'& .MuiInputLabel-root': { right: 14, left: 'auto', transformOrigin: 'top right' },
+							'& .MuiOutlinedInput-root': { textAlign: 'right' },
+						}}
+					/>
+
+					<FormControl fullWidth variant="outlined">
+						<InputLabel sx={{ right: 14, left: 'auto', transformOrigin: 'top right' }}>
+							אתר
+						</InputLabel>
 						<Select
-							sx={{
-								'& .MuiSelect-select': {
-									textAlign: 'right',
-								},
-							}}
 							value={formData.site}
-							label="Site"
 							onChange={(e) => handleInputChange('site', e.target.value)}
+							label="אתר"
+							sx={{ textAlign: 'right' }}
 						>
 							{SITE_OPTIONS.map((site) => (
-								<MenuItem
-									key={site}
-									value={site}
-									style={{ textAlign: 'right' }}
-								>
-									{hebrewSiteNames[site] || site.toUpperCase()}
+								<MenuItem key={site} value={site}>
+									{hebrewSiteNames[site] ?? site.toUpperCase()}
 								</MenuItem>
 							))}
 						</Select>
 					</FormControl>
 
-					<FormControl fullWidth>
-						<InputLabel>(רשות) מפקד</InputLabel>
+					<FormControl fullWidth variant="outlined">
+						<InputLabel sx={{ right: 14, left: 'auto', transformOrigin: 'top right' }}>
+							סוג שירות
+						</InputLabel>
 						<Select
-							sx={{
-								'& .MuiSelect-select': {
-									textAlign: 'right',
-								},
-							}}
-							value={formData.manager}
-							label="(רשות) מפקד"
-							inputProps={{ style: { textAlign: 'right' } }}
-							onChange={(e) => handleInputChange('manager', e.target.value)}
-						>
-							<MenuItem value="">
-								<em>אין מפקד</em>
-							</MenuItem>
-							{managers.map((manager) => (
-								<MenuItem key={manager.userId} value={manager.userId}>
-									{manager.name} ({manager.site}) ({manager.groupName})
-								</MenuItem>
-							))}
-						</Select>
-					</FormControl>
-
-					<FormControl fullWidth required>
-						<InputLabel>סוג שירות</InputLabel>
-						<Select
-							sx={{
-								'& .MuiSelect-select': {
-									textAlign: 'right',
-								},
-							}}
 							value={formData.serviceType}
-							label="סוג שירות"
 							onChange={(e) => handleInputChange('serviceType', e.target.value)}
+							label="סוג שירות"
+							sx={{ textAlign: 'right' }}
 						>
-							{SERVICE_TYPE_OPTIONS.map((serviceType) => (
-								<MenuItem key={serviceType} value={serviceType}>
-									{hebrewServiceTypeNames[serviceType]}
+							{SERVICE_TYPE_OPTIONS.map((type) => (
+								<MenuItem key={type} value={type}>
+									{hebrewServiceTypeNames[type]}
 								</MenuItem>
 							))}
 						</Select>
 					</FormControl>
 
 					<Box>
-						<Typography variant="subtitle1" sx={{ mb: 1, textAlign: 'right' }}>
-							תפקידים *
+						<Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'right' }}>
+							תפקידים
 						</Typography>
 						<FormGroup sx={{ alignItems: 'flex-end' }}>
 							{SYSTEM_ROLE_OPTIONS.map((role) => (
@@ -445,23 +369,21 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 
 					{/* Site Manager Site Selection */}
 					{hasSiteManagerRole && (
-						<FormControl fullWidth required>
-							<InputLabel>אתר לניהול</InputLabel>
+						<FormControl fullWidth variant="outlined">
+							<InputLabel sx={{ right: 14, left: 'auto', transformOrigin: 'top right' }}>
+								אתר לניהול
+							</InputLabel>
 							<Select
-								sx={{
-									'& .MuiSelect-select': {
-										textAlign: 'right',
-									},
-								}}
 								value={formData.siteManagerSite}
-								label="אתר לניהול"
 								onChange={(e) =>
 									handleInputChange('siteManagerSite', e.target.value)
 								}
+								label="אתר לניהול"
+								sx={{ textAlign: 'right' }}
 							>
 								{SITE_MANAGER_OPTIONS.map((site) => (
 									<MenuItem key={site} value={site}>
-										{hebrewSiteNames[site] || site.toUpperCase()}
+										{hebrewSiteNames[site] ?? site.toUpperCase()}
 									</MenuItem>
 								))}
 							</Select>
@@ -471,64 +393,65 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					{/* Personnel Manager Group Selection */}
 					{hasPersonnelManagerRole && (
 						<>
-							{/* Show group selection dropdown only if no new group name is entered */}
-							{!formData.newGroupName && (
-								<FormControl fullWidth required>
-									<InputLabel>בחר קבוצה קיימת לפקד עליה</InputLabel>
-									<Select
-										sx={{
-											'& .MuiSelect-select': {
-												textAlign: 'right',
-											},
-										}}
-										value={formData.selectedGroupId}
-										label="בחר קבוצה קיימת לפקד עליה"
-										onChange={(e) => {
-											handleInputChange('selectedGroupId', e.target.value);
-											// Clear new group name when selecting existing group
-											if (e.target.value) {
-												handleInputChange('newGroupName', '');
-											}
-										}}
-									>
-										<MenuItem value="">
-											<em>בחר קבוצה או הזן שם חדש למטה</em>
-										</MenuItem>
-										{availableGroups.map((group) => (
-											<MenuItem key={group.groupId} value={group.groupId}>
-												{group.name}
-											</MenuItem>
-										))}
-									</Select>
-								</FormControl>
-							)}
-
-							{/* Show new group name field only if no existing group is selected */}
-							{!formData.selectedGroupId && (
-								<TextField
-									label="צור קבוצה חדשה לפקד עליה"
-									value={formData.newGroupName}
+							<Typography variant="subtitle1" sx={{ textAlign: 'right' }}>
+								בחירת קבוצה למנהל כוח אדם
+							</Typography>
+							
+							<FormControl fullWidth variant="outlined">
+								<InputLabel sx={{ right: 14, left: 'auto', transformOrigin: 'top right' }}>
+									קבוצה קיימת
+								</InputLabel>
+								<Select
+									value={formData.selectedGroupId}
 									onChange={(e) => {
-										handleInputChange('newGroupName', e.target.value);
-										// Clear selected group when typing new group name
+										handleInputChange('selectedGroupId', e.target.value);
+										// Clear new group name when selecting existing group
 										if (e.target.value) {
-											handleInputChange('selectedGroupId', '');
+											handleInputChange('newGroupName', '');
 										}
 									}}
-									fullWidth
-									required
-									placeholder="הזן שם לקבוצה חדשה או בחר קבוצה קיימת למעלה"
-								/>
-							)}
+									label="קבוצה קיימת"
+									sx={{ textAlign: 'right' }}
+								>
+									<MenuItem value="">
+										<em>בחר קבוצה קיימת</em>
+									</MenuItem>
+									{formData.availableGroups.map((group) => (
+										<MenuItem key={group.groupId} value={group.groupId}>
+											{group.name}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
 
-							<Typography variant="caption" sx={{ textAlign: 'right', color: 'text.secondary' }}>
-								* חובה לבחור קבוצה קיימת או ליצור קבוצה חדשה
+							<Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary' }}>
+								או
 							</Typography>
+
+							<TextField
+								fullWidth
+								label="שם קבוצה חדשה"
+								variant="outlined"
+								value={formData.newGroupName}
+								onChange={(e) => {
+									handleInputChange('newGroupName', e.target.value);
+									// Clear selected group when entering new group name
+									if (e.target.value) {
+										handleInputChange('selectedGroupId', '');
+									}
+								}}
+								sx={{
+									'& .MuiInputLabel-root': { right: 14, left: 'auto', transformOrigin: 'top right' },
+									'& .MuiOutlinedInput-root': { textAlign: 'right' },
+								}}
+								helperText="הזן שם לקבוצה חדשה (אופציונלי)"
+								FormHelperTextProps={{ sx: { textAlign: 'right' } }}
+							/>
 						</>
 					)}
 
-					<Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-						<Button variant="outlined" onClick={handleClose}>
+					<Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
+						<Button variant="outlined" onClick={handleCancel}>
 							ביטול
 						</Button>
 						<Button
@@ -536,7 +459,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 							onClick={handleSubmit}
 							disabled={loading}
 						>
-							{loading ? '...בתהליך הוספה' : 'הוסף משתמש'}
+							{loading ? 'מוסיף...' : 'הוסף משתמש'}
 						</Button>
 					</Box>
 				</Stack>

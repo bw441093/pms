@@ -54,10 +54,10 @@ export function usePeopleData(userId: string) {
 
 export function useAddNewPerson() {
 	const queryClient = useQueryClient();
+	
 	return useMutation({
 		mutationFn: ({
 			name,
-			manager,
 			site,
 			email,
 			systemRoles,
@@ -66,16 +66,15 @@ export function useAddNewPerson() {
 			newGroupName,
 		}: {
 			name: string;
-			manager: string;
 			site: string;
 			email: string;
-			systemRoles: { name: string; opts: string[]  }[];
+			systemRoles: { name: string; opts: string[] }[];
 			serviceType: string;
 			selectedGroupId?: string;
 			newGroupName?: string;
-		}) => addNewPerson(name, manager, site, email, systemRoles, serviceType, selectedGroupId, newGroupName),
+		}) => addNewPerson(name, site, email, systemRoles, serviceType, selectedGroupId, newGroupName),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['people'] });
+			queryClient.invalidateQueries({ queryKey: ['peopleData'] });
 		},
 	});
 }
@@ -152,11 +151,11 @@ export function useUpdateReportStatus() {
 
 export function useUpdatePersonDetails() {
 	const queryClient = useQueryClient();
+	
 	return useMutation({
 		mutationFn: ({
 			userId,
 			name,
-			manager,
 			site,
 			email,
 			systemRoles,
@@ -166,17 +165,15 @@ export function useUpdatePersonDetails() {
 		}: {
 			userId: string;
 			name?: string;
-			manager?: string;
 			site?: string;
 			email?: string;
 			systemRoles?: { name: string; opts: string[] }[];
 			serviceType?: string;
 			selectedGroupId?: string;
 			newGroupName?: string;
-		}) => updatePersonDetails(userId, { name, manager, site, email, systemRoles, serviceType, selectedGroupId, newGroupName }),
+		}) => updatePersonDetails(userId, { name, site, email, systemRoles, serviceType, selectedGroupId, newGroupName }),
 		onSuccess: () => {
-			// Invalidate people queries to refresh data after status update
-			queryClient.invalidateQueries({ queryKey: ['people'] });
+			queryClient.invalidateQueries({ queryKey: ['peopleData'] });
 		},
 	});
 }

@@ -435,7 +435,7 @@ const DesktopDashboard: React.FC<DesktopDashboardProps> = ({
 								</TableCell>
 								<TableCell align="right">
 									<Typography sx={{ fontWeight: 500 }}>
-										{person.manager?.name || '---'}
+										{person.manager?.name || 'לא משויך'}
 									</Typography>
 								</TableCell>
 								<TableCell align="right">

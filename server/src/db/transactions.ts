@@ -6,7 +6,7 @@ import { TransactionsTable } from './schema';
 export const createTransaction = async (
 	origin: string,
 	target: string,
-	field: 'site' | 'manager',
+	field: 'site',
 	userId: string
 ) => {
 	const transactionId = await db

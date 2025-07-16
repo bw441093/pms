@@ -26,49 +26,48 @@ export const systemRolesSchema = z.object({
 	),
 });
 
-export const postPersonSchema = z
-	.object({
-		name: z.string(),
-		manager: z.string().optional(),
-		site: z.string(),
-		email: z.string().email(),
-		serviceType: z.string(),
-		systemRoles: z.array(
-			z.object({
-				name: z.string(),
-				opts: z.array(z.string()).optional(),
-			})
-		),
-		selectedGroupId: z.string().optional(), // For personnelManager role - existing group selection
-		newGroupName: z.string().optional(), // For personnelManager role - new group creation
-	})
-
-export const updateStatusSchema = z.object({
-	status: z.string(),
-	location: z.string(),
+export const postPersonSchema = z.object({
+	email: z.string().email().optional(),
+	name: z.string().min(1),
+	site: z.string().min(1),
+	serviceType: z.string().optional(),
+	systemRoles: z.array(
+		z.object({
+			name: z.string(),
+			opts: z.array(z.string()).optional(),
+		})
+	),
+	selectedGroupId: z.string().optional(), // For personnelManager role - existing group selection
+	newGroupName: z.string().optional(), // For personnelManager role - new group creation
 });
 
-export const updateAlertSchema = z.object({
-	status: z.enum(['pending', 'good', 'bad']),
+export const putPersonStatusSchema = z.object({
+	status: z.string().min(1),
+	location: z.string().min(1),
 });
 
-export const postMoveSchema = z.object({
-	origin: z.string(),
-	target: z.string(),
-	field: z.enum(['site', 'manager']),
+export const postTransactionSchema = z.object({
+	origin: z.string().min(1),
+	target: z.string().min(1),
+	field: z.enum(['site']),
 });
 
-export const updateMoveSchema = z.object({
-	originator: z.enum(['origin', 'target']),
+export const patchTransactionSchema = z.object({
 	status: z.boolean(),
+	originator: z.enum(['origin', 'target']),
 });
 
 export const updatePersonDetailsSchema = z.object({
 	name: z.string().optional(),
-	manager: z.string().optional(),
 	site: z.string().optional(),
-	email: z.string().email().optional(),
 	serviceType: z.string().optional(),
+	email: z.string().email().optional(),
+	systemRoles: z.array(
+		z.object({
+			name: z.string(),
+			opts: z.array(z.string()).optional(),
+		})
+	).optional(),
 	selectedGroupId: z.string().optional(), // For personnelManager role - existing group selection
 	newGroupName: z.string().optional(), // For personnelManager role - new group creation
-}).merge(systemRolesSchema);
+});

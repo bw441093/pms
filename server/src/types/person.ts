@@ -7,18 +7,16 @@ import {
 	idSchema,
 	systemRolesSchema,
 	postPersonSchema,
-	updateStatusSchema,
-	updateAlertSchema,
-	postMoveSchema,
-	updateMoveSchema,
+	putPersonStatusSchema,
+	postTransactionSchema,
+	patchTransactionSchema,
 	updatePersonDetailsSchema,
 } from '../validations/person';
 
 export type Id = z.infer<typeof idSchema>;
-export type Status = z.infer<typeof updateStatusSchema>;
-export type Alert = z.infer<typeof updateAlertSchema>;
-export type PostMove = z.infer<typeof postMoveSchema>;
-export type UpdateMove = z.infer<typeof updateMoveSchema>;
+export type Status = z.infer<typeof putPersonStatusSchema>;
+export type PostTransaction = z.infer<typeof postTransactionSchema>;
+export type UpdateTransaction = z.infer<typeof patchTransactionSchema>;
 export type Login = z.infer<typeof loginSchema>;
 export type OTP = z.infer<typeof otpVerifySchema>;
 export type UpdateSystemRoles = z.infer<typeof systemRolesSchema>;

@@ -13,10 +13,10 @@ export type Person = {
 	name: string;
 	site: Sites;
 	serviceType: ServiceTypes;
-	manager: {
+	manager?: {
 		id: string;
 		name: string;
-	};
+	} | null;
 	alertStatus: string;
 	reportStatus: string;
 	location: string;

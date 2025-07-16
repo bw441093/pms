@@ -139,7 +139,6 @@ export async function generateSystemRoles() {
 export async function generatePersons(users: any[], roles: any[]) {
 	console.log('👤 Generating persons...');
 	const persons = [];
-	const managers = [];
 
 	for (let i = 0; i < users.length; i++) {
 		const user = users[i];
@@ -159,21 +158,6 @@ export async function generatePersons(users: any[], roles: any[]) {
 
 		await db.insert(PersonsTable).values(person as any);
 		persons.push(person);
-
-		// Assign first 5 as managers
-		if (i < 5) {
-			managers.push(user.id);
-		}
-	}
-
-	// Assign managers to persons
-	console.log('👨‍💼 Assigning managers...');
-	for (let i = 5; i < persons.length; i++) {
-		const managerId = getRandomElement(managers);
-		await db
-			.update(PersonsTable)
-			.set({ manager: managerId })
-			.where(eq(PersonsTable.id, persons[i]?.id));
 	}
 
 	// Assign roles to persons
@@ -302,7 +286,7 @@ export async function generateTransactions(persons: any[], count: number = 50) {
 			target,
 			originConfirmation: Math.random() > 0.3,
 			targetConfirmation: Math.random() > 0.3,
-			field: getRandomElement(['site', 'manager'] as const),
+			field: 'site',
 			createdAt: getRandomDateInRange(90), // Random date within last 90 days
 			status: getRandomElement(['pending', 'resolved'] as const),
 			userId: person.id,
@@ -434,19 +418,11 @@ export async function getPersonsByRole(roleName: string) {
 		.where(eq(SystemRolesTable.name, roleName));
 }
 
-export async function getPersonsByManager(managerId: string) {
-	return await db
-		.select()
-		.from(PersonsTable)
-		.where(eq(PersonsTable.manager, managerId));
-}
-
 export async function getPendingTransactions() {
 	return await db
 		.select()
 		.from(TransactionsTable)
-		.where(eq(TransactionsTable.status, 'pending'))
-		.orderBy(desc(TransactionsTable.createdAt));
+		.where(eq(TransactionsTable.status, 'pending'));
 }
 
 export async function getPersonsWithAlerts() {

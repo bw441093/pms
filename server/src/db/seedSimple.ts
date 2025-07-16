@@ -98,7 +98,6 @@ async function seedSimpleData() {
 		id: userId,
 		name: userName,
 		site: 'mbt',
-		manager: null, // You don't have a manager
 		alertStatus: 'good',
 		reportStatus: 'present',
 		location: 'jerusalem',
@@ -142,7 +141,6 @@ async function seedSimpleData() {
 			id: reportId,
 			name: report.name,
 			site: 'mbt', // Same site as you
-			manager: userId, // You are their direct manager
 			alertStatus: 'good',
 			reportStatus: 'present',
 			location: 'jerusalem',
@@ -166,7 +164,6 @@ async function seedSimpleData() {
 		id: otherMbtManagerId,
 		name: 'Other MBT Manager',
 		site: 'mbt',
-		manager: null,
 		alertStatus: 'good',
 		reportStatus: 'present',
 		location: 'jerusalem',
@@ -196,7 +193,6 @@ async function seedSimpleData() {
 			id: colleagueId,
 			name: colleague.name,
 			site: 'mbt', // Same site as you
-			manager: otherMbtManagerId, // Different manager
 			alertStatus: 'good',
 			reportStatus: 'present',
 			location: 'jerusalem',
@@ -229,7 +225,6 @@ async function seedSimpleData() {
 			id: managerId,
 			name: manager.name,
 			site: 'mbt', // Same site as you
-			manager: userId, // You are their manager
 			alertStatus: 'good',
 			reportStatus: 'present',
 			location: 'jerusalem',
@@ -265,7 +260,6 @@ async function seedSimpleData() {
 			id: reportId,
 			name: report.name,
 			site: 'mbt',
-			manager: middleManagerIds[managerIndex], // Reports to middle manager
 			alertStatus: 'good',
 			reportStatus: 'present',
 			location: 'jerusalem',
@@ -290,7 +284,6 @@ async function seedSimpleData() {
 		id: unrelatedManagerId,
 		name: 'Unrelated Manager',
 		site: 'kir', // Different site
-		manager: null,
 		alertStatus: 'good',
 		reportStatus: 'present',
 		location: 'haifa',
@@ -325,7 +318,6 @@ async function seedSimpleData() {
 			id: personId,
 			name: person.name,
 			site: 'kir', // Different site
-			manager: unrelatedManagerId, // Manager who is not you
 			alertStatus: 'good',
 			reportStatus: 'present',
 			location: 'haifa',

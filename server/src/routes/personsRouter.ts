@@ -5,14 +5,13 @@ import {
 	deletePersonHandler,
 	getManagersHandler,
 	getPersonsHandler,
-	postMoveHandler,
+	createTransactionHandler,
 	postPersonHandler,
-	updateMoveHandler,
-	updateStatusHandler,
-	updateAlertHandler,
-	deleteMoveHandler,
+	confirmTransactionHandler,
+	updatePersonStatusHandler,
+	updatePersonAlertHandler,
 	getPersonByIdHandler,
-	alertAllUsersHandler,
+	updateGlobalAlertHandler,
 	updatePersonDetailsHandler,
 	getSitePersonsHandler,
 	getDirectReportsHandler,
@@ -20,12 +19,11 @@ import {
 import authorize from '../middleware/authorization';
 import {
 	idSchema,
-	postMoveSchema,
+	postTransactionSchema,
 	postPersonSchema,
 	systemRolesSchema,
-	updateMoveSchema,
-	updateStatusSchema,
-	updateAlertSchema,
+	patchTransactionSchema,
+	putPersonStatusSchema,
 	updatePersonDetailsSchema,
 	userIdSchema,
 } from '../validations/person';
@@ -49,30 +47,29 @@ router.get('/managers', getManagersHandler);
 router.post(
 	'/alert-all',
 	authorize(['hrManager', 'admin']),
-	alertAllUsersHandler
+	updateGlobalAlertHandler
 );
 router.get('/:id', validator({ params: idSchema }), getPersonByIdHandler);
 router.put(
 	'/:id/status',
-	validator({ params: idSchema, body: updateStatusSchema }),
-	updateStatusHandler
+	validator({ params: idSchema, body: putPersonStatusSchema }),
+	updatePersonStatusHandler
 );
 router.post(
 	'/:id/alert',
-	validator({ params: idSchema, body: updateAlertSchema }),
-	updateAlertHandler
+	validator({ params: idSchema }),
+	updatePersonAlertHandler
 );
 router.post(
 	'/:id/move',
-	validator({ params: idSchema, body: postMoveSchema }),
-	postMoveHandler
+	validator({ params: idSchema, body: postTransactionSchema }),
+	createTransactionHandler
 );
 router.patch(
 	'/:id/move',
-	validator({ params: idSchema, body: updateMoveSchema }),
-	updateMoveHandler
+	validator({ params: idSchema, body: patchTransactionSchema }),
+	confirmTransactionHandler
 );
-router.delete('/:id/move', validator({ params: idSchema }), deleteMoveHandler);
 router.put(
 	'/:id/details',
 	authorize(['siteManager', 'personnelManager', 'hrManager', 'admin']),

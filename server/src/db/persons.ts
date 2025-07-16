@@ -218,11 +218,9 @@ export const createPerson = async (
 	id: string,
 	name: string,
 	site: string,
-	manager?: string,
 	serviceType?: string
 ) => {
 	const updateData: any = { id, name, site, serviceType };
-	if (manager) updateData.manager = manager;
 	const user = await db
 		.insert(PersonsTable)
 		.values(updateData)
@@ -239,16 +237,6 @@ export const updatePersonStatusLocation = async (
 	const user = await db
 		.update(PersonsTable)
 		.set({ reportStatus: status, location, updatedAt: new Date() })
-		.where(eq(PersonsTable.id, id))
-		.returning({ id: PersonsTable.id });
-
-	return user;
-};
-
-export const updatePersonManager = async (id: string, manager: string) => {
-	const user = await db
-		.update(PersonsTable)
-		.set({ manager, updatedAt: new Date() })
 		.where(eq(PersonsTable.id, id))
 		.returning({ id: PersonsTable.id });
 
@@ -299,7 +287,6 @@ export const updatePersonDetails = async (
 	id: string,
 	updates: {
 		name?: string;
-		manager?: string;
 		site?: string;
 		serviceType?: string;
 	}
@@ -307,7 +294,6 @@ export const updatePersonDetails = async (
 	const updateData: any = { updatedAt: new Date() };
 	
 	if (updates.name !== undefined) updateData.name = updates.name;
-	if (updates.manager !== undefined) updateData.manager = updates.manager;
 	if (updates.site !== undefined) updateData.site = updates.site;
 	if (updates.serviceType !== undefined) updateData.serviceType = updates.serviceType;
 	const user = await db

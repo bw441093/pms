@@ -25,7 +25,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({ user }) => {
       <Stack spacing={1} mb={2}>
         <ProfileInfoRow
           title="מפקד ישיר"
-          value={user.manager?.name || '---'}
+          value={user.manager?.name || 'לא משויך למפקד'}
           icon={<PersonIcon sx={{ color: theme.palette.custom.surfaceContainerLowest, scale: 0.8 }} />}
           bgcolor={theme.palette.custom.gray4}
           iconBgColor={theme.palette.custom.lightBlue}

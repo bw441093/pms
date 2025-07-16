@@ -21,7 +21,6 @@ export const PersonsTable = pgTable('persons', {
 	id: uuid('user_id').notNull().primaryKey(),
 	name: text().notNull(),
 	site: text().notNull(),
-	manager: uuid('manager_id').references((): AnyPgColumn => PersonsTable.id),
 	alertStatus: text({ enum: ['pending', 'good', 'bad'] })
 		.default('good')
 		.notNull(),
@@ -44,7 +43,7 @@ export const TransactionsTable = pgTable(
 		target: text().notNull(),
 		originConfirmation: boolean().default(false).notNull(),
 		targetConfirmation: boolean().default(false).notNull(),
-		field: text({ enum: ['site', 'manager'] })
+		field: text({ enum: ['site'] })
 			.default('site')
 			.notNull(),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -120,10 +119,6 @@ export const EventsTable = pgTable('events', {
 
 // Relations
 export const PersonsRelations = relations(PersonsTable, ({ one, many }) => ({
-	manager: one(PersonsTable, {
-		fields: [PersonsTable.manager],
-		references: [PersonsTable.id],
-	}),
 	personSystemRoles: many(PersonsToSystemRoles),
 	transaction: one(TransactionsTable),
 }));

@@ -147,12 +147,14 @@ const PersonCard: React.FC<PersonCardProps> = ({
 
 					{/* Location info */}
 					<Stack spacing={1}>
-						<Stack direction="row" alignItems="center">
-							<PersonIcon sx={{ color: theme.palette.custom.surfaceContainerHighest }} />
-							<Typography sx={{ marginInlineStart: '2vw', color: theme.palette.custom.surfaceBright, fontWeight: 500, fontSize: 18 }}>
-								{manager?.name}
-							</Typography>
-						</Stack>
+						{manager && (
+							<Stack direction="row" alignItems="center">
+								<PersonIcon sx={{ color: theme.palette.custom.surfaceContainerHighest }} />
+								<Typography sx={{ marginInlineStart: '2vw', color: theme.palette.custom.surfaceBright, fontWeight: 500, fontSize: 18 }}>
+									{manager.name}
+								</Typography>
+							</Stack>
+						)}
 						<Stack direction="row" alignItems="center">
 							<LocationOnIcon sx={{ color: theme.palette.custom.surfaceContainerHighest }} />
 							<Typography sx={{ marginInlineStart: '2vw', color: theme.palette.custom.surfaceBright, fontWeight: 500, fontSize: 18 }}>
