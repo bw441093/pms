@@ -29,6 +29,7 @@ export function useSiteData(userId: string) {
 	return useQuery({
 		queryKey: ['site', userId],
 		queryFn: () => getSitePersons(userId),
+		refetchInterval: 2000,
 		enabled: !!userId,
 	});
 }
@@ -37,6 +38,7 @@ export function useDirectReportsData(userId: string) {
 	return useQuery({
 		queryKey: ['directReports', userId],
 		queryFn: () => getDirectReports(userId),
+		refetchInterval: 2000,
 		enabled: !!userId,
 	});
 }

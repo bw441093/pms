@@ -25,6 +25,7 @@ const PREDEFINED_SYSTEM_ROLES = [
 
 // Predefined groups that should exist in the database
 const PREDEFINED_GROUPS = [
+	// Command groups
 	{
 		name: 'לשכת מפקד 9920',
 		command: true,
@@ -38,33 +39,39 @@ const PREDEFINED_GROUPS = [
         command: true,
     },
 	{
-		name: 'אתר קרייה',
-		command: false,
-	},
-	{
-		name: 'אתר מידטאון',
-		command: false,
-	},
-	{
-		name: 'אתר מבת',
-		command: false,
-	},
-	{
-		name: 'אתר מפרשית',
-		command: false,
-	},
-	{
 		name: 'מדור כחול לבן',
 		command: true,
 	},
-    {
-        name: 'משמרת עיבוד',
-        command: false,
-    },
 	{
 		name: 'צוות תכנון',
 		command: true,
 	},
+	// Site groups (non-command) - All sites from SITE_OPTIONS
+	{
+		name: 'איילת השחר', // mbt
+		command: false,
+	},
+	{
+		name: 'בראשית', // mfs
+		command: false,
+	},
+	{
+		name: 'ביה״ב', // kir
+		command: false,
+	},
+	{
+		name: 'רקיע', // mdt
+		command: false,
+	},
+	{
+		name: 'אחר', // other
+		command: false,
+	},
+	// Additional non-command groups
+    {
+        name: 'משמרת עיבוד',
+        command: false,
+    },
 ] as const;
 
 /**

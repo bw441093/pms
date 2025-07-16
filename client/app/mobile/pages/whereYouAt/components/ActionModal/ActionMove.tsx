@@ -8,6 +8,7 @@ import {
 	Select,
 	FormControl,
 	InputLabel,
+	Alert,
 } from '@mui/material';
 import Check from '@mui/icons-material/Check';
 
@@ -26,6 +27,7 @@ const MoveAction = ({
 	const { id, site, transaction } = person;
 	const [origin, setOrigin] = useState(site);
 	const [target, setTarget] = useState('');
+	const [error, setError] = useState('');
 	const [permissions, setPermissions] = useState({
 		isOriginManager: false,
 		isTargetManager: false,
@@ -80,11 +82,22 @@ const MoveAction = ({
 
 	const handleButtonClick = (event: SyntheticEvent) => {
 		event.stopPropagation();
+		
+		// Validate target is selected
+		if (!target.trim()) {
+			setError('אנא בחר יעד להעברה');
+			return;
+		}
+		
+		setError(''); // Clear any previous errors
 		postMoveStatusMutation.mutate(
 			{ userId: id, origin, target },
 			{
 				onSuccess: () => {
 					onClose();
+				},
+				onError: (error) => {
+					setError(error.message || 'שגיאה ביצירת בקשת העברה');
 				},
 			}
 		);
@@ -95,11 +108,15 @@ const MoveAction = ({
 		event: SyntheticEvent
 	) => {
 		event.stopPropagation();
+		setError(''); // Clear any previous errors
 		updateMoveStatusMutation.mutate(
 			{ userId: id, originator, status: true },
 			{
 				onSuccess: () => {
 					onClose();
+				},
+				onError: (error) => {
+					setError(error.message || 'שגיאה באישור העברה');
 				},
 			}
 		);
@@ -161,6 +178,12 @@ const MoveAction = ({
 				הזז משתמש
 			</Typography>
 
+			{error && (
+				<Alert severity="error" sx={{ textAlign: 'right' }}>
+					{error}
+				</Alert>
+			)}
+
 			{shouldShowTextInputs && (
 				<Stack spacing={2}>
 					<FormControl fullWidth>
@@ -174,8 +197,9 @@ const MoveAction = ({
 							labelId="origin-select-label"
 							id="origin-select"
 							value={origin}
-							label="origin"
+							label="מקור"
 							onChange={(e) => setOrigin(e.target.value)}
+							disabled
 						>
 							{SITE_OPTIONS.map((option) => (
 								<MenuItem key={option} value={option}>
@@ -195,7 +219,7 @@ const MoveAction = ({
 							labelId="target-select-label"
 							id="target-select"
 							value={target}
-							label="Target"
+							label="יעד"
 							onChange={(e) => setTarget(e.target.value)}
 						>
 							{SITE_OPTIONS.map((option) => (
@@ -250,7 +274,7 @@ const MoveAction = ({
 					<Button
 						variant="contained"
 						onClick={handleButtonClick}
-						disabled={isLoading}
+						disabled={isLoading || !target.trim()}
 					>
 						שליחה
 					</Button>

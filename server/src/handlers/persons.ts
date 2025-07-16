@@ -455,3 +455,20 @@ export const getSitePersonsHandler = async (req: Request, res: Response) => {
 		res.status(500).send('Failed to get site persons');
 	}
 };
+
+export const getDirectReportsHandler = async (req: Request, res: Response) => {
+	try {
+		const { userId } = req.params;
+		if (!userId) {
+			res.status(400).send('User ID is required');
+			return;
+		}
+		logger.info(`Fetching direct reports for user: ${userId}`);
+		const directReports = await findDirectReports(userId);
+		logger.info(`Found ${directReports.length} direct reports for user: ${userId}`);
+		res.status(200).send(directReports);
+	} catch (error) {
+		logger.error('Error getting direct reports:', error);
+		res.status(500).send('Failed to get direct reports');
+	}
+};

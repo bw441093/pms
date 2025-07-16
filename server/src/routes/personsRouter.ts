@@ -15,6 +15,7 @@ import {
 	alertAllUsersHandler,
 	updatePersonDetailsHandler,
 	getSitePersonsHandler,
+	getDirectReportsHandler,
 } from '../handlers/persons';
 import authorize from '../middleware/authorization';
 import {
@@ -79,5 +80,6 @@ router.put(
 	updatePersonDetailsHandler
 );
 router.get('/site/:userId', validator({ params: userIdSchema }), getSitePersonsHandler);
+router.get('/:userId/direct-reports', validator({ params: userIdSchema }), getDirectReportsHandler);
 
 export default router;

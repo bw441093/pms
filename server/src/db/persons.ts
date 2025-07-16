@@ -3,8 +3,55 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { db } from './db';
 import { PersonsTable, PersonsToSystemRoles, SystemRolesTable, PersonsToGroups, GroupsTable } from './schema';
 
+// Helper function to find the actual manager based on group hierarchy
+const findActualManager = async (personId: string) => {
+	// Find command groups where this person is a member
+	const memberGroups = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => and(eq(ptg.personId, personId), eq(ptg.groupRole, 'member')),
+		with: { 
+			group: true
+		}
+	});
+
+	// Filter for command groups only
+	const commandGroupIds = memberGroups
+		.filter(ptg => ptg.group.command)
+		.map(ptg => ptg.groupId);
+
+	if (commandGroupIds.length === 0) {
+		return null;
+	}
+
+	// Find admins of those command groups
+	const groupAdmins = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => and(
+			inArray(ptg.groupId, commandGroupIds),
+			eq(ptg.groupRole, 'admin')
+		),
+		with: {
+			person: {
+				columns: {
+					id: true,
+					name: true,
+				}
+			}
+		}
+	});
+
+	// Return the first admin found (if person is in multiple command groups, take the first one)
+	const firstAdmin = groupAdmins[0];
+	if (firstAdmin?.person?.id && firstAdmin?.person?.name) {
+		return {
+			id: firstAdmin.person.id,
+			name: firstAdmin.person.name,
+		};
+	}
+
+	return null;
+};
+
 export const find = async () => {
-	const user = await db.query.PersonsTable.findMany({
+	const users = await db.query.PersonsTable.findMany({
 		with: {
 			transaction: {
 				columns: {
@@ -17,16 +64,21 @@ export const find = async () => {
 					role: true,
 				},
 			},
-			manager: {
-				columns: {
-					id: true,
-					name: true,
-				},
-			},
 		},
 	});
 
-	return user;
+	// Add actual managers based on group hierarchy
+	const usersWithActualManagers = await Promise.all(
+		users.map(async (user) => {
+			const actualManager = await findActualManager(user.id);
+			return {
+				...user,
+				manager: actualManager,
+			};
+		})
+	);
+
+	return usersWithActualManagers;
 };
 
 export const findPersonById = async (id: string) => {
@@ -44,16 +96,20 @@ export const findPersonById = async (id: string) => {
 					role: true,
 				},
 			},
-			manager: {
-				columns: {
-					id: true,
-					name: true,
-				},
-			},
 		},
 	});
-	user?.personSystemRoles;
-	return user;
+	
+	if (!user) {
+		return null;
+	}
+
+	// Add actual manager based on group hierarchy
+	const actualManager = await findActualManager(user.id);
+	
+	return {
+		...user,
+		manager: actualManager,
+	};
 };
 
 export const findManagers = async () => {
@@ -74,46 +130,88 @@ export const findManagers = async () => {
 };
 
 export const findDirectReports = async (id: string) => {
-	const users = await db.query.PersonsTable.findMany({
-		where: eq(PersonsTable.manager, id),
-		with: {
-			transaction: {
-				columns: {
-					userId: false,
-				},
-			},
-			manager: {
-				columns: {
-					id: true,
-					name: true,
-				},
-			},
-		},
+	// New logic: Find people who are members of command groups where the user is admin
+	
+	// Step 1: Find all groups where this user is admin
+	const adminGroups = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => and(eq(ptg.personId, id), eq(ptg.groupRole, 'admin')),
+		with: { 
+			group: true
+		}
 	});
 
-	return users;
+	// Step 2: Filter for command groups only
+	const commandGroupIds = adminGroups
+		.filter(ptg => ptg.group.command)
+		.map(ptg => ptg.groupId);
+
+	if (commandGroupIds.length === 0) {
+		return [];
+	}
+
+	// Step 3: Find all members of those command groups (excluding the admin themselves)
+	const groupMembers = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => and(
+			inArray(ptg.groupId, commandGroupIds),
+			eq(ptg.groupRole, 'member')
+		),
+		with: {
+			person: {
+				with: {
+					transaction: {
+						columns: {
+							userId: false,
+						},
+					},
+				}
+			}
+		}
+	});
+
+	// Step 4: Extract unique persons and add actual managers
+	const uniquePersonsMap = new Map();
+	const personsWithActualManagers = await Promise.all(
+		groupMembers.map(async (ptg) => {
+			if (!uniquePersonsMap.has(ptg.person.id)) {
+				const actualManager = await findActualManager(ptg.person.id);
+				const personWithManager = {
+					...ptg.person,
+					manager: actualManager,
+				};
+				uniquePersonsMap.set(ptg.person.id, personWithManager);
+				return personWithManager;
+			}
+			return null;
+		})
+	);
+
+	return personsWithActualManagers.filter(person => person !== null);
 };
 
 export const findSiteMembers = async (sites: string[] = [], userId: string | undefined) => {
-	const query = userId ? and(inArray(PersonsTable.site, sites), eq(PersonsTable.manager, userId)) : inArray(PersonsTable.site, sites);
 	const users = await db.query.PersonsTable.findMany({
-		where: query,
+		where: inArray(PersonsTable.site, sites),
 		with: {
 			transaction: {
 				columns: {
 					userId: false,
 				},
 			},
-			manager: {
-				columns: {
-					id: true,
-					name: true,
-				},
-			},
 		},
 	});
 
-	return users;
+	// Add actual managers based on group hierarchy
+	const usersWithActualManagers = await Promise.all(
+		users.map(async (user) => {
+			const actualManager = await findActualManager(user.id);
+			return {
+				...user,
+				manager: actualManager,
+			};
+		})
+	);
+
+	return usersWithActualManagers;
 };
 
 export const createPerson = async (
