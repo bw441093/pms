@@ -68,6 +68,8 @@ export const updatePersonDetailsSchema = z.object({
 			opts: z.array(z.string()).optional(),
 		})
 	).optional(),
+	newSiteManagerSites: z.array(z.string()).optional(),
 	selectedGroupId: z.string().optional(), // For personnelManager role - existing group selection
 	newGroupName: z.string().optional(), // For personnelManager role - new group creation
+	replacementAdmins: z.record(z.string()).optional(), // For command group admin replacements: groupId -> personId
 });

@@ -57,21 +57,25 @@ async function seedSimpleData() {
 			groupId: uuidv4(),
 			name: 'Development Team',
 			command: false,
+			site: false,
 		},
 		{
 			groupId: uuidv4(),
 			name: 'Operations Team',
 			command: true,
+			site: false,
 		},
 		{
 			groupId: uuidv4(),
 			name: 'Security Team',
 			command: true,
+			site: false,
 		},
 		{
 			groupId: uuidv4(),
 			name: 'Strategic Planning Team',
 			command: true,
+			site: false,
 		},
 	];
 

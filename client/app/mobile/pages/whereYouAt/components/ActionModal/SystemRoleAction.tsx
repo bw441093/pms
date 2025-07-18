@@ -31,24 +31,25 @@ import {
 } from '~/consts';
 import { getPerson } from '../../../../../clients/personsClient';
 import { useUpdatePersonDetails } from '~/hooks/useQueries';
+import { getAdminCommandGroups, getManagedSites, hasHigherRole } from '../../../../../utils/groupUtils';
 
 interface SystemRoleActionProps {
 	person: Person;
 	onClose: () => void;
 }
 
-interface Manager {
-	userId: string;
-	name: string;
-	site: string;
-	groupId: string;
-	groupName: string;
-}
-
 interface Group {
 	groupId: string;
 	name: string;
 	command: boolean;
+}
+
+interface Manager {
+	userId: string;
+	name: string;
+	site: string;
+	groupName: string;
+	groupId: string;
 }
 
 const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
@@ -63,20 +64,33 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 	const [userLoading, setUserLoading] = useState(true);
 	const updatePersonDetailsMutation = useUpdatePersonDetails();
 
+	// Commander state
+	const [managers, setManagers] = useState<Manager[]>([]);
+	const [commander, setCommander] = useState('');
+
 	// Personnel Manager group selection state
 	const [availableGroups, setAvailableGroups] = useState<Group[]>([]);
 	const [selectedGroupId, setSelectedGroupId] = useState('');
 	const [newGroupName, setNewGroupName] = useState('');
 
+	// Replacement admin state
+	const [currentCommandGroups, setCurrentCommandGroups] = useState<Group[]>([]);
+	const [replacementAdmins, setReplacementAdmins] = useState<Record<string, string>>({});
+	const [availableReplacements, setAvailableReplacements] = useState<Person[]>([]);
+	const [needsReplacement, setNeedsReplacement] = useState(false);
+
 	// Person details form state
 	const [personDetails, setPersonDetails] = useState({
 		name: person.name,
-		email: '',
+		email: person.email || '',
 		site: person.site,
 		serviceType: person.serviceType,
 	});
-	const [managers, setManagers] = useState<Manager[]>([]);
-	const [managersLoading, setManagersLoading] = useState(false);
+
+	// Fetch managers when component mounts
+	useEffect(() => {
+		fetchManagers();
+	}, []);
 
 	// Get current user's information for authorization
 	useEffect(() => {
@@ -86,13 +100,22 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 				if (userId) {
 					const user = await getPerson(userId);
 					setCurrentUser(user);
-					setSelectedRoles(person.personSystemRoles?.map((pr) => pr.role.name) ?? []);
-					const siteManagerRole = person.personSystemRoles?.find(
-						(pr) => pr.role.name === 'siteManager'
-					);
-					if (siteManagerRole && siteManagerRole.role.opts) {
-						setSiteManagerSites(siteManagerRole.role.opts);
+					
+					// Get initial roles from person's system roles
+					const roles = person.personSystemRoles?.map((pr) => pr.role.name) ?? [];
+					
+					// Check if person is currently admin of any command groups
+					const commandGroups = await fetchCurrentCommandGroups();
+					if (commandGroups && commandGroups.length > 0) {
+						roles.push('personnelManager');
 					}
+					const currentUserSiteManagerSites = await getCurrentUserSiteManagerSites();
+					if (currentUserSiteManagerSites.length > 0) {
+						roles.push('siteManager');
+					}
+					
+					setSelectedRoles(roles);
+					setSiteManagerSites(currentUserSiteManagerSites);
 				}
 			} catch (err) {
 				console.error('Error fetching current user:', err);
@@ -103,8 +126,95 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 		};
 
 		fetchCurrentUser();
-		fetchManagers();
 	}, []);
+
+	// Set initial commander when person data is available
+	useEffect(() => {
+		if (person.manager?.id) {
+			setCommander(person.manager.id);
+		}
+	}, [person.manager]);
+
+	const fetchManagers = async () => {
+		try {
+			const response = await axios.get('/api/users/managers', {
+				headers: {
+					Authorization: `Bearer ${localStorage.getItem('login_token')}`,
+				},
+			});
+			setManagers(response.data);
+		} catch (err) {
+			console.error('Error fetching managers:', err);
+			setError('Failed to load managers');
+		}
+	};
+
+	// Check if replacement is needed when roles change
+	useEffect(() => {
+		checkReplacementNeeded();
+	}, [selectedRoles, selectedGroupId, newGroupName, currentCommandGroups]);
+
+	const fetchCurrentCommandGroups = async () => {
+		try {
+			const adminCommandGroups = await getAdminCommandGroups(person.id);
+			setCurrentCommandGroups(adminCommandGroups);
+			return adminCommandGroups;
+		} catch (err) {
+			console.error('Error fetching current command groups:', err);
+		}
+	};
+
+	const fetchAvailableReplacements = async () => {
+		try {
+			// Get all persons to choose from as replacements
+			const response = await axios.get('/api/users', {
+				headers: {
+					Authorization: `Bearer ${localStorage.getItem('login_token')}`,
+				},
+			});
+			
+			// Filter out the current person
+			const availablePeople = response.data.filter((p: Person) => p.id !== person.id);
+			setAvailableReplacements(availablePeople);
+		} catch (err) {
+			console.error('Error fetching available replacements:', err);
+			setError('Failed to load available replacements');
+		}
+	};
+
+	const checkReplacementNeeded = () => {
+		const willHavePersonnelManager = selectedRoles.includes('personnelManager');
+		
+		// If person currently has personnelManager role and command groups
+		if (currentCommandGroups.length > 0) {
+			// Case 1: Removing personnelManager role completely
+			if (!willHavePersonnelManager) {
+				setNeedsReplacement(true);
+				fetchAvailableReplacements();
+				return;
+			}
+			
+			// Case 2: Changing to a different group (if they selected a different group)
+			if (willHavePersonnelManager && (selectedGroupId || newGroupName)) {
+				// Check if the selected group is different from current groups
+				const isDifferentGroup = !currentCommandGroups.some(group => group.groupId === selectedGroupId);
+				if (isDifferentGroup) {
+					setNeedsReplacement(true);
+					fetchAvailableReplacements();
+					return;
+				}
+			}
+		}
+		
+		setNeedsReplacement(false);
+	};
+
+	const handleReplacementChange = (groupId: string, replacementPersonId: string) => {
+		setReplacementAdmins(prev => ({
+			...prev,
+			[groupId]: replacementPersonId
+		}));
+	};
 
 	// Fetch available groups when personnelManager role is selected
 	useEffect(() => {
@@ -112,20 +222,6 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 			fetchAvailableGroups();
 		}
 	}, [selectedRoles]);
-
-	const fetchManagers = async () => {
-		try {
-			setManagersLoading(true);
-			const response = await axios.get('/api/users/managers');
-			console.log('response.data', response.data);
-			setManagers(response.data);
-		} catch (err) {
-			console.error('Error fetching managers:', err);
-			setError('Failed to load managers');
-		} finally {
-			setManagersLoading(false);
-		}
-	};
 
 	const fetchAvailableGroups = async () => {
 		try {
@@ -165,59 +261,45 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 		return currentUser.personSystemRoles.map((pr) => pr.role.name);
 	};
 
-	const getCurrentUserSiteManagerSites = () => {
-		if (!currentUser?.personSystemRoles) return [];
-		const siteManagerRole = currentUser.personSystemRoles.find(
-			(pr) => pr.role.name === 'siteManager'
-		);
-		return siteManagerRole?.role.opts || [];
-	};
-
-	const hasHigherRole = () => {
-		const userSystemRoles = getCurrentUserRoles();
-		return (
-			userSystemRoles.includes('personnelManager') ||
-			userSystemRoles.includes('hrManager') ||
-			userSystemRoles.includes('admin')
-		);
-	};
-
-	const canModifyRole = (role: string) => {
-		if (hasHigherRole()) return true;
-
-		const userSystemRoles = getCurrentUserRoles();
-		const userSiteManagerSites = getCurrentUserSiteManagerSites();
-
-		// Site managers can only modify siteManager roles for their sites
-		if (role === 'siteManager' && userSystemRoles.includes('siteManager')) {
-			// Check if the person being modified is in one of the current user's managed sites
-			return userSiteManagerSites.includes(person.site);
+	const getCurrentUserSiteManagerSites = async () => {
+		if (!currentUser?.id) return [];
+		
+		try {
+			return await getManagedSites(currentUser.id);
+		} catch (err) {
+			console.error('Error getting managed sites from groups:', err);
+			return [];
 		}
+	};
+
+	const canModifyRole = async () => {
+		const userSystemRoles = getCurrentUserRoles();
+		if (hasHigherRole(userSystemRoles)) return true;
 
 		return false;
 	};
 
-	const canModifySite = (site: string) => {
-		if (hasHigherRole()) return true;
-
+	const canModifySite = async (site: string) => {
 		const userSystemRoles = getCurrentUserRoles();
-		const userSiteManagerSites = getCurrentUserSiteManagerSites();
+		if (hasHigherRole(userSystemRoles)) return true;
 
 		// Site managers can only modify sites they manage
-		if (userSystemRoles.includes('siteManager')) {
-			return userSiteManagerSites.includes(site);
+		if (siteManagerSites.includes(site)) {
+			return true;
 		}
 
 		return false;
 	};
 
 	const canModifyPersonDetails = () => {
-		if (hasHigherRole()) return true;
+		const userSystemRoles = getCurrentUserRoles();
+		if (hasHigherRole(userSystemRoles)) return true;
 		return false;
 	};
 
-	const handleRoleChange = (role: string) => {
-		if (!canModifyRole(role)) {
+	const handleRoleChange = async (role: string) => {
+		const canModify = await canModifyRole();
+		if (!canModify) {
 			setError('אין לך הרשאות מתאימות לעריכת תפקיד זה');
 			return;
 		}
@@ -243,8 +325,9 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 		setError(''); // Clear any previous errors
 	};
 
-	const handleSiteChange = (site: string) => {
-		if (!canModifySite(site)) {
+	const handleSiteChange = async (site: string) => {
+		const canModify = await canModifySite(site);
+		if (!canModify) {
 			setError('אין לך הרשאות מתאימות לעריכת אתר זה');
 			return;
 		}
@@ -290,9 +373,23 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 			}
 		}
 
+		// Validate replacement admins are selected if needed
+		if (needsReplacement) {
+			const missingReplacements = currentCommandGroups.filter(group => 
+				!replacementAdmins[group.groupId]
+			);
+			if (missingReplacements.length > 0) {
+				setError(`חובה לבחור מחליף עבור הקבוצות: ${missingReplacements.map(g => g.name).join(', ')}`);
+				return;
+			}
+		}
+
 		// Check if user has permission to make these changes
+		const roleChecks = await Promise.all(
+			selectedRoles.map(role => canModifyRole())
+		);
 		const unauthorizedRoles = selectedRoles.filter(
-			(role) => !canModifyRole(role)
+			(role, index) => !roleChecks[index]
 		);
 		if (unauthorizedRoles.length > 0) {
 			setError(
@@ -301,8 +398,11 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 			return;
 		}
 
+		const siteChecks = await Promise.all(
+			siteManagerSites.map(site => canModifySite(site))
+		);
 		const unauthorizedSites = siteManagerSites.filter(
-			(site) => !canModifySite(site)
+			(site, index) => !siteChecks[index]
 		);
 		if (unauthorizedSites.length > 0) {
 			setError(
@@ -326,11 +426,15 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 				name: personDetails.name,
 				email: personDetails.email || undefined,
 				site: personDetails.site,
+				commander: commander || undefined,
 				systemRoles: selectedRoles.map((role) => ({
 					name: role,
-					opts: role === 'siteManager' ? siteManagerSites : [],
+					opts: [],
 				})) || [],
 				serviceType: personDetails.serviceType,
+				...(selectedRoles.includes('siteManager') && {
+					newSiteManagerSites: siteManagerSites
+				}), 
 				// Only include group fields if personnelManager role is selected
 				...(selectedRoles.includes('personnelManager') && {
 					...(selectedGroupId && selectedGroupId.trim() !== '' && {
@@ -339,12 +443,12 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 					...(newGroupName && newGroupName.trim() !== '' && {
 						newGroupName: newGroupName
 					})
+				}),
+				// Include replacement admins if needed
+				...(needsReplacement && {
+					replacementAdmins: replacementAdmins
 				})
 			};
-
-			console.log('Debug - SystemRoleAction sending payload:', detailsPayload);
-			console.log('Debug - selectedGroupId:', detailsPayload.selectedGroupId, 'type:', typeof detailsPayload.selectedGroupId);
-			console.log('Debug - newGroupName:', detailsPayload.newGroupName, 'type:', typeof detailsPayload.newGroupName);
 
 			await updatePersonDetailsMutation.mutate(detailsPayload);
 
@@ -418,6 +522,30 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 							/>
 
 							<FormControl fullWidth>
+								<InputLabel>(רשות) מפקד</InputLabel>
+								<Select
+									sx={{
+										'& .MuiSelect-select': {
+											textAlign: 'right',
+										},
+									}}
+									value={commander}
+									label="(רשות) מפקד"
+									inputProps={{ style: { textAlign: 'right' } }}
+									onChange={(e) => setCommander(e.target.value)}
+								>
+									<MenuItem value="">
+										<em>אין מפקד</em>
+									</MenuItem>
+									{managers.map((manager) => (
+										<MenuItem key={manager.userId} value={manager.userId}>
+											{manager.name} ({manager.site}) ({manager.groupName})
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+
+							<FormControl fullWidth>
 								<InputLabel>אתר</InputLabel>
 								<Select
 									sx={{
@@ -471,7 +599,7 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 									<Checkbox
 										checked={selectedRoles.includes(role)}
 										onChange={() => handleRoleChange(role)}
-										disabled={!canModifyRole(role)}
+										disabled={!canModifyRole()}
 									/>
 								}
 								label={hebrewSystemRoleNames[role] || 'תפקיד לא ידוע'}
@@ -580,6 +708,49 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 							<Typography variant="caption" sx={{ textAlign: 'right', color: 'text.secondary' }}>
 								* חובה לבחור קבוצה קיימת או ליצור קבוצה חדשה
 							</Typography>
+						</Stack>
+					</Box>
+				)}
+
+				{needsReplacement && currentCommandGroups.length > 0 && (
+					<Box>
+						<Divider sx={{ my: 2 }} />
+						<Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'right' }}>
+							בחירת מחליף למפקד קבוצה
+						</Typography>
+						<Typography variant="body2" sx={{ mb: 2, textAlign: 'right', color: 'text.secondary' }}>
+							אתה כרגע מפקד של קבוצות הפיקוד הבאות. חובה לבחור מחליף לכל קבוצה לפני שינוי התפקיד.
+						</Typography>
+						<Stack spacing={2}>
+							{currentCommandGroups.map((group) => (
+								<Box key={group.groupId}>
+									<Typography variant="body2" sx={{ mb: 1, textAlign: 'right', fontWeight: 'bold' }}>
+										קבוצה: {group.name}
+									</Typography>
+									<FormControl fullWidth required>
+										<InputLabel>בחר מחליף</InputLabel>
+										<Select
+											sx={{
+												'& .MuiSelect-select': {
+													textAlign: 'right',
+												},
+											}}
+											value={replacementAdmins[group.groupId] || ''}
+											label="בחר מחליף"
+											onChange={(e) => handleReplacementChange(group.groupId, e.target.value)}
+										>
+											<MenuItem value="">
+												<em>בחר מחליף</em>
+											</MenuItem>
+											{availableReplacements.map((replacement) => (
+												<MenuItem key={replacement.id} value={replacement.id}>
+													{replacement.name} ({replacement.site})
+												</MenuItem>
+											))}
+										</Select>
+									</FormControl>
+								</Box>
+							))}
 						</Stack>
 					</Box>
 				)}

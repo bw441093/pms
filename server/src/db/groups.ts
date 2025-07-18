@@ -1,7 +1,10 @@
-import { eq, inArray, and } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 import { db } from './db';
-import { GroupsTable, PersonsToGroups } from './schema';
+import { GroupsTable, PersonsToGroups, UsersTable } from './schema';
+
+// Import the findActualManager function from persons.ts
+import { findActualManager } from './persons';
 
 export const findGroupsByPersonId = async (personId: string) => {
 	const personGroups = await db.query.PersonsToGroups.findMany({
@@ -120,7 +123,24 @@ export const findAllSubordinatePersons = async (personId: string) => {
 		// Avoid duplicate persons in the same group
 		const personExists = groupedPersons[groupId].persons.some(p => p.id === person.id);
 		if (!personExists) {
-			groupedPersons[groupId].persons.push(person);
+			// Get the user's email from the UsersTable
+			const userEmail = await db.query.UsersTable.findFirst({
+				where: eq(UsersTable.id, person.id),
+				columns: {
+					email: true,
+				},
+			});
+			
+			// Get the person's actual manager
+			const actualManager = await findActualManager(person.id);
+			
+			const personWithEmailAndManager = {
+				...person,
+				email: userEmail?.email || '',
+				manager: actualManager,
+			};
+			
+			groupedPersons[groupId].persons.push(personWithEmailAndManager);
 		}
 	}
 	
@@ -137,10 +157,16 @@ export const addPersonToGroup = async (personId: string, groupId: string, groupR
 	return result[0];
 };
 
-export const createGroup = async (name: string, command: boolean = true) => {
+export const createGroup = async (name: string, command: boolean = true, site: boolean = false) => {
+	// Enforce constraint: if site is true, command must be false
+	if (site && command) {
+		throw new Error('Site groups cannot be command groups. Please set command to false for site groups.');
+	}
+	
 	const result = await db.insert(GroupsTable).values({
 		name,
 		command,
+		site,
 	}).returning({ groupId: GroupsTable.groupId, name: GroupsTable.name });
 	
 	return result[0];
@@ -190,4 +216,52 @@ export const findAllSubordinateCommandGroups = async (managerId: string) => {
 	);
 	
 	return uniqueGroups;
+};
+
+export const findAdminSiteGroups = async (userId: string) => {
+	// Get all groups where user is admin
+	const adminGroups = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => and(
+			eq(ptg.personId, userId),
+			eq(ptg.groupRole, 'admin')
+		),
+		with: { group: true }
+	});
+
+	// Filter for site groups only
+	const siteGroups = adminGroups
+		.filter(ptg => ptg.group.site !== null)
+		.map(ptg => ptg.group);
+
+	// Remove duplicates by groupId
+	const uniqueGroups = siteGroups.filter((group, index, self) =>
+		index === self.findIndex(g => g.groupId === group.groupId)
+	);
+
+	return uniqueGroups;
+};
+
+export const removePersonFromGroup = async (personId: string, groupId: string, groupRole?: 'admin' | 'member') => {
+	if (groupRole) {
+		// Remove person with specific role
+		const result = await db.delete(PersonsToGroups)
+			.where(and(
+				eq(PersonsToGroups.personId, personId),
+				eq(PersonsToGroups.groupId, groupId),
+				eq(PersonsToGroups.groupRole, groupRole)
+			))
+			.returning({ personId: PersonsToGroups.personId, groupId: PersonsToGroups.groupId });
+		
+		return result[0];
+	} else {
+		// Remove person regardless of role
+		const result = await db.delete(PersonsToGroups)
+			.where(and(
+				eq(PersonsToGroups.personId, personId),
+				eq(PersonsToGroups.groupId, groupId)
+			))
+			.returning({ personId: PersonsToGroups.personId, groupId: PersonsToGroups.groupId });
+		
+		return result[0];
+	}
 };

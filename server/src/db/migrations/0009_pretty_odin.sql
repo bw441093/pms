@@ -1,0 +1,1 @@
+ALTER TABLE "groups" ADD COLUMN "site" boolean DEFAULT false NOT NULL;

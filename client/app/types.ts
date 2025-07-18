@@ -11,7 +11,9 @@ export type Locations = typeof LOCATION_STATUSES[number];
 export type Person = {
 	id: string;
 	name: string;
-	site: Sites;
+	email?: string;
+	site: Sites; // Permanent/base site where person is stationed
+	currentSite?: Sites; // Current/reported site based on site group membership
 	serviceType: ServiceTypes;
 	manager?: {
 		id: string;
@@ -44,6 +46,7 @@ export type Group = {
 	groupId: string;
 	name: string;
 	command: boolean;
+	site: boolean;
 };
 
 export type GroupedPersons = {

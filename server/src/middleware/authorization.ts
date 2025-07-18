@@ -33,10 +33,6 @@ export default function authorize(allowedRoles: SystemRole[] = []) {
 				return;
 			}
 
-			logger.info(`allowedRoles: ${JSON.stringify(allowedRoles)}`);
-			logger.info(`user: ${JSON.stringify(user)}`);
-			logger.info(`user?.personSystemRoles: ${JSON.stringify(user?.personSystemRoles)}`);
-
 			if (allowedRoles.length === 0) {
 				next();
 				return;

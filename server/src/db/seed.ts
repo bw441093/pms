@@ -6,14 +6,6 @@ import { logger } from '../logger';
 // Predefined system roles that should exist in the database
 const PREDEFINED_SYSTEM_ROLES = [
 	{
-		name: 'siteManager',
-		opts: null, // Site managers will have specific sites assigned when created
-	},
-	{
-		name: 'personnelManager',
-		opts: null,
-	},
-	{
 		name: 'hrManager',
 		opts: null,
 	},
@@ -29,48 +21,59 @@ const PREDEFINED_GROUPS = [
 	{
 		name: 'לשכת מפקד 9920',
 		command: true,
+		site: false,
 	},
 	{
 		name: 'ענף טכנולוגי',
 		command: true,
+		site: false,
 	},
     {
         name: ' מנהל משאבי אנוש',
         command: true,
+		site: false,
     },
 	{
 		name: 'מדור כחול לבן',
 		command: true,
+		site: false,
 	},
 	{
 		name: 'צוות תכנון',
 		command: true,
+		site: false,
 	},
 	// Site groups (non-command) - All sites from SITE_OPTIONS
 	{
 		name: 'איילת השחר', // mbt
 		command: false,
+		site: true,
 	},
 	{
 		name: 'בראשית', // mfs
 		command: false,
+		site: true,
 	},
 	{
 		name: 'ביה״ב', // kir
 		command: false,
+		site: true,
 	},
 	{
 		name: 'רקיע', // mdt
 		command: false,
+		site: true,
 	},
 	{
 		name: 'אחר', // other
 		command: false,
+		site: true,
 	},
 	// Additional non-command groups
     {
         name: 'משמרת עיבוד',
         command: false,
+		site: false,
     },
 ] as const;
 
@@ -123,8 +126,9 @@ export const seedGroups = async (): Promise<void> => {
 				await db.insert(GroupsTable).values({
 					name: groupData.name,
 					command: groupData.command,
+					site: groupData.site,
 				});
-				logger.info(`  ✅ Created group: ${groupData.name}`);
+				logger.info(`  ✅ Created group: ${groupData.name} (${groupData.site ? 'site' : 'non-site'} group)`);
 			} else {
 				logger.info(`  ℹ️  Group already exists: ${groupData.name}`);
 			}

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'crypto';
+import { eq, and } from 'drizzle-orm';
 
 import {
 	find,
@@ -15,12 +16,16 @@ import {
 	updatePersonDetails,
 	findSitePersons,
 	findDirectReports,
+	movePersonToSiteGroup,
+	updatePersonSiteManagerSites,
+	updatePersonCommandGroup,
 } from '../db/persons';
 import { createSystemRole, deleteUserSystemRoles } from '../db/systemRoles';
 import { createUser } from '../db/users';
 import { createTransaction, deleteTransaction, updateTransaction } from '../db/transactions';
 import { logger } from '../logger';
-import { createGroup, findCommandGroupsByAdmin, addPersonToGroup, findGroupByName } from '../db/groups';
+import { createGroup, findCommandGroupsByAdmin, addPersonToGroup, findGroupByName, removePersonFromGroup } from '../db/groups';
+import { db } from '../db/db';
 
 interface PostPerson {
 	email?: string;
@@ -30,6 +35,7 @@ interface PostPerson {
 	systemRoles: { name: string; opts: string[] }[];
 	selectedGroupId?: string;
 	newGroupName?: string;
+	commander?: string;
 }
 
 interface UpdatePersonDetails {
@@ -37,15 +43,18 @@ interface UpdatePersonDetails {
 	site?: string;
 	serviceType?: string;
 	email?: string;
+	commander?: string;
 	systemRoles?: { name: string; opts: string[] }[];
+	newSiteManagerSites?: string[];
 	selectedGroupId?: string;
 	newGroupName?: string;
+	replacementAdmins?: Record<string, string>; // groupId -> personId
 }
 
 export const postPersonHandler = async (req: Request, res: Response) => {
 	logger.info('Add user to table');
 	try {
-		const { email, name, site, systemRoles, serviceType, selectedGroupId, newGroupName } = req.body as PostPerson;
+		const { email, name, site, systemRoles, serviceType, selectedGroupId, newGroupName, commander } = req.body as PostPerson;
 
 		// Create User first (returns the generated ID)
 		const userId = await createUser(email || `${uuidv4()}@temp.com`);
@@ -53,12 +62,22 @@ export const postPersonHandler = async (req: Request, res: Response) => {
 		// Create Person
 		await createPerson(userId, name, site, serviceType);
 
+		// Automatically assign person to their permanent site group
+		try {
+			await movePersonToSiteGroup(userId, site);
+			logger.info(`Assigned person ${userId} to their permanent site group: ${site}`);
+		} catch (error) {
+			logger.error(`Failed to assign person ${userId} to site group ${site}:`, error);
+			// Don't fail the whole operation, just log the error
+		}
+
 		// Add system roles to the person if provided
-		if (systemRoles && systemRoles.length > 0) {
-			for (const roleData of systemRoles) {
-				await createSystemRole(roleData.name, roleData.opts, userId);
+		for (const roleData of systemRoles) {
+			if (['hrManager', 'admin'].includes(roleData.name)) {
+				await createSystemRole([roleData.name], userId);
 			}
 		}
+		
 
 		// Handle group assignment for personnelManager role
 		const hasPersonnelManagerRole = systemRoles.some((role: any) => role.name === 'personnelManager');
@@ -74,7 +93,7 @@ export const postPersonHandler = async (req: Request, res: Response) => {
 			if (normalizedSelectedGroupId) {
 				// Use existing group
 				groupId = normalizedSelectedGroupId;
-				logger.info(`Adding personnelManager ${userId} as admin to existing group: ${groupId}`);
+				logger.info(`Setting personnelManager ${userId} as admin of existing group: ${groupId}`);
 			} else if (normalizedNewGroupName) {
 				// Create new group
 				logger.info(`Creating new command group: ${normalizedNewGroupName} for personnelManager: ${userId}`);
@@ -99,12 +118,37 @@ export const postPersonHandler = async (req: Request, res: Response) => {
 			}
 			
 			try {
+				// For new persons, just add them as admin (no need to remove from old groups)
 				await addPersonToGroup(userId, groupId, 'admin');
 				logger.info(`Added personnelManager ${userId} as admin to group: ${groupId}`);
 			} catch (err) {
 				logger.error(`Error handling group assignment for personnelManager: ${err}`);
 				res.status(500).send('Error assigning group to personnelManager');
 				return;
+			}
+		}
+
+		// Handle commander assignment if provided
+		if (commander && commander.trim()) {
+			logger.info(`Handling commander assignment for user ${userId} to commander: ${commander}`);
+			
+			try {
+				// Find the commander's command groups where they are admin
+				const commanderCommandGroups = await findCommandGroupsByAdmin(commander);
+				
+				if (commanderCommandGroups.length === 0) {
+					logger.warn(`Commander ${commander} has no command groups where they are admin`);
+				} else {
+					// Add the new user as a member to all of the commander's command groups
+					for (const group of commanderCommandGroups) {
+						await addPersonToGroup(userId, group.groupId, 'member');
+						logger.info(`Added user ${userId} as member to commander's command group: ${group.name} (${group.groupId})`);
+					}
+					logger.info(`Successfully assigned user ${userId} to ${commanderCommandGroups.length} commander groups`);
+				}
+			} catch (err) {
+				logger.error(`Error handling commander assignment for user ${userId}: ${err}`);
+				// Don't fail the whole operation, just log the error
 			}
 		}
 
@@ -309,7 +353,7 @@ export const confirmTransactionHandler = async (req: Request, res: Response) => 
 			
 			// Execute the move based on field type
 			if (updatedUser.transaction.field === 'site') {
-				await updatePersonSite(id, updatedUser.transaction.target);
+				await movePersonToSiteGroup(id, updatedUser.transaction.target);
 			}
 			// Note: manager field handling removed since we no longer use manager field
 			
@@ -334,21 +378,62 @@ export const updatePersonDetailsHandler = async (req: Request, res: Response) =>
 	}
 	
 	logger.info(`Update person details for id: ${id}`);
+	logger.info(`Full request body:`, JSON.stringify(req.body, null, 2));
 	try {
-		const { name, site, email, serviceType, systemRoles, selectedGroupId, newGroupName } = req.body as UpdatePersonDetails;
+		const { name, site, email, serviceType, commander, systemRoles, selectedGroupId, newGroupName, newSiteManagerSites, replacementAdmins } = req.body as UpdatePersonDetails;
 		
 		// Log received fields for debugging
-		logger.info(`Received update fields - selectedGroupId: "${selectedGroupId}", newGroupName: "${newGroupName}"`);
+		logger.info(`Received update fields - selectedGroupId: "${selectedGroupId}", newGroupName: "${newGroupName}", commander: "${commander}"`);
 
 		// Normalize inputs - convert empty strings to undefined
 		const normalizedSelectedGroupId = selectedGroupId?.trim() || undefined;
 		const normalizedNewGroupName = newGroupName?.trim() || undefined;
+		const normalizedCommander = commander?.trim() || undefined;
 		
-		logger.info(`Normalized fields - selectedGroupId: "${normalizedSelectedGroupId}", newGroupName: "${normalizedNewGroupName}"`);
+		logger.info(`Normalized fields - selectedGroupId: "${normalizedSelectedGroupId}", newGroupName: "${normalizedNewGroupName}", commander: "${normalizedCommander}"`);
 
 		// Update basic person details
 		await updatePersonDetails(id, { name, site, serviceType });
+		
+		// Handle commander assignment if provided
+		if (normalizedCommander !== undefined) {
+			logger.info(`Handling commander assignment for user ${id} to commander: ${normalizedCommander}`);
+			
+			try {
+				// First, remove the person from all existing command groups where they are members
+				const existingCommandGroupMemberships = await db.query.PersonsToGroups.findMany({
+					where: (ptg: any) => and(eq(ptg.personId, id), eq(ptg.groupRole, 'member')),
+					with: { group: true }
+				});
 
+				for (const ptg of existingCommandGroupMemberships) {
+					if (ptg.group.command) {
+						await removePersonFromGroup(id, ptg.groupId, 'member');
+						logger.info(`Removed user ${id} from command group ${ptg.group.name} (${ptg.groupId})`);
+					}
+				}
+
+				// If a new commander is specified, add the person to their command groups
+				if (normalizedCommander) {
+					const commanderCommandGroups = await findCommandGroupsByAdmin(normalizedCommander);
+					
+					if (commanderCommandGroups.length === 0) {
+						logger.warn(`Commander ${normalizedCommander} has no command groups where they are admin`);
+					} else {
+						// Add the person as a member to all of the commander's command groups
+						for (const group of commanderCommandGroups) {
+							await addPersonToGroup(id, group.groupId, 'member');
+							logger.info(`Added user ${id} as member to commander's command group: ${group.name} (${group.groupId})`);
+						}
+						logger.info(`Successfully assigned user ${id} to ${commanderCommandGroups.length} commander groups`);
+					}
+				}
+			} catch (err) {
+				logger.error(`Error handling commander assignment for user ${id}: ${err}`);
+				// Don't fail the whole operation, just log the error
+			}
+		}
+		
 		// Handle system roles update if provided
 		if (systemRoles) {
 			// Delete existing system roles for this person
@@ -356,7 +441,32 @@ export const updatePersonDetailsHandler = async (req: Request, res: Response) =>
 
 			// Add new system roles
 			for (const roleData of systemRoles) {
-				await createSystemRole(roleData.name, roleData.opts, id);
+				await createSystemRole([roleData.name], id);
+			}
+		}
+
+		// Handle newSiteManagerSites update if provided
+		if (newSiteManagerSites && newSiteManagerSites.length > 0) {
+			await updatePersonSiteManagerSites(id, newSiteManagerSites);
+		}
+
+		// Handle replacement admins if provided (do this BEFORE command group updates)
+		if (replacementAdmins && Object.keys(replacementAdmins).length > 0) {
+			logger.info(`Handling replacement admins for user ${id}:`, replacementAdmins);
+			for (const [groupId, personId] of Object.entries(replacementAdmins)) {
+				try {
+					// Remove the original admin from the group
+					await removePersonFromGroup(id, groupId, 'admin');
+					logger.info(`Removed original admin ${id} from group ${groupId}`);
+					
+					// Add the replacement as admin to the group
+					await addPersonToGroup(personId, groupId, 'admin');
+					logger.info(`Added replacement admin ${personId} to group ${groupId}`);
+				} catch (err) {
+					logger.error(`Error replacing admin ${personId} in group ${groupId}:`, err);
+					res.status(500).send(`Error replacing admin ${personId} in group ${groupId}`);
+					return;
+				}
 			}
 		}
 
@@ -370,7 +480,7 @@ export const updatePersonDetailsHandler = async (req: Request, res: Response) =>
 			if (normalizedSelectedGroupId) {
 				// Use existing group
 				groupId = normalizedSelectedGroupId;
-				logger.info(`Adding personnelManager ${id} as admin to existing group: ${groupId}`);
+				logger.info(`Setting personnelManager ${id} as admin of existing group: ${groupId}`);
 			} else if (normalizedNewGroupName) {
 				// Create new group
 				logger.info(`Creating new command group: ${normalizedNewGroupName} for personnelManager: ${id}`);
@@ -395,11 +505,25 @@ export const updatePersonDetailsHandler = async (req: Request, res: Response) =>
 			}
 			
 			try {
+				// Remove from any remaining command groups that didn't have replacements
+				const remainingCommandGroups = await db.query.PersonsToGroups.findMany({
+					where: (ptg: any) => and(eq(ptg.personId, id), eq(ptg.groupRole, 'admin')),
+					with: { group: true }
+				});
+
+				for (const ptg of remainingCommandGroups) {
+					if (ptg.group.command) {
+						await removePersonFromGroup(id, ptg.groupId, 'admin');
+						logger.info(`Removed ${id} from remaining command group ${ptg.groupId}`);
+					}
+				}
+				
+				// Add to new group
 				await addPersonToGroup(id, groupId, 'admin');
-				logger.info(`Added personnelManager ${id} as admin to group: ${groupId}`);
+				logger.info(`Added personnelManager ${id} as admin to new command group: ${groupId}`);
 			} catch (err) {
-				logger.error(`Error handling group assignment for personnelManager in update: ${err}`);
-				res.status(500).send('Error assigning group to personnelManager');
+				logger.error(`Error updating personnelManager command group: ${err}`);
+				res.status(500).send('Error updating personnelManager command group');
 				return;
 			}
 		}

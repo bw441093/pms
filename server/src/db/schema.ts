@@ -82,6 +82,7 @@ export const GroupsTable = pgTable('groups', {
 	groupId: uuid('group_id').defaultRandom().notNull().primaryKey(),
 	name: text().notNull(),
 	command: boolean().default(false).notNull(),
+	site: boolean().default(false).notNull(),
 });
 
 export const PersonsToGroups = pgTable(

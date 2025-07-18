@@ -430,7 +430,8 @@ const DesktopDashboard: React.FC<DesktopDashboardProps> = ({
 								</TableCell>
 								<TableCell align="right">
 									<Typography sx={{ fontWeight: 500 }}>
-										{hebrewSiteNames[person.site] || person.site}
+										{/* Show current site (where they are now) if available, fallback to permanent site */}
+										{hebrewSiteNames[((person as any).currentSite || person.site) as keyof typeof hebrewSiteNames] || (person as any).currentSite || person.site}
 									</Typography>
 								</TableCell>
 								<TableCell align="right">

@@ -64,6 +64,7 @@ export function useAddNewPerson() {
 			serviceType,
 			selectedGroupId,
 			newGroupName,
+			commander,
 		}: {
 			name: string;
 			site: string;
@@ -72,7 +73,8 @@ export function useAddNewPerson() {
 			serviceType: string;
 			selectedGroupId?: string;
 			newGroupName?: string;
-		}) => addNewPerson(name, site, email, systemRoles, serviceType, selectedGroupId, newGroupName),
+			commander?: string;
+		}) => addNewPerson(name, site, email, systemRoles, serviceType, selectedGroupId, newGroupName, commander),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['peopleData'] });
 		},
@@ -160,8 +162,10 @@ export function useUpdatePersonDetails() {
 			email,
 			systemRoles,
 			serviceType,
+			newSiteManagerSites,
 			selectedGroupId,
 			newGroupName,
+			replacementAdmins,	
 		}: {
 			userId: string;
 			name?: string;
@@ -169,9 +173,11 @@ export function useUpdatePersonDetails() {
 			email?: string;
 			systemRoles?: { name: string; opts: string[] }[];
 			serviceType?: string;
+			newSiteManagerSites?: string[];
 			selectedGroupId?: string;
 			newGroupName?: string;
-		}) => updatePersonDetails(userId, { name, site, email, systemRoles, serviceType, selectedGroupId, newGroupName }),
+			replacementAdmins?: Record<string, string>;
+		}) => updatePersonDetails(userId, { name, site, email, systemRoles, serviceType, newSiteManagerSites, selectedGroupId, newGroupName, replacementAdmins }),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['peopleData'] });
 		},

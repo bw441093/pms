@@ -1,10 +1,51 @@
 import { and, eq, inArray } from 'drizzle-orm';
 
 import { db } from './db';
-import { PersonsTable, PersonsToSystemRoles, SystemRolesTable, PersonsToGroups, GroupsTable } from './schema';
+import { PersonsTable, PersonsToSystemRoles, SystemRolesTable, PersonsToGroups, GroupsTable, UsersTable } from './schema';
+import { logger } from '../logger';
+
+// Site code to Hebrew name mapping (same as in client)
+const hebrewSiteNames: Record<string, string> = {
+	mbt: 'איילת השחר',
+	mfs: 'בראשית', 
+	kir: 'ביה״ב',
+	mdt: 'רקיע',
+	other: 'אחר',
+};
+
+// Reverse mapping from Hebrew name to site code
+const siteCodeFromHebrew: Record<string, string> = {
+	'איילת השחר': 'mbt',
+	'בראשית': 'mfs',
+	'ביה״ב': 'kir', 
+	'רקיע': 'mdt',
+	'אחר': 'other',
+};
+
+// Helper function to find the current/reported site based on site group membership
+const findCurrentSite = async (personId: string) => {
+	// Find site groups where this person is a member
+	const siteGroups = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => eq(ptg.personId, personId),
+		with: { 
+			group: true
+		}
+	});
+
+	// Filter for site groups only
+	const currentSiteGroup = siteGroups.find(ptg => ptg.group.site);
+	
+	if (currentSiteGroup) {
+		// Convert Hebrew group name to site code
+		const siteCode = siteCodeFromHebrew[currentSiteGroup.group.name];
+		return siteCode || 'other'; // fallback to 'other' if not found
+	}
+
+	return null; // No current site group membership
+};
 
 // Helper function to find the actual manager based on group hierarchy
-const findActualManager = async (personId: string) => {
+export const findActualManager = async (personId: string) => {
 	// Find command groups where this person is a member
 	const memberGroups = await db.query.PersonsToGroups.findMany({
 		where: (ptg) => and(eq(ptg.personId, personId), eq(ptg.groupRole, 'member')),
@@ -67,18 +108,30 @@ export const find = async () => {
 		},
 	});
 
-	// Add actual managers based on group hierarchy
-	const usersWithActualManagers = await Promise.all(
+	// Add actual managers and current sites based on group hierarchy
+	const usersWithActualManagersAndSites = await Promise.all(
 		users.map(async (user) => {
 			const actualManager = await findActualManager(user.id);
+			const currentSite = await findCurrentSite(user.id);
+			
+			// Get the user's email from the UsersTable
+			const userEmail = await db.query.UsersTable.findFirst({
+				where: eq(UsersTable.id, user.id),
+				columns: {
+					email: true,
+				},
+			});
+			
 			return {
 				...user,
+				email: userEmail?.email || '',
 				manager: actualManager,
+				currentSite,
 			};
 		})
 	);
 
-	return usersWithActualManagers;
+	return usersWithActualManagersAndSites;
 };
 
 export const findPersonById = async (id: string) => {
@@ -103,13 +156,26 @@ export const findPersonById = async (id: string) => {
 		return null;
 	}
 
-	// Add actual manager based on group hierarchy
+	// Get the user's email from the UsersTable
+	const userEmail = await db.query.UsersTable.findFirst({
+		where: eq(UsersTable.id, id),
+		columns: {
+			email: true,
+		},
+	});
+
+	// Add actual manager and current site based on group hierarchy
 	const actualManager = await findActualManager(user.id);
+	const currentSite = await findCurrentSite(user.id);
 	
-	return {
+	const result = {
 		...user,
+		email: userEmail?.email || '',
 		manager: actualManager,
+		currentSite,
 	};
+	
+	return result;
 };
 
 export const findManagers = async () => {
@@ -168,24 +234,36 @@ export const findDirectReports = async (id: string) => {
 		}
 	});
 
-	// Step 4: Extract unique persons and add actual managers
+	// Step 4: Extract unique persons and add actual managers, current sites, and emails
 	const uniquePersonsMap = new Map();
-	const personsWithActualManagers = await Promise.all(
+	const personsWithActualManagersAndSites = await Promise.all(
 		groupMembers.map(async (ptg) => {
 			if (!uniquePersonsMap.has(ptg.person.id)) {
 				const actualManager = await findActualManager(ptg.person.id);
-				const personWithManager = {
+				const currentSite = await findCurrentSite(ptg.person.id);
+				
+				// Get the user's email from the UsersTable
+				const userEmail = await db.query.UsersTable.findFirst({
+					where: eq(UsersTable.id, ptg.person.id),
+					columns: {
+						email: true,
+					},
+				});
+				
+				const personWithManagerAndSite = {
 					...ptg.person,
+					email: userEmail?.email || '',
 					manager: actualManager,
+					currentSite,
 				};
-				uniquePersonsMap.set(ptg.person.id, personWithManager);
-				return personWithManager;
+				uniquePersonsMap.set(ptg.person.id, personWithManagerAndSite);
+				return personWithManagerAndSite;
 			}
 			return null;
 		})
 	);
 
-	return personsWithActualManagers.filter(person => person !== null);
+	return personsWithActualManagersAndSites.filter(person => person !== null);
 };
 
 export const findSiteMembers = async (sites: string[] = [], userId: string | undefined) => {
@@ -200,18 +278,30 @@ export const findSiteMembers = async (sites: string[] = [], userId: string | und
 		},
 	});
 
-	// Add actual managers based on group hierarchy
-	const usersWithActualManagers = await Promise.all(
+	// Add actual managers, current sites, and emails based on group hierarchy
+	const usersWithActualManagersAndSites = await Promise.all(
 		users.map(async (user) => {
 			const actualManager = await findActualManager(user.id);
+			const currentSite = await findCurrentSite(user.id);
+			
+			// Get the user's email from the UsersTable
+			const userEmail = await db.query.UsersTable.findFirst({
+				where: eq(UsersTable.id, user.id),
+				columns: {
+					email: true,
+				},
+			});
+			
 			return {
 				...user,
+				email: userEmail?.email || '',
 				manager: actualManager,
+				currentSite,
 			};
 		})
 	);
 
-	return usersWithActualManagers;
+	return usersWithActualManagersAndSites;
 };
 
 export const createPerson = async (
@@ -306,21 +396,210 @@ export const updatePersonDetails = async (
 };
 
 export const findSitePersons = async (userId: string) => {
-	// Get the user's siteManager roles and their opts (site names)
-	const roles = await db.query.PersonsToSystemRoles.findMany({
-		where: (ptsr) => eq(ptsr.userId, userId),
-		with: { role: true }
+	// Find site groups where this user is admin
+	const adminSiteGroups = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => and(eq(ptg.personId, userId), eq(ptg.groupRole, 'admin')),
+		with: { 
+			group: true
+		}
 	});
-	
-	// Collect all sites from all siteManager roles (in case of multiple)
-	const sites: string[] = roles
-		.filter(r => r.role.name === 'siteManager' && Array.isArray(r.role.opts))
-		.flatMap(r => r.role.opts as string[]);
-	
-	if (!sites.length) return [];
 
-	// Find all persons whose site is in the managed sites
-	return await db.query.PersonsTable.findMany({
-		where: (fields) => inArray(fields.site, sites)
+	// Filter for site groups only
+	const siteGroupIds = adminSiteGroups
+		.filter(ptg => ptg.group.site)
+		.map(ptg => ptg.groupId);
+
+	if (siteGroupIds.length === 0) {
+		return [];
+	}
+
+	// Find all members of those site groups
+	const siteGroupMembers = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => and(
+			inArray(ptg.groupId, siteGroupIds),
+			eq(ptg.groupRole, 'member')
+		),
+		with: {
+			person: {
+				with: {
+					transaction: {
+						columns: {
+							userId: false,
+						},
+					},
+					personSystemRoles: {
+						columns: { userId: false, roleId: false },
+						with: {
+							role: true,
+						},
+					},
+				}
+			}
+		}
 	});
+
+	// Extract unique persons and add actual managers, current sites, and emails
+	const uniquePersonsMap = new Map();
+	const personsWithActualManagersAndSites = await Promise.all(
+		siteGroupMembers.map(async (ptg) => {
+			if (!uniquePersonsMap.has(ptg.person.id)) {
+				const actualManager = await findActualManager(ptg.person.id);
+				const currentSite = await findCurrentSite(ptg.person.id);
+				
+				// Get the user's email from the UsersTable
+				const userEmail = await db.query.UsersTable.findFirst({
+					where: eq(UsersTable.id, ptg.person.id),
+					columns: {
+						email: true,
+					},
+				});
+				
+				const personWithManagerAndSite = {
+					...ptg.person,
+					email: userEmail?.email || '',
+					manager: actualManager,
+					currentSite,
+				};
+				uniquePersonsMap.set(ptg.person.id, personWithManagerAndSite);
+				return personWithManagerAndSite;
+			}
+			return null;
+		})
+	);
+
+	return personsWithActualManagersAndSites.filter(person => person !== null);
+};
+
+export const movePersonToSiteGroup = async (personId: string, targetSiteCode: string) => {
+	// Get the Hebrew name for the target site
+	const targetSiteGroupName = hebrewSiteNames[targetSiteCode];
+	if (!targetSiteGroupName) {
+		throw new Error(`Invalid site code: ${targetSiteCode}`);
+	}
+
+	// Find the target site group
+	const targetSiteGroup = await db.query.GroupsTable.findFirst({
+		where: (groups) => and(eq(groups.name, targetSiteGroupName), eq(groups.site, true)),
+	});
+
+	if (!targetSiteGroup) {
+		throw new Error(`Site group not found for site: ${targetSiteCode}`);
+	}
+
+	// Remove person from any existing site groups
+	const existingSiteGroups = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => eq(ptg.personId, personId),
+		with: { group: true }
+	});
+
+	for (const ptg of existingSiteGroups) {
+		if (ptg.group.site) {
+			await db.delete(PersonsToGroups)
+				.where(and(
+					eq(PersonsToGroups.personId, personId),
+					eq(PersonsToGroups.groupId, ptg.groupId)
+				));
+		}
+	}
+
+	// Add person to the new site group as a member
+	await db.insert(PersonsToGroups).values({
+		personId,
+		groupId: targetSiteGroup.groupId,
+		groupRole: 'member',
+	});
+
+	return { success: true, targetSiteGroup: targetSiteGroupName };
+};
+
+export const updatePersonSiteManagerSites = async (personId: string, newSiteCodes: string[]) => {
+	logger.info(`Updating site manager sites for person ${personId}. New sites: ${JSON.stringify(newSiteCodes)}`);
+	
+	// Remove person from all existing site groups where they are admin
+	const existingSiteGroups = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => and(eq(ptg.personId, personId), eq(ptg.groupRole, 'admin')),
+		with: { group: true }
+	});
+
+	logger.info(`Found existing admin groups: ${JSON.stringify(existingSiteGroups)}`);
+
+	for (const ptg of existingSiteGroups) {
+		if (ptg.group.site) {
+			logger.info(`Removing person ${personId} from site group ${ptg.group.name} (${ptg.groupId})`);
+			await db.delete(PersonsToGroups)
+				.where(and(
+					eq(PersonsToGroups.personId, personId),
+					eq(PersonsToGroups.groupId, ptg.groupId),
+					eq(PersonsToGroups.groupRole, 'admin')
+				));
+		}
+	}
+
+	// Add person as admin to new site groups
+	for (const siteCode of newSiteCodes) {
+		const siteGroupName = hebrewSiteNames[siteCode];
+		if (!siteGroupName) {
+			logger.error(`Invalid site code: ${siteCode}`);
+			continue;
+		}
+
+		// Find the site group
+		const siteGroup = await db.query.GroupsTable.findFirst({
+			where: (groups) => and(eq(groups.name, siteGroupName), eq(groups.site, true)),
+		});
+
+		if (!siteGroup) {
+			logger.error(`Site group not found for site: ${siteCode}`);
+			continue;
+		}
+
+		logger.info(`Adding person ${personId} as admin to site group ${siteGroupName} (${siteGroup.groupId})`);
+		await db.insert(PersonsToGroups).values({
+			personId,
+			groupId: siteGroup.groupId,
+			groupRole: 'admin',
+		});
+	}
+
+	logger.info(`Site manager update completed for person ${personId}`);
+	return { success: true };
+};
+
+export const updatePersonCommandGroup = async (personId: string, newGroupId: string) => {
+	logger.info(`Updating command group for person ${personId}. New group: ${newGroupId}`);
+	
+	// Remove person from all existing command groups where they are admin
+	const existingCommandGroups = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => and(eq(ptg.personId, personId), eq(ptg.groupRole, 'admin')),
+		with: { group: true }
+	});
+
+	logger.info(`Found existing admin groups: ${JSON.stringify(existingCommandGroups)}`);
+
+	for (const ptg of existingCommandGroups) {
+		if (ptg.group.command) {
+			logger.info(`Removing person ${personId} from command group ${ptg.group.name} (${ptg.groupId})`);
+			await db.delete(PersonsToGroups)
+				.where(and(
+					eq(PersonsToGroups.personId, personId),
+					eq(PersonsToGroups.groupId, ptg.groupId),
+					eq(PersonsToGroups.groupRole, 'admin')
+				));
+		}
+	}
+
+	// Add person as admin to new command group
+	logger.info(`Adding person ${personId} as admin to command group: ${newGroupId}`);
+	await db.insert(PersonsToGroups).values({
+		personId,
+		groupId: newGroupId,
+		groupRole: 'admin',
+	});
+
+	logger.info(`Command group update completed for person ${personId}`);
+	return { success: true };
+};
+
+export const getCurrentSiteCode = async (personId: string) => {
+	return await findCurrentSite(personId);
 };

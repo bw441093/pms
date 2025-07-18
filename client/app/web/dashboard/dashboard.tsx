@@ -6,6 +6,7 @@ import DesktopDashboard from './DesktopDashboard';
 import type { Person } from '../../types';
 import { getPerson } from '~/clients/personsClient';
 import { applyFiltersAndSearch, type FilterOptions } from '../../utils/filterUtils';
+import { checkIsPersonnelManager, getManagedSites, hasHigherRole } from '../../utils/groupUtils';
 
 export default function DashboardPage() {
 	const navigate = useNavigate();
@@ -72,33 +73,45 @@ export default function DashboardPage() {
 			if (!userId) return null;
 			const currentUser = await getPerson(userId);
 
-			if (currentUser.personSystemRoles) {
-				let isManager = false;
-				let isSiteManager = false;
-				let isDirectManager = false;
-				const newSitesManaged: string[] = [];
+			// Use group-based role checking instead of system roles
+			let isManager = false;
+			let isSiteManager = false;
+			let isDirectManager = false;
+			const newSitesManaged: string[] = [];
 
-				currentUser.personSystemRoles.forEach((pr) => {
-					if (pr.role.name === 'personnelManager') {
-						isManager = true;
-						isDirectManager = true; // Personnel managers can also see direct reports
-					}
+			// Check for higher-level system roles (these still use system roles)
+			const systemRoles = currentUser.personSystemRoles?.map((pr: any) => pr.role.name) ?? [];
+			const hasHigherRolePermissions = hasHigherRole(systemRoles);
 
-					if (pr.role.name === 'siteManager' && pr.role.opts) {
-						isSiteManager = true;
-						newSitesManaged.push(...pr.role.opts);
-					}
-				});
+			if (hasHigherRolePermissions) {
+				// Higher roles have all permissions
+				isManager = true;
+				isSiteManager = true;
+				isDirectManager = true;
+			} else {
+				// Check group-based roles
+				const isPersonnelManagerByGroup = await checkIsPersonnelManager(userId);
+				const managedSites = await getManagedSites(userId);
 
-				// Update filters and sites
-				setFilters(prev => ({
-					...prev,
-					isManager,
-					isSiteManager,
-					isDirectManager
-				}));
-				setSitesManaged(newSitesManaged);
+				if (isPersonnelManagerByGroup) {
+					isManager = true;
+					isDirectManager = true; // Personnel managers can also see direct reports
+				}
+
+				if (managedSites.length > 0) {
+					isSiteManager = true;
+					newSitesManaged.push(...managedSites);
+				}
 			}
+
+			// Update filters and sites
+			setFilters(prev => ({
+				...prev,
+				isManager,
+				isSiteManager,
+				isDirectManager
+			}));
+			setSitesManaged(newSitesManaged);
 
 			return currentUser;
 		},

@@ -58,6 +58,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 	const [formData, setFormData] = useState({
 		name: '',
 		email: '',
+		commander: '',
 		site: '',
 		roles: [] as string[],
 		serviceType: 'hova',
@@ -181,10 +182,12 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 			setLoading(true);
 			
 			// Create system roles array with proper structure
-			const systemRoles = formData.roles.map(role => ({
-				name: role,
-				opts: role === 'siteManager' ? [formData.siteManagerSite] : [],
-			}));
+			const systemRoles = formData.roles.
+				filter(role => SYSTEM_ROLE_OPTIONS.includes(role as any))
+				.map(role => ({
+					name: role,
+					opts: [],
+				}));
 
 			// Only include group fields if personnelManager role is selected
 			const groupFields = formData.roles.includes('personnelManager') ? {
@@ -195,6 +198,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 			await addNewPersonMutation.mutateAsync({
 				name: formData.name,
 				email: formData.email,
+				commander: formData.commander,
 				site: formData.site,
 				systemRoles,
 				serviceType: formData.serviceType,
@@ -206,6 +210,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 				name: '',
 				email: '',
 				site: '',
+				commander: '',
 				roles: [],
 				serviceType: 'hova',
 				siteManagerSite: '',
@@ -232,6 +237,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 		setFormData({
 			name: '',
 			email: '',
+			commander: '',
 			site: '',
 			roles: [],
 			serviceType: 'hova',
@@ -302,6 +308,31 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 							'& .MuiOutlinedInput-root': { textAlign: 'right' },
 						}}
 					/>
+
+					<FormControl fullWidth>
+						<InputLabel>(רשות) מפקד</InputLabel>
+						<Select
+							sx={{
+								'& .MuiSelect-select': {
+									textAlign: 'right',
+								},
+							}}
+							value={formData.commander}
+							label="(רשות) מפקד"
+							inputProps={{ style: { textAlign: 'right' } }}
+							onChange={(e) => handleInputChange('commander', e.target.value)}
+						>
+							<MenuItem value="">
+								<em>אין מפקד</em>
+							</MenuItem>
+							{managers.map((manager) => (
+								<MenuItem key={manager.userId} value={manager.userId}>
+									{manager.name} ({manager.site}) ({manager.groupName})
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
+
 
 					<FormControl fullWidth variant="outlined">
 						<InputLabel sx={{ right: 14, left: 'auto', transformOrigin: 'top right' }}>

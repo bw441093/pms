@@ -86,8 +86,10 @@ export async function updatePersonDetails(
 		email?: string;
 		systemRoles?: { name: string; opts: string[] }[];
 		serviceType?: string;
+		newSiteManagerSites?: string[];
 		selectedGroupId?: string;
 		newGroupName?: string;
+		replacementAdmins?: Record<string, string>;
 	}
 ) {
 	const response = await apiClient.put(`/users/${userId}/details`, details);
@@ -101,7 +103,8 @@ export async function addNewPerson(
 		systemRoles: { name: string; opts: string[] }[],
 		serviceType: string,
 		selectedGroupId?: string,
-		newGroupName?: string
+		newGroupName?: string,
+		commander?: string
 	) {
 	const response = await apiClient.post('/users', {
 		name,
@@ -111,6 +114,7 @@ export async function addNewPerson(
 		serviceType,
 		selectedGroupId,
 		newGroupName,
+		commander,
 	});
 	return response.data;
 }

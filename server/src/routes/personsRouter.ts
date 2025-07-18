@@ -32,13 +32,13 @@ const router = Router();
 
 router.post(
 	'/',
-	authorize(['siteManager', 'personnelManager', 'hrManager', 'admin']),
+	authorize(['hrManager', 'admin']), // Only higher roles can create users
 	validator({ body: postPersonSchema }),
 	postPersonHandler
 );
 router.delete(
 	'/:id',
-	authorize(['siteManager', 'personnelManager', 'hrManager', 'admin']),
+	authorize(['hrManager', 'admin']), // Only higher roles can delete users
 	validator({ params: idSchema }),
 	deletePersonHandler
 );
@@ -72,7 +72,7 @@ router.patch(
 );
 router.put(
 	'/:id/details',
-	authorize(['siteManager', 'personnelManager', 'hrManager', 'admin']),
+	authorize([]), // Allow any authenticated user - handlers do proper authorization
 	validator({ params: idSchema, body: updatePersonDetailsSchema }),
 	updatePersonDetailsHandler
 );

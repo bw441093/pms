@@ -10,20 +10,17 @@ import { Stack } from '@mui/material';
 import type { Person, GroupedPersons } from '../../../types';
 import { getPerson } from '~/clients/personsClient';
 import { applyFiltersAndSearchToGroupedData, applyFiltersAndSearchFlat, type FilterOptions } from '../../../utils/filterUtils';
-
+import { checkIsPersonnelManager, getManagedSites, hasHigherRole } from '../../../utils/groupUtils';
 
 export default function WhereYouAt() {
 	const [userId, setUserId] = useState('');
 	const [searchTerm, setSearchTerm] = useState('');
-	const queryClient = useQueryClient();
 	const [filters, setFilters] = useState<FilterOptions>({
 		isManager: false,
 		isSiteManager: false,
 		isDirectManager: false,
 	});
 	const [sitesManaged, setSitesManaged] = useState<string[]>([]);
-	const isMobile = useIsMobile();
-	const navigate = useNavigate();
 	
 
 	useEffect(() => {
@@ -32,7 +29,6 @@ export default function WhereYouAt() {
 	}, []);
 
 	const { data: groupedCommandChainData = {} as GroupedPersons, isLoading: peopleLoadingCommandChain } = useCommandChainData(userId);
-	console.log("groupedCommandChainData", groupedCommandChainData);
 	const { data: sortedPeopleSite = [], isLoading: peopleLoadingSite } = useSiteData(userId);
 	const { data: sortedPeopleDirectReports = [], isLoading: peopleLoadingDirectReports } = useDirectReportsData(userId);
 	
@@ -56,33 +52,45 @@ export default function WhereYouAt() {
 			if (!userId) return null;
 			const currentUser = await getPerson(userId);
 
-			if (currentUser.personSystemRoles) {
-				let isManager = false;
-				let isSiteManager = false;
-				let isDirectManager = false;
-				const newSitesManaged: string[] = [];
+			// Use group-based role checking instead of system roles
+			let isManager = false;
+			let isSiteManager = false;
+			let isDirectManager = false;
+			const newSitesManaged: string[] = [];
 
-				currentUser.personSystemRoles.forEach((pr: any) => {
-					if (pr.role.name === 'personnelManager') {
-						isManager = true;
-						isDirectManager = true; // Personnel managers can also see direct reports
-					}
+			// Check for higher-level system roles (these still use system roles)
+			const systemRoles = currentUser.personSystemRoles?.map((pr: any) => pr.role.name) ?? [];
+			const hasHigherRolePermissions = hasHigherRole(systemRoles);
 
-					if (pr.role.name === 'siteManager' && pr.role.opts) {
-						isSiteManager = true;
-						newSitesManaged.push(...pr.role.opts);
-					}
-				});
-
-				// Update filters and sites
-				setFilters(prev => ({
-					...prev,
-					isManager,
-					isSiteManager,
-					isDirectManager
-				}));
-				setSitesManaged(newSitesManaged);
+			if (hasHigherRolePermissions) {
+				// Higher roles have all permissions
+				isManager = true;
+				isSiteManager = true;
+				isDirectManager = true;
 			}
+			// Check group-based roles
+			const isPersonnelManagerByGroup = await checkIsPersonnelManager(userId);
+			const managedSites = await getManagedSites(userId);
+
+			if (isPersonnelManagerByGroup) {
+				isManager = true;
+				isDirectManager = true; // Personnel managers can also see direct reports
+			}
+
+			if (managedSites.length > 0) {
+				isSiteManager = true;
+				newSitesManaged.push(...managedSites);
+			}
+			
+
+			// Update filters and sites
+			setFilters(prev => ({
+				...prev,
+				isManager,
+				isSiteManager,
+				isDirectManager
+			}));
+			setSitesManaged(newSitesManaged);
 
 			return currentUser;
 		},
@@ -94,7 +102,6 @@ export default function WhereYouAt() {
 	// Get grouped data for when showing grouped view
 	const groupedPeopleToShow = useMemo(() => {
 		if (!shouldShowGrouped) return {};
-		
 		return applyFiltersAndSearchToGroupedData(
 			groupedCommandChainData,
 			sortedPeopleSite,
@@ -121,10 +128,7 @@ export default function WhereYouAt() {
 		);
 	}, [shouldShowGrouped, groupedCommandChainData, sortedPeopleSite, sortedPeopleDirectReports, searchTerm, currentUser, filters, sitesManaged]);
 
-
-
 	// This component is only for mobile - desktop users are redirected globally
-	
 	return (
 		<Stack
 			direction="column"

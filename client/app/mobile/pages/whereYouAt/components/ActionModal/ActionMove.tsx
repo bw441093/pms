@@ -16,6 +16,7 @@ import type { Person } from '../../../../../types';
 import { getPerson } from '~/clients/personsClient';
 import { usePostMoveStatus, useUpdateMoveStatus } from '~/hooks/useQueries';
 import { hebrewSiteNames, SITE_OPTIONS } from '~/consts';
+import { checkIsPersonnelManager, hasHigherRole, isAdminOfSite } from '../../../../../utils/groupUtils';
 
 const MoveAction = ({
 	person,
@@ -24,8 +25,8 @@ const MoveAction = ({
 	person: Person;
 	onClose: () => void;
 }) => {
-	const { id, site, transaction } = person;
-	const [origin, setOrigin] = useState(site);
+	const { id, site, currentSite, transaction } = person;
+	const [origin, setOrigin] = useState(currentSite || site);
 	const [target, setTarget] = useState('');
 	const [error, setError] = useState('');
 	const [permissions, setPermissions] = useState({
@@ -51,26 +52,27 @@ const MoveAction = ({
 			};
 
 			if (transaction) {
-				user.personSystemRoles?.forEach(({ role }) => {
-					if (role.name === 'hrManager' || role.name === 'admin')
-						newPermissions.isHrManager = true;
-					if (role.name === 'siteManager') {
-						if (
-							role?.opts.some(
-								(siteToManage: string) => siteToManage === transaction.origin
-							)
-						) {
-							newPermissions.isOriginManager = true;
-						}
-						if (
-							role?.opts.some(
-								(siteToManage: string) => siteToManage === transaction.target
-							)
-						) {
-							newPermissions.isTargetManager = true;
-						}
-					}
-				});
+				// Check for higher-level system roles (these still use system roles)
+				const systemRoles = user.personSystemRoles?.map((pr: any) => pr.role.name) ?? [];
+				const hasHigherRolePermissions = hasHigherRole(systemRoles);
+
+				if (hasHigherRolePermissions) {
+					newPermissions.isHrManager = true;
+					newPermissions.isPersonnelManager = true; // Higher roles have personnel manager permissions
+				} else {
+					// Check group-based personnel manager role
+					newPermissions.isPersonnelManager = await checkIsPersonnelManager(userId);
+				}
+
+				// Check site group admin permissions using centralized utility functions
+				try {
+					// Check if user is admin of origin and target sites
+					newPermissions.isOriginManager = await isAdminOfSite(userId, transaction.origin);
+					newPermissions.isTargetManager = await isAdminOfSite(userId, transaction.target);
+				} catch (err) {
+					console.error('Error loading site group permissions:', err);
+					// Fallback to false for site permissions
+				}
 			}
 			setPermissions(newPermissions);
 		};
@@ -118,11 +120,6 @@ const MoveAction = ({
 				},
 			}
 		);
-	};
-
-	const handleChange = (e: ChangeEvent<HTMLInputElement>, setter: Function) => {
-		const { value } = e.target;
-		setter(value);
 	};
 
 	const isButtonDisabled = (originator: string) => {
@@ -230,7 +227,7 @@ const MoveAction = ({
 				</Stack>
 			)}
 
-			{shouldShowConfirmationButtons && (
+			{shouldShowConfirmationButtons && transaction && (
 				<Stack spacing={2}>
 					<Typography
 						variant="body2"

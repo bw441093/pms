@@ -48,16 +48,14 @@ const PersonCard: React.FC<PersonCardProps> = ({
 	const {
 		name,
 		site,
+		currentSite,
 		manager,
 		location,
 		reportStatus,
 		updatedAt,
 		transaction,
 		alertStatus,
-		personSystemRoles,
-		serviceType,
 	} = person;
-	console.log(person);
 
 	const handleButtonClick = (action: string, event: SyntheticEvent) => {
 		event.stopPropagation();
@@ -178,9 +176,10 @@ const PersonCard: React.FC<PersonCardProps> = ({
 								}}
 							/>
 							<Typography sx={{ marginInlineStart: '2vw', color: theme.palette.custom.surfaceBright, fontWeight: 500, fontSize: 18 }}>
-								{site in hebrewSiteNames
-									? hebrewSiteNames[site as keyof typeof hebrewSiteNames]
-									: site}
+								{/* Show current site (where they are now) if available, fallback to permanent site */}
+								{(currentSite || site) in hebrewSiteNames
+									? hebrewSiteNames[(currentSite || site) as keyof typeof hebrewSiteNames]
+									: (currentSite || site)}
 							</Typography>
 						</Stack>
 					</Stack>

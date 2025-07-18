@@ -24,7 +24,6 @@ export const filterPeople = (
   if (filters.isManager) {
     isManagedByMeFiltered = commandChainPeople;
   }
-
   // Filter people from sites that the current user manages
   if (filters.isSiteManager && sitesManaged.length > 0) {
     isInMySitefiltered = sitePeople;
@@ -35,8 +34,18 @@ export const filterPeople = (
     isDirectlyManagedByMeFiltered = directReportsPeople;
   }
 
-  const filteredSet = new Set([...isManagedByMeFiltered, ...isInMySitefiltered, ...isDirectlyManagedByMeFiltered]);
-  return Array.from(filteredSet);
+  // Combine all filtered people and deduplicate by ID
+  const allFilteredPeople = [...isManagedByMeFiltered, ...isInMySitefiltered, ...isDirectlyManagedByMeFiltered];
+  
+  // Deduplicate by person ID
+  const uniquePeopleMap = new Map<string, Person>();
+  allFilteredPeople.forEach(person => {
+    uniquePeopleMap.set(person.id, person);
+  });
+  
+  const uniquePeople = Array.from(uniquePeopleMap.values());
+  console.log("uniquePeople", uniquePeople);
+  return uniquePeople;
 };
 
 // Fuzzy search function
@@ -107,7 +116,6 @@ export const applyFiltersAndSearchFlat = (
   Object.values(groupedCommandChainData).forEach(({ persons }) => {
     commandChainPeople.push(...persons);
   });
-
   // Use existing flat filter logic
   return applyFiltersAndSearch(
     commandChainPeople,
