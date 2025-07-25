@@ -1,7 +1,8 @@
 import React from 'react';
-import { Stack, Box, Typography, IconButton, Chip, useTheme } from '@mui/material';
+import { Stack, Box, Typography, IconButton, Chip, useTheme, Button } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import CheckIcon from '@mui/icons-material/Check';
 
 interface PersonCardHeaderProps {
   name: string;
@@ -53,29 +54,34 @@ const PersonCardHeader: React.FC<PersonCardHeaderProps> = ({
             sx={{ px: 1, borderRadius: 5, bgcolor: theme.palette.custom.gray4, display: 'flex', alignItems: 'center', minWidth: 'fit-content' }}
           />
           <Chip
-            icon={<LocationOnIcon sx={{ fontSize: 16 }} />}
             label={(currentSite || site) in hebrewSiteNames ? hebrewSiteNames[currentSite || site] : (currentSite || site)}
-            sx={{ px: 1, borderRadius: 5, bgcolor: theme.palette.custom.gray4, display: 'flex', alignItems: 'center', minWidth: 'fit-content' }}
+            icon={<LocationOnIcon />}
+            size="small"
+            sx={{
+              bgcolor: theme.palette.custom.gray4,
+              fontWeight: 500,
+              px: 1,
+              py: 1.7,
+              '& .MuiChip-icon': {
+                marginLeft: 0.3,
+                marginRight: 0,
+              },
+            }}
           />
-          {/* <Typography
-          fontWeight={500}
-          fontSize={15}
-          sx={{ mr: 3 }}
-          color="#888"
-        >
-          {reportStatus in hebrewLocationNames ? hebrewLocationNames[reportStatus] : reportStatus}
-        </Typography> */}
         </Stack>
       </Stack>
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: collapsed ? 0 : 4, transition: 'margin 0.3s ease' }} >
-        <Box
-          bgcolor="#EEE"
-          sx={{ px: 2, py: 0.7, borderRadius: 2, display: 'flex', alignItems: 'center', minWidth: 'fit-content' }}
+        <Button
+          variant="outlined"
+          loadingPosition="start"
+          loading={false}
+          dir='ltr'
+          onClick={(e) => { e.stopPropagation(); handleButtonClick('Report', e); }}
+          onMouseDown={e => e.stopPropagation()}
+          sx={{ borderRadius: 2, fontSize: 14, fontWeight: 500,textTransform: 'none', height: '3vh'}}
         >
-          <Typography sx={{ marginInlineStart: '2vw', color: '#333', fontWeight: 500, fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 80 }}>
-            {(currentSite || site) in hebrewSiteNames ? hebrewSiteNames[currentSite || site] : (currentSite || site)}
-          </Typography>
-        </Box>
+          אישור
+        </Button>
         <IconButton className="person-card-menu-btn" size="small" onClick={(e) => { e.stopPropagation(); handleButtonClick('More', e); }}>
           <MoreVertIcon />
         </IconButton>

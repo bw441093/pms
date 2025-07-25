@@ -71,6 +71,13 @@
       "when": 1752695779830,
       "tag": "0009_pretty_odin",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1753437967932,
+      "tag": "0010_outstanding_wendell_rand",
+      "breakpoints": true
     }
   ]
 }

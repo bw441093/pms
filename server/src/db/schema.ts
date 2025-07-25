@@ -30,6 +30,7 @@ export const PersonsTable = pgTable('persons', {
 		.notNull()
 		.default('hova'),
 	updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+	approvedBy: text('approvedBy'),
 });
 
 export const TransactionsTable = pgTable(
