@@ -1,8 +1,11 @@
 import { BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 import HomeIcon from '@mui/icons-material/Home';
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import PersonIcon from '@mui/icons-material/Person';
+import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import { useTheme } from '@mui/material/styles';
 import { useAtomValue } from 'jotai';
 import { hasAdminAccessAtom } from '../../../atoms/userAtom';
@@ -56,17 +59,17 @@ export default function BottomNavBar() {
 			>
 				<BottomNavigationAction
 					value="/calendar"
-					icon={<CalendarMonthIcon />}
+					icon={location.pathname === "/calendar" ? <CalendarMonthIcon /> : <CalendarMonthOutlinedIcon />}
 				/>
 				{hasAdminAccess && (
 					<BottomNavigationAction
 						value="/"
-						icon={<HomeIcon />}
+						icon={location.pathname === "/" ? <HomeIcon /> : <HomeOutlinedIcon />}
 					/>
 				)}
 				<BottomNavigationAction
 					value="/profile"
-					icon={<PersonIcon />}
+					icon={location.pathname === "/profile" ? <PersonIcon /> : <PersonOutlinedIcon />}
 				/>
 			</BottomNavigation>
 		</Paper>

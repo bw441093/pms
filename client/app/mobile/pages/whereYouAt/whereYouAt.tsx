@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
-import PersonCard from './components/PersonCard';
+import PersonCard from './components/PersonCard/PersonCard';
 import GroupHeader from './components/GroupHeader';
 import { useCommandChainData, useSiteData, useDirectReportsData } from '../../../hooks/useQueries';
 import { useIsMobile } from '../../../hooks/useQueries';
@@ -128,6 +128,16 @@ export default function WhereYouAt() {
 		);
 	}, [shouldShowGrouped, groupedCommandChainData, sortedPeopleSite, sortedPeopleDirectReports, searchTerm, currentUser, filters, sitesManaged]);
 
+	// Collapse state for each group
+	const [collapsedGroups, setCollapsedGroups] = useState<{ [groupId: string]: boolean }>({});
+
+	const handleToggleGroupCollapse = useCallback((groupId: string) => {
+		setCollapsedGroups(prev => ({
+			...prev,
+			[groupId]: !prev[groupId],
+		}));
+	}, []);
+
 	// This component is only for mobile - desktop users are redirected globally
 	return (
 		<Stack
@@ -148,16 +158,23 @@ export default function WhereYouAt() {
 					// Grouped view with sticky headers
 					Object.entries(groupedPeopleToShow).map(([groupId, { group, persons }]) => (
 						<Stack key={groupId} spacing={0} justifyContent="center" alignItems="center" sx={{ width: '100%' }}>
-							<GroupHeader group={group} />
-							<Stack spacing={1.5} sx={{ width: '95%', alignItems: 'center', py: 1 }}>
-								{persons.map((person: Person) => (
-									<PersonCard
-										key={person.id}
-										person={person}
-										permissions={permissions}
-									/>
-								))}
-							</Stack>
+							<GroupHeader 
+								group={group} 
+								collapsed={!!collapsedGroups[groupId]} 
+								onToggleCollapse={() => handleToggleGroupCollapse(groupId)} 
+								representativePerson={persons[0]}
+							/>
+							{!collapsedGroups[groupId] && (
+								<Stack spacing={1.5} sx={{ width: '95%', alignItems: 'center', py: 1 }}>
+									{persons.map((person: Person) => (
+										<PersonCard
+											key={person.id}
+											person={person}
+											permissions={permissions}
+										/>
+									))}
+								</Stack>
+							)}
 						</Stack>
 					))
 				) : (
