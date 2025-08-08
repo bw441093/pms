@@ -8,7 +8,7 @@ import { logger } from '../logger';
 const hebrewSiteNames: Record<string, string> = {
 	mbt: 'איילת השחר',
 	mfs: 'בראשית', 
-	kir: 'ביה״ב',
+	kir: 'בית הבחירה',
 	mdt: 'רקיע',
 	other: 'אחר',
 };
@@ -322,11 +322,12 @@ export const createPerson = async (
 export const updatePersonStatusLocation = async (
 	id: string,
 	status: string,
-	location: string
+	location: string,
+	reporterId: string // new argument for the reporter's id
 ) => {
 	const user = await db
 		.update(PersonsTable)
-		.set({ reportStatus: status, location, updatedAt: new Date() })
+		.set({ reportStatus: status, location, updatedAt: new Date(), approvedBy: reporterId })
 		.where(eq(PersonsTable.id, id))
 		.returning({ id: PersonsTable.id });
 

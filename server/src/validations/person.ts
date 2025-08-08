@@ -44,6 +44,7 @@ export const postPersonSchema = z.object({
 export const putPersonStatusSchema = z.object({
 	status: z.string().min(1),
 	location: z.string().min(1),
+	reporterId: z.string().uuid(),
 });
 
 export const postTransactionSchema = z.object({

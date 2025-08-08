@@ -23,6 +23,7 @@ export type Person = {
 	reportStatus: string;
 	location: string;
 	updatedAt: string;
+	approvedBy: string | null;
 	transaction?: {
 		id: string;
 		origin: Sites;
@@ -47,6 +48,7 @@ export type Group = {
 	name: string;
 	command: boolean;
 	site: boolean;
+	isLeafGroup?: boolean;
 };
 
 export type GroupedPersons = {

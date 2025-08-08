@@ -41,7 +41,7 @@ export default function GroupHeader({ group, collapsed, onToggleCollapse, repres
 						sx={{ bgcolor: theme.palette.custom.gray4, fontWeight: 500, px: 1, py: 1.7, ml: 1 }}
 					/>
 				)}
-				{representativePerson?.site && (
+				{group.isLeafGroup && representativePerson?.site && (
 					<Chip
 						label={hebrewSiteNames[representativePerson.site] || representativePerson.site}
 						icon={<LocationCityIcon />}

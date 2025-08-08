@@ -37,12 +37,12 @@ export const SYSTEM_ROLE_OPTIONS = [
 	'hrManager',
 	'admin',
 ] as const;
-export const SERVICE_TYPE_OPTIONS = ['hova', 'keva', 'miluim', 'aatz', 'ps'] as const;
+export const SERVICE_TYPE_OPTIONS = ['hova', 'keva', 'miluim', 'aatz', 'ps', 'miluimActive'] as const;
 
 export const hebrewSiteNames: Record<Sites, string> = {
 	mbt: 'איילת השחר',
 	mfs: 'בראשית',
-	kir: 'ביה״ב',
+	kir: 'בית הבחירה',
 	mdt: 'רקיע',
 	other: 'אחר',
 };
@@ -53,6 +53,7 @@ export const hebrewServiceTypeNames: Record<ServiceTypes, string> = {
 	miluim: 'מילואים',
 	aatz: 'אזרח עובד צה"ל',
 	ps: 'יועץ',
+	miluimActive: 'מילואים פעיל',
 };
 
 export const hebrewSystemRoleNames: Record<SystemRoles, string> = {

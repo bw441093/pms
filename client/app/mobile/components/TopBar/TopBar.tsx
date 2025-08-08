@@ -10,9 +10,9 @@ interface TopBarProps {
 
 const TopBar: React.FC<TopBarProps> = ({ onMenuClick, onNotificationClick }) => {
   return (
-    <AppBar 
-      position="fixed" 
-      sx={{ 
+    <AppBar
+      position="fixed"
+      sx={{
         backgroundColor: 'white',
         boxShadow: 'none',
         borderBottom: '0.5px solid rgba(0, 0, 0, 0.12)',
@@ -20,18 +20,18 @@ const TopBar: React.FC<TopBarProps> = ({ onMenuClick, onNotificationClick }) => 
       }}
     >
       <Toolbar sx={{ justifyContent: 'space-between' }}>
+
         <IconButton
-          edge="start"
-          onClick={onMenuClick}
+          edge="end"
+          onClick={onNotificationClick}
           sx={{ color: 'black' }}
         >
-          <MenuIcon />
+          <NotificationsIcon />
         </IconButton>
-
-        <Typography 
-          variant="h6" 
+        <Typography
+          variant="h6"
           component="div"
-          sx={{ 
+          sx={{
             color: 'black',
             fontWeight: 'bold',
             position: 'absolute',
@@ -43,11 +43,11 @@ const TopBar: React.FC<TopBarProps> = ({ onMenuClick, onNotificationClick }) => 
         </Typography>
 
         <IconButton
-          edge="end"
-          onClick={onNotificationClick}
+          edge="start"
+          onClick={onMenuClick}
           sx={{ color: 'black' }}
         >
-          <NotificationsIcon />
+          <MenuIcon />
         </IconButton>
       </Toolbar>
     </AppBar>

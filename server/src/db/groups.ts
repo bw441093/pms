@@ -147,14 +147,101 @@ export const findAllSubordinatePersons = async (personId: string) => {
 	return groupedPersons;
 };
 
+export const updateLeafGroupStatus = async (groupId: string) => {
+	// Get the group to check if it's a command group
+	const group = await findGroupById(groupId);
+	if (!group || !group.command) {
+		// Non-command groups are never leaf groups
+		await db.update(GroupsTable)
+			.set({ isLeafGroup: false })
+			.where(eq(GroupsTable.groupId, groupId));
+		return;
+	}
+
+	// Find all non-admin members of this group
+	const memberRecords = await db.query.PersonsToGroups.findMany({
+		where: (ptg) => and(eq(ptg.groupId, groupId), eq(ptg.groupRole, 'member')),
+	});
+	const memberIds = memberRecords.map(m => m.personId);
+
+	// Check if any member is an admin of any other group
+	let anyMemberIsAdminElsewhere = false;
+	for (const memberId of memberIds) {
+		const adminElsewhereRecords = await db.query.PersonsToGroups.findMany({
+			where: (ptg) => and(eq(ptg.personId, memberId), eq(ptg.groupRole, 'admin')),
+		});
+		if (adminElsewhereRecords.some(r => r.groupId !== groupId)) {
+			anyMemberIsAdminElsewhere = true;
+			break;
+		}
+	}
+
+	// Update the isLeafGroup status
+	const isLeafGroup = !anyMemberIsAdminElsewhere;
+	await db.update(GroupsTable)
+		.set({ isLeafGroup })
+		.where(eq(GroupsTable.groupId, groupId));
+};
+
+// export const recalculateAllLeafGroups = async () => {
+// 	// Get all command groups
+// 	const commandGroups = await db.query.GroupsTable.findMany({
+// 		where: eq(GroupsTable.command, true),
+// 	});
+
+// 	// Update each command group's leaf status
+// 	for (const group of commandGroups) {
+// 		await updateLeafGroupStatus(group.groupId);
+// 	}
+
+// 	// Set all non-command groups to isLeafGroup = false
+// 	await db.update(GroupsTable)
+// 		.set({ isLeafGroup: false })
+// 		.where(eq(GroupsTable.command, false));
+// };
+
+export const updateGroupMembership = async (
+	personId: string, 
+	groupId: string, 
+	groupRole: 'admin' | 'member',
+	action: 'add' | 'remove' | 'update'
+) => {
+	// Perform the membership change
+	if (action === 'add') {
+		await db.insert(PersonsToGroups).values({
+			personId,
+			groupId,
+			groupRole,
+		});
+	} else if (action === 'remove') {
+		await db.delete(PersonsToGroups)
+			.where(and(eq(PersonsToGroups.personId, personId), eq(PersonsToGroups.groupId, groupId)));
+	} else if (action === 'update') {
+		await db.update(PersonsToGroups)
+			.set({ groupRole })
+			.where(and(eq(PersonsToGroups.personId, personId), eq(PersonsToGroups.groupId, groupId)));
+	}
+
+	// Update leaf group status for affected groups
+	await updateLeafGroupStatus(groupId);
+
+	// If the person's role changed to/from admin, update leaf status for all groups they're in
+	if (groupRole === 'admin' || action === 'remove') {
+		const allPersonGroups = await db.query.PersonsToGroups.findMany({
+			where: eq(PersonsToGroups.personId, personId),
+		});
+		
+		for (const ptg of allPersonGroups) {
+			if (ptg.groupId !== groupId) {
+				await updateLeafGroupStatus(ptg.groupId);
+			}
+		}
+	}
+};
+
 export const addPersonToGroup = async (personId: string, groupId: string, groupRole: 'admin' | 'member' = 'member') => {
-	const result = await db.insert(PersonsToGroups).values({
-		personId,
-		groupId,
-		groupRole,
-	}).returning({ personId: PersonsToGroups.personId, groupId: PersonsToGroups.groupId });
-	
-	return result[0];
+	const result = await updateGroupMembership(personId, groupId, groupRole, 'add');
+	return { personId, groupId };
 };
 
 export const createGroup = async (name: string, command: boolean = true, site: boolean = false) => {

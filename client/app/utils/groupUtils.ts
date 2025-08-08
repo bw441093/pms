@@ -4,7 +4,7 @@ import { getGroupsByPersonId, getPersonRoleInGroup } from '~/clients/groupsClien
 const siteCodeToHebrew: Record<string, string> = {
 	mbt: 'איילת השחר',
 	mfs: 'בראשית', 
-	kir: 'ביה״ב',
+	kir: 'בית הבחירה',
 	mdt: 'רקיע',
 	other: 'אחר',
 };

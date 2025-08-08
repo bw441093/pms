@@ -19,6 +19,8 @@ export default function WhereYouAt() {
 		isManager: false,
 		isSiteManager: false,
 		isDirectManager: false,
+		hasReportStatus: false,
+		noReportStatus: false,
 	});
 	const [sitesManaged, setSitesManaged] = useState<string[]>([]);
 	
@@ -32,6 +34,8 @@ export default function WhereYouAt() {
 	const { data: sortedPeopleSite = [], isLoading: peopleLoadingSite } = useSiteData(userId);
 	const { data: sortedPeopleDirectReports = [], isLoading: peopleLoadingDirectReports } = useDirectReportsData(userId);
 	
+	console.log(groupedCommandChainData);
+
 	// Get permissions from the first person in command chain (if any)
 	const firstGroup = Object.values(groupedCommandChainData)[0];
 	const permissions = (firstGroup?.persons?.[0]?.personSystemRoles || []).map((pr: any) => ({ name: pr.role.name, opts: pr.role.opts }));
@@ -97,7 +101,7 @@ export default function WhereYouAt() {
 	});
 
 	// Determine if we should show grouped view (only when isManager filter is active and others are not)
-	const shouldShowGrouped = filters.isManager && !filters.isSiteManager && !filters.isDirectManager;
+	const shouldShowGrouped = filters.isManager && !filters.isSiteManager && !filters.isDirectManager && !filters.hasReportStatus && !filters.noReportStatus;
 
 	// Get grouped data for when showing grouped view
 	const groupedPeopleToShow = useMemo(() => {

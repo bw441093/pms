@@ -29,7 +29,7 @@ export function useSiteData(userId: string) {
 	return useQuery({
 		queryKey: ['site', userId],
 		queryFn: () => getSitePersons(userId),
-		refetchInterval: 2000,
+		refetchInterval: Infinity,
 		enabled: !!userId,
 	});
 }
@@ -38,7 +38,7 @@ export function useDirectReportsData(userId: string) {
 	return useQuery({
 		queryKey: ['directReports', userId],
 		queryFn: () => getDirectReports(userId),
-		refetchInterval: 2000,
+		refetchInterval: Infinity,
 		enabled: !!userId,
 	});
 }
@@ -139,11 +139,13 @@ export function useUpdateReportStatus() {
 			userId,
 			status,
 			location,
+			reporterId,
 		}: {
-			userId: string;
+			userId: string;	
 			status: string;
 			location: string;
-		}) => updateReportStatus(userId, status, location),
+			reporterId: string;
+		}) => updateReportStatus(userId, status, location, reporterId),
 		onSuccess: () => {
 			// Invalidate people queries to refresh data after status update
 			queryClient.invalidateQueries({ queryKey: ['people'] });

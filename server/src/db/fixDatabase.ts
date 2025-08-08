@@ -112,9 +112,20 @@ async function fixDatabase() {
 				"group_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 				"name" text NOT NULL,
 				"command" boolean DEFAULT false NOT NULL,
-				"site" boolean DEFAULT false NOT NULL
+				"site" boolean DEFAULT false NOT NULL,
+				"isLeafGroup" boolean DEFAULT false NOT NULL
 			);
 		`);
+
+		// Add isLeafGroup column if it doesn't exist
+		try {
+			await db.execute(sql`
+				ALTER TABLE "groups" ADD COLUMN "isLeafGroup" boolean DEFAULT false NOT NULL;
+			`);
+			console.log('Added isLeafGroup column to groups table');
+		} catch (e) {
+			console.log('isLeafGroup column already exists or error adding it');
+		}
 
 		// Create persons_to_groups table if missing
 		console.log('Creating persons_to_groups table...');
@@ -148,6 +159,82 @@ async function fixDatabase() {
 			`);
 		} catch (e) {
 			console.log('Foreign key constraint for groups already exists');
+		}
+
+		// Create events table if missing
+		console.log('Creating events table...');
+		await db.execute(sql`
+			CREATE TABLE IF NOT EXISTS "events" (
+				"event_id" uuid DEFAULT gen_random_uuid() NOT NULL,
+				"entity_id" uuid NOT NULL,
+				"entityType" text NOT NULL,
+				"start_time" timestamp NOT NULL,
+				"end_time" timestamp NOT NULL,
+				"title" text NOT NULL,
+				"description" text NOT NULL,
+				"location" text NOT NULL,
+				"mandatory" boolean NOT NULL,
+				"insider" boolean NOT NULL,
+				"created_at" timestamp DEFAULT now() NOT NULL,
+				"updated_at" timestamp DEFAULT now() NOT NULL,
+				CONSTRAINT "events_entity_id_event_id_pk" PRIMARY KEY("entity_id","event_id")
+			);
+		`);
+
+		// Add foreign key constraints for events
+		try {
+			await db.execute(sql`
+				ALTER TABLE "events" 
+				ADD CONSTRAINT "events_entity_id_persons_user_id_fk" 
+				FOREIGN KEY ("entity_id") REFERENCES "public"."persons"("user_id") 
+				ON DELETE cascade ON UPDATE no action;
+			`);
+		} catch (e) {
+			console.log('Foreign key constraint for events->persons already exists');
+		}
+
+		try {
+			await db.execute(sql`
+				ALTER TABLE "events" 
+				ADD CONSTRAINT "events_entity_id_groups_group_id_fk" 
+				FOREIGN KEY ("entity_id") REFERENCES "public"."groups"("group_id") 
+				ON DELETE cascade ON UPDATE no action;
+			`);
+		} catch (e) {
+			console.log('Foreign key constraint for events->groups already exists');
+		}
+
+		// Create events_to_groups table if missing
+		console.log('Creating events_to_groups table...');
+		await db.execute(sql`
+			CREATE TABLE IF NOT EXISTS "events_to_groups" (
+				"event_id" uuid NOT NULL,
+				"group_id" uuid NOT NULL,
+				CONSTRAINT "events_to_groups_event_id_group_id_pk" PRIMARY KEY("event_id","group_id")
+			);
+		`);
+
+		// Add foreign key constraints for events_to_groups
+		try {
+			await db.execute(sql`
+				ALTER TABLE "events_to_groups" 
+				ADD CONSTRAINT "events_to_groups_event_id_events_event_id_fk" 
+				FOREIGN KEY ("event_id") REFERENCES "public"."events"("event_id") 
+				ON DELETE cascade ON UPDATE no action;
+			`);
+		} catch (e) {
+			console.log('Foreign key constraint for events_to_groups->events already exists');
+		}
+
+		try {
+			await db.execute(sql`
+				ALTER TABLE "events_to_groups" 
+				ADD CONSTRAINT "events_to_groups_group_id_groups_group_id_fk" 
+				FOREIGN KEY ("group_id") REFERENCES "public"."groups"("group_id") 
+				ON DELETE cascade ON UPDATE no action;
+			`);
+		} catch (e) {
+			console.log('Foreign key constraint for events_to_groups->groups already exists');
 		}
 
 		console.log('✅ Database fix completed successfully!');

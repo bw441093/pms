@@ -7,7 +7,7 @@ import {
   Button,
   FormGroup,
   FormControlLabel,
-  Checkbox,
+  Switch,
   Stack,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -30,7 +30,7 @@ const FilterModal = ({ open, onClose, filters, onFiltersChange }: FilterModalPro
     setTempFilters(filters);
   }, [filters, open]);
 
-  const handleFilterChange = (filterName: 'isManager' | 'isSiteManager' | 'isDirectManager') => (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFilterChange = (filterName: 'isManager' | 'isSiteManager' | 'isDirectManager' | 'hasReportStatus' | 'noReportStatus') => (event: React.ChangeEvent<HTMLInputElement>) => {
     const newTempFilters = {
       ...tempFilters,
       [filterName]: event.target.checked,
@@ -68,41 +68,82 @@ const FilterModal = ({ open, onClose, filters, onFiltersChange }: FilterModalPro
           <Stack spacing={2} sx={{ mt: 1 }}>
             <FormControlLabel
               control={
-                <Checkbox 
+                <Switch 
                   checked={tempFilters.isManager}
                   onChange={handleFilterChange('isManager')}
                 />
               }
               label="רק אנשים שאני מנהל"
               sx={{ 
-                flexDirection: 'row-reverse',
                 marginLeft: 0,
+                justifyContent: 'space-between',
+                backgroundColor: theme.palette.custom.gray3,
+                borderRadius: 3,
+                paddingX: 2
               }}
             />
             <FormControlLabel
               control={
-                <Checkbox 
+                <Switch 
                   checked={tempFilters.isSiteManager}
                   onChange={handleFilterChange('isSiteManager')}
                 />
               }
               label="רק אנשים מהאתרים שלי"
               sx={{ 
-                flexDirection: 'row-reverse',
                 marginLeft: 0,
+                justifyContent: 'space-between',
+                backgroundColor: theme.palette.custom.gray3,
+                borderRadius: 3,
+                paddingX: 2
               }}
             />
             <FormControlLabel
               control={
-                <Checkbox 
+                <Switch 
                   checked={tempFilters.isDirectManager}
                   onChange={handleFilterChange('isDirectManager')}
                 />
               }
               label="רק אנשים שמדווחים לי ישירות"
               sx={{ 
-                flexDirection: 'row-reverse',
                 marginLeft: 0,
+                justifyContent: 'space-between',
+                backgroundColor: theme.palette.custom.gray3,
+                borderRadius: 3,
+                paddingX: 2
+              }}
+            />
+            <FormControlLabel
+              control={
+                <Switch 
+                  checked={tempFilters.hasReportStatus}
+                  onChange={handleFilterChange('hasReportStatus')}
+                />
+              }
+              label="רק אנשים עם סטטוס דיווח"
+              sx={{ 
+                marginLeft: 0,
+                justifyContent: 'space-between',
+                backgroundColor: theme.palette.custom.gray3,
+                borderRadius: 3,
+                paddingX: 2
+              }}
+            />
+            <FormControlLabel
+              control={
+                <Switch 
+                  checked={tempFilters.noReportStatus}
+                  onChange={handleFilterChange('noReportStatus')}
+                />
+              }
+              label="רק אנשים ללא סטטוס דיווח"
+              sx={{ 
+                marginLeft: 0,
+                justifyContent: 'space-between',
+                backgroundColor: theme.palette.custom.gray3,
+                borderRadius: 3,
+                paddingX: 2
               }}
             />
           </Stack>

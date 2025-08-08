@@ -30,6 +30,7 @@ const defaultPerson: Person = {
 	reportStatus: 'home',
 	alertStatus: 'pending',
 	updatedAt: '2025-06-18T11:09:04.797Z',
+	approvedBy: null,
 };
 
 interface PersonCardProps {
@@ -52,9 +53,11 @@ const PersonCard: React.FC<PersonCardProps> = ({
 		site,
 		currentSite,
 		reportStatus,
+		serviceType,
 		updatedAt,
 		transaction,
 		alertStatus,
+		approvedBy,
 	} = person;
 
 	const handleButtonClick = (action: string, event: SyntheticEvent) => {
@@ -63,13 +66,16 @@ const PersonCard: React.FC<PersonCardProps> = ({
 		setOpenModal(true);
 	};
 
-	const handleCardClick = (e: React.MouseEvent) => {
-		// Prevent toggling collapse when clicking any button or interactive element
-		if ((e.target as HTMLElement).closest('button') || 
-		    (e.target as HTMLElement).closest('.person-card-menu-btn') ||
-		    (e.target as HTMLElement).tagName === 'BUTTON') return;
-		setCollapsed((prev) => !prev);
-	};
+  const handleCardClick = (e: React.MouseEvent) => {
+    // If any modal is open, ignore clicks on the card
+    if (openModal) return;
+    const anyOpenMuiModal = document.querySelector('.MuiModal-root[aria-hidden="false"]');
+    if (anyOpenMuiModal) return;
+    // Prevent toggling collapse when clicking any button or interactive element
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('.person-card-menu-btn') || target.tagName === 'BUTTON') return;
+    setCollapsed((prev) => !prev);
+  };
 
 	return (
 		<Card
@@ -95,6 +101,8 @@ const PersonCard: React.FC<PersonCardProps> = ({
 						hebrewSiteNames={hebrewSiteNames}
 						collapsed={collapsed}
 						handleButtonClick={handleButtonClick}
+						approvedBy={approvedBy}
+						serviceType={serviceType}
 					/>
 					<Collapse in={!collapsed} timeout="auto" unmountOnExit>
 						<PersonCardActions

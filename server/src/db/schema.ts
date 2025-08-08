@@ -24,7 +24,7 @@ export const PersonsTable = pgTable('persons', {
 	alertStatus: text({ enum: ['pending', 'good', 'bad'] })
 		.default('good')
 		.notNull(),
-	reportStatus: text().default('present').notNull(),
+	reportStatus: text().default('present'),
 	location: text().default('home').notNull(),
 	serviceType: text({ enum: ['hova', 'keva', 'miluim', 'aatz', 'ps'] })
 		.notNull()
@@ -84,6 +84,7 @@ export const GroupsTable = pgTable('groups', {
 	name: text().notNull(),
 	command: boolean().default(false).notNull(),
 	site: boolean().default(false).notNull(),
+	isLeafGroup: boolean().default(false).notNull(),
 });
 
 export const PersonsToGroups = pgTable(
@@ -116,6 +117,17 @@ export const EventsTable = pgTable('events', {
 	updatedAt: timestamp('updated_at').defaultNow().notNull(),
 },
 	(t) => [primaryKey({ columns: [t.entityId, t.eventId] })]
+);
+
+export const EventsToGroups = pgTable('events_to_groups', {
+	eventId: uuid('event_id')
+		.notNull()
+		.references(() => EventsTable.eventId, { onDelete: 'cascade' }),
+	groupId: uuid('group_id')
+		.notNull()
+		.references(() => GroupsTable.groupId, { onDelete: 'cascade' }),
+},
+	(t) => [primaryKey({ columns: [t.eventId, t.groupId] })]
 );
 
 
@@ -158,6 +170,21 @@ export const PersonsToGroupsRelations = relations(PersonsToGroups, ({ one }) => 
 	}),
 	group: one(GroupsTable, {
 		fields: [PersonsToGroups.groupId],
+		references: [GroupsTable.groupId],
+	}),
+}));
+
+export const EventsRelations = relations(EventsTable, ({ many }) => ({
+	eventsToGroups: many(EventsToGroups),
+}));
+
+export const EventsToGroupsRelations = relations(EventsToGroups, ({ one }) => ({
+	event: one(EventsTable, {
+		fields: [EventsToGroups.eventId],
+		references: [EventsTable.eventId],
+	}),
+	group: one(GroupsTable, {
+		fields: [EventsToGroups.groupId],
 		references: [GroupsTable.groupId],
 	}),
 }));

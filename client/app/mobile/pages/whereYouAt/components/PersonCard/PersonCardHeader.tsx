@@ -3,6 +3,8 @@ import { Stack, Box, Typography, IconButton, Chip, useTheme, Button } from '@mui
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CheckIcon from '@mui/icons-material/Check';
+import { hebrewServiceTypeNames } from '~/consts';
+import type { ServiceTypes } from '~/types';
 
 interface PersonCardHeaderProps {
   name: string;
@@ -15,6 +17,9 @@ interface PersonCardHeaderProps {
   hebrewSiteNames: Record<string, string>;
   collapsed: boolean;
   handleButtonClick: (action: string, event: React.SyntheticEvent) => void;
+  approvedBy?: string | null;
+  loading?: boolean;
+  serviceType: ServiceTypes;
 }
 
 const PersonCardHeader: React.FC<PersonCardHeaderProps> = ({
@@ -28,6 +33,9 @@ const PersonCardHeader: React.FC<PersonCardHeaderProps> = ({
   hebrewSiteNames,
   collapsed,
   handleButtonClick,
+  approvedBy,
+  loading = false,
+  serviceType,
 }) => {
   const theme = useTheme();
 
@@ -47,12 +55,21 @@ const PersonCardHeader: React.FC<PersonCardHeaderProps> = ({
           >
             {name}
           </Typography>
+          <Typography
+            fontWeight={700}
+            fontSize={18}
+            sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginRight: 0.5 }}
+          >
+            {`(${hebrewServiceTypeNames[serviceType]})`}
+          </Typography>
         </Stack>
         <Stack direction="row" alignItems="center" gap={1}>
-          <Chip
+          {
+            reportStatus && <Chip
             label={reportStatus in hebrewLocationNames ? hebrewLocationNames[reportStatus] : reportStatus}
             sx={{ px: 1, borderRadius: 5, bgcolor: theme.palette.custom.gray4, display: 'flex', alignItems: 'center', minWidth: 'fit-content' }}
           />
+          }
           <Chip
             label={(currentSite || site) in hebrewSiteNames ? hebrewSiteNames[currentSite || site] : (currentSite || site)}
             icon={<LocationOnIcon />}
@@ -71,17 +88,23 @@ const PersonCardHeader: React.FC<PersonCardHeaderProps> = ({
         </Stack>
       </Stack>
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: collapsed ? 0 : 4, transition: 'margin 0.3s ease' }} >
-        <Button
-          variant="outlined"
-          loadingPosition="start"
-          loading={false}
-          dir='ltr'
-          onClick={(e) => { e.stopPropagation(); handleButtonClick('Report', e); }}
-          onMouseDown={e => e.stopPropagation()}
-          sx={{ borderRadius: 2, fontSize: 14, fontWeight: 500,textTransform: 'none', height: '3vh'}}
-        >
-          אישור
-        </Button>
+        {approvedBy === null && reportStatus ? (
+          <Button
+            variant="outlined"
+            loadingPosition="start"
+            loading={loading}
+            dir='ltr'
+            onClick={(e) => { e.stopPropagation(); handleButtonClick('Report', e); }}
+            onMouseDown={e => e.stopPropagation()}
+            sx={{ borderRadius: 2, fontSize: 14, fontWeight: 500, textTransform: 'none', height: '3vh' }}
+          >
+            אישור
+          </Button>
+        ) : (
+          <Box sx={{ width: 23, height: 23, borderRadius: 1.5, bgcolor: theme.palette.custom.success, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CheckIcon sx={{ color: theme.palette.custom.gray1, fontSize: 16 }} />
+          </Box>
+        )}
         <IconButton className="person-card-menu-btn" size="small" onClick={(e) => { e.stopPropagation(); handleButtonClick('More', e); }}>
           <MoreVertIcon />
         </IconButton>
