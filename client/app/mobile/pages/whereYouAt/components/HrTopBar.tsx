@@ -215,13 +215,12 @@ const HrTopBar = ({ onSearch, onFiltersChange, initialFilters }: TopBarProps) =>
 					backgroundColor: isStuck ? theme.palette.custom.gray1 : 'transparent',
 					borderBottom: isStuck ? '1.5px solid' : 'none',
 					py: 1,
-					mx: 'auto',
 					mt: -1,
 					mb: '2vh',
-					borderColor: 'divider',
+					borderColor: theme.palette.custom.gray4,
 					transition: 'all 0.1s ease-in-out',
+					px: 10,
 				}}
-				px={2}
 			>
 				<IconButton
 					onClick={handleFilterClick}

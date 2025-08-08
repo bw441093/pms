@@ -8,12 +8,13 @@
 		"dev": "tsx watch src/index.ts",
 		"seed:generate": "tsx src/db/generateTestData.ts generate",
 		"seed:clear": "tsx src/db/generateTestData.ts clear",
-		"seed:help": "tsx src/db/generateTestData.ts help",		
+		"seed:help": "tsx src/db/generateTestData.ts help",
 		"seed:simple": "tsx src/db/seedSimple.ts",
 		"seed:predefined": "tsx src/db/runSeed.ts",
 		"migrate:generate": "drizzle-kit generate",
 		"migrate:run": "tsx src/db/migrate.ts",
-		"db:reset": "tsx src/db/resetSchema.ts"
+		"db:reset": "tsx src/db/resetSchema.ts",
+		"db:fix": "tsx src/db/fixDatabase.ts"
 	},
 	"author": "",
 	"license": "ISC",
@@ -27,6 +28,7 @@
 		"express": "^4.21.2",
 		"node-cron": "^4.1.1",
 		"pg": "^8.16.0",
+		"web-push": "^3.6.7",
 		"winston": "^3.17.0",
 		"ws": "^8.18.2",
 		"xlsx": "^0.18.5",

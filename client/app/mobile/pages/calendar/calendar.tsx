@@ -2,13 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { Calendar as BigCalendar, dateFnsLocalizer, type View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Card, FormControl, InputLabel, Select, MenuItem, Box, Typography, ButtonGroup, IconButton, Stack } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Card, FormControl, InputLabel, Select, MenuItem, Box, Typography, ButtonGroup, IconButton, Stack, Chip } from '@mui/material';
 import { he } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import TopBar from '../whereYouAt/components/TopBar';
 import { SITE_OPTIONS, hebrewSiteNames } from '../../../consts'; // adjust path as needed
 import { getGroupsByPersonId, getPersonRoleInGroup } from '~/clients/groupsClient';
-import { getEventsByEntityId, createEvent, updateEvent, deleteEvent } from '~/clients/eventsClient';
+import { getEventsByEntityId, getEventsByGroupIds, createEvent, updateEvent, deleteEvent } from '~/clients/eventsClient';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
@@ -34,6 +34,13 @@ interface Event {
   isMandatory?: boolean;
   isInsider?: boolean;
   entityId?: string;
+  groupIds?: string[];
+  eventsToGroups?: Array<{
+    group: {
+      groupId: string;
+      name: string;
+    };
+  }>;
 }
 
 const variants = {
@@ -142,11 +149,12 @@ export default function Calendar() {
     description: '',
     place: '',
     isMandatory: false,
-    isInsider: false
+    isInsider: false,
+    groupIds: []
   });
   const [groups, setGroups] = useState<any[]>([]);
   const [adminGroups, setAdminGroups] = useState<any[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
 
   const getNewDate = (dir: number) => {
     const newDate = new Date(displayDate);
@@ -219,42 +227,49 @@ export default function Calendar() {
     fetchUserGroups();
   }, []);
 
-  // Fetch events when selectedGroup changes
+  // Fetch events when selectedGroups changes
   useEffect(() => {
     const fetchEvents = async () => {
-      if (!selectedGroup) {
+      if (selectedGroups.length === 0) {
         setEvents([]);
         return;
       }
       try {
-        const eventsData = await getEventsByEntityId(selectedGroup, 'group');
+        // Fetch events for multiple groups
+        const eventsData = await getEventsByGroupIds(selectedGroups);
+        
         // Map server events to local Event interface
-        const mappedEvents = eventsData.map((event: any) => ({
-          id: event.eventId,
-          title: event.title,
-          start: new Date(event.startTime),
-          end: new Date(event.endTime),
-          description: event.description,
-          place: event.location,
-          isMandatory: event.mandatory,
-          isInsider: event.insider,
-          entityId: event.entityId,
-        }));
+        const mappedEvents = eventsData.map((event: any) => {
+          const groupIds = event.eventsToGroups?.map((etg: any) => etg.group.groupId) || [];
+          return {
+            id: event.eventId,
+            title: event.title,
+            start: new Date(event.startTime),
+            end: new Date(event.endTime),
+            description: event.description,
+            place: event.location,
+            isMandatory: event.mandatory,
+            isInsider: event.insider,
+            entityId: event.entityId,
+            groupIds: groupIds,
+            eventsToGroups: event.eventsToGroups || []
+          };
+        });
         setEvents(mappedEvents);
       } catch (error) {
         console.error('Error fetching events:', error);
         setEvents([]);
       }
     };
-    if (selectedGroup) {
-      fetchEvents();
-    } else {
-      setEvents([]);
-    }
-  }, [selectedGroup]);
+    
+    fetchEvents();
+  }, [selectedGroups]);
 
   const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
-    if (!(selectedGroup && adminGroups.some(ag => ag.groupId === selectedGroup))) {
+    // Check if user is admin of any of the selected groups
+    if (!(selectedGroups.length > 0 && selectedGroups.some(groupId => 
+      adminGroups.some(ag => ag.groupId === groupId)
+    ))) {
         return;
     }
     setNewEvent({
@@ -268,8 +283,12 @@ export default function Calendar() {
   };
 
   const handleSelectEvent = (event: Event) => {
+    const groupIds = event.groupIds || event.eventsToGroups?.map(etg => etg.group.groupId) || [];
     setSelectedEvent(event);
-    setNewEvent(event);
+    setNewEvent({
+      ...event,
+      groupIds: groupIds
+    });
     setOpenDialog(true);
   };
 
@@ -278,7 +297,7 @@ export default function Calendar() {
     try {
       const eventPayload = {
         eventId: selectedEvent?.id,
-        entityId: selectedGroup,
+        entityId: selectedGroups[0] || '', // Use first selected group as primary entity
         entityType: 'group',
         startTime:
           newEvent.start
@@ -297,6 +316,7 @@ export default function Calendar() {
         location: newEvent.place,
         mandatory: newEvent.isMandatory,
         insider: newEvent.isInsider,
+        groupIds: newEvent.groupIds || selectedGroups // Use selected groups if no specific groupIds
       };
       if (selectedEvent) {
         // Update existing event
@@ -309,6 +329,8 @@ export default function Calendar() {
           place: updated.location,
           isMandatory: updated.mandatory,
           isInsider: updated.insider,
+          groupIds: updated.eventsToGroups?.map((etg: any) => etg.group.groupId) || [],
+          eventsToGroups: updated.eventsToGroups || []
         } : event));
       } else {
         // Create new event
@@ -321,6 +343,8 @@ export default function Calendar() {
           place: created.location,
           isMandatory: created.mandatory,
           isInsider: created.insider,
+          groupIds: created.eventsToGroups?.map((etg: any) => etg.group.groupId) || [],
+          eventsToGroups: created.eventsToGroups || []
         }]);
       }
     } catch (error) {
@@ -334,7 +358,8 @@ export default function Calendar() {
       description: '',
       place: '',
       isMandatory: false,
-      isInsider: false
+      isInsider: false,
+      groupIds: []
     });
   };
 
@@ -350,16 +375,11 @@ export default function Calendar() {
     setOpenDialog(false);
   };
 
-  // Filter events by selected group
-  const filteredEvents = selectedGroup
-    ? events.filter(event => event.entityId === selectedGroup)
-    : events;
-
   // Create separate event data for next calendar
   const getEventsForDate = (date: Date) => {
     // For now, return the same events since we don't have date-specific filtering
     // In a real implementation, you might filter events by date range
-    return filteredEvents;
+    return events;
   };
 
   // Prevent all page scrolling when calendar is open
@@ -386,16 +406,34 @@ export default function Calendar() {
         {/* Group Filter Dropdown */}
         <Box display="flex" justifyContent="center" alignItems="center" p={2}>
           <FormControl sx={{ width: '90%', mt: 2}} >
-            <InputLabel>בחר קבוצה</InputLabel>
+            <InputLabel>בחר קבוצות</InputLabel>
             <Select
-              value={selectedGroup || ''}
-              label="בחר קבוצה"
-              onChange={e => setSelectedGroup(e.target.value || null)}
+              multiple
+              value={selectedGroups}
+              label="בחר קבוצות"
+              onChange={e => {
+                const value = e.target.value as string[];
+                setSelectedGroups(value);
+              }}
               sx={{ minWidth: 200 }}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {(selected as string[]).map((groupId) => {
+                    const group = groups.find(g => g.groupId === groupId);
+                    return (
+                      <Chip 
+                        key={groupId} 
+                        label={group?.name || groupId} 
+                        size="small"
+                        sx={{ direction: 'rtl' }}
+                      />
+                    );
+                  })}
+                </Box>
+              )}
             >
-              <MenuItem value="">הצג הכל</MenuItem>
               {groups.map(group => (
-                <MenuItem key={group.groupId} value={group.groupId}>
+                <MenuItem key={group.groupId} value={group.groupId} sx={{ direction: 'rtl' }}>
                   {group.name}
                 </MenuItem>
               ))}
@@ -616,6 +654,40 @@ export default function Calendar() {
               >
                 <MenuItem value="insider" sx={{ direction: 'rtl' }}>פנימי</MenuItem>
                 <MenuItem value="outside" sx={{ direction: 'rtl' }}>חיצוני</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth margin="dense">
+              <InputLabel>קבוצות</InputLabel>
+              <Select
+                multiple
+                value={newEvent.groupIds || []}
+                label="קבוצות"
+                onChange={e => {
+                  setNewEvent({ ...newEvent, groupIds: e.target.value as string[] });
+                }}
+                sx={{ direction: 'rtl' }}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {(selected as string[]).map((groupId) => {
+                      const group = groups.find(g => g.groupId === groupId);
+                      return (
+                        <Chip 
+                          key={groupId} 
+                          label={group?.name || groupId} 
+                          size="small"
+                          sx={{ direction: 'rtl' }}
+                        />
+                      );
+                    })}
+                  </Box>
+                )}
+              >
+                {groups.map(group => (
+                  <MenuItem key={group.groupId} value={group.groupId} sx={{ direction: 'rtl' }}>
+                    {group.name}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </DialogContent>

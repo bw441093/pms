@@ -9,7 +9,6 @@ import {
 	findManagers,
 	createPerson,
 	updatePersonStatusLocation,
-	updatePersonSite,
 	updatePersonAlertStatus,
 	updateAlertStatus,
 	deletePerson,
@@ -18,7 +17,6 @@ import {
 	findDirectReports,
 	movePersonToSiteGroup,
 	updatePersonSiteManagerSites,
-	updatePersonCommandGroup,
 } from '../db/persons';
 import { createSystemRole, deleteUserSystemRoles } from '../db/systemRoles';
 import { createUser } from '../db/users';
@@ -254,7 +252,7 @@ export const getManagersHandler = async (req: Request, res: Response) => {
 
 export const updatePersonStatusHandler = async (req: Request, res: Response) => {
 	const { id } = req.params;
-	const { status, location } = req.body;
+	const { status, location, reporterId } = req.body;
 
 	if (!id) {
 		res.status(400).send('User ID is required');
@@ -263,7 +261,7 @@ export const updatePersonStatusHandler = async (req: Request, res: Response) => 
 
 	try {
 		logger.info(`Update status for user with id: ${id}`);
-		await updatePersonStatusLocation(id, status, location);
+		await updatePersonStatusLocation(id, status, location, reporterId);
 
 		logger.info(`Done update status for user with id: ${id}`);
 		res.status(200).send('Status updated');

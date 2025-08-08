@@ -4,6 +4,8 @@ export interface FilterOptions {
   isManager: boolean;
   isSiteManager: boolean;
   isDirectManager: boolean;
+  hasReportStatus: boolean;
+  noReportStatus: boolean;
 }
 
 export const filterPeople = (
@@ -43,7 +45,28 @@ export const filterPeople = (
     uniquePeopleMap.set(person.id, person);
   });
   
-  const uniquePeople = Array.from(uniquePeopleMap.values());
+  let uniquePeople = Array.from(uniquePeopleMap.values());
+  
+  // Apply report status filters
+  if (filters.hasReportStatus || filters.noReportStatus) {
+    uniquePeople = uniquePeople.filter(person => {
+      const hasReportStatus = person.reportStatus && person.reportStatus.trim() !== '';
+      
+      if (filters.hasReportStatus && filters.noReportStatus) {
+        // If both are selected, show all people (no filtering)
+        return true;
+      } else if (filters.hasReportStatus) {
+        // Show only people with report status
+        return hasReportStatus;
+      } else if (filters.noReportStatus) {
+        // Show only people without report status
+        return !hasReportStatus;
+      }
+      
+      return true;
+    });
+  }
+  
   console.log("uniquePeople", uniquePeople);
   return uniquePeople;
 };
@@ -167,10 +190,35 @@ export const applyFiltersAndSearchToGroupedData = (
     return include;
   };
 
+  // Helper function to check if a person should be included based on report status filters
+  const shouldIncludePersonByReportStatus = (person: Person) => {
+    if (!filters.hasReportStatus && !filters.noReportStatus) {
+      return true; // No report status filters applied
+    }
+    
+    const hasReportStatus = person.reportStatus && person.reportStatus.trim() !== '';
+    
+    if (filters.hasReportStatus && filters.noReportStatus) {
+      // If both are selected, show all people (no filtering)
+      return true;
+    } else if (filters.hasReportStatus) {
+      // Show only people with report status
+      return hasReportStatus;
+    } else if (filters.noReportStatus) {
+      // Show only people without report status
+      return !hasReportStatus;
+    }
+    
+    return true;
+  };
+
   // Process each group from the command chain data
   Object.entries(groupedCommandChainData).forEach(([groupId, { group, persons }]) => {
     // Filter persons based on the active filters
     let filteredPersons = persons.filter(shouldIncludePerson);
+    
+    // Apply report status filters
+    filteredPersons = filteredPersons.filter(shouldIncludePersonByReportStatus);
     
     // Apply search filter
     if (searchTerm) {

@@ -13,15 +13,12 @@ export const loadApp = async () => {
 	app.use(express.json());
 	app.use(cors());
 
-	// API routes should come before static file serving
+	// API routes
 	app.use('/api', router);
 
-	// Serve static files from the build directory
-	app.use(express.static(path.join(process.cwd(), 'build', 'client')));
-
-	// Catch-all route to serve index.html for client-side routing
+	// For development, just return a simple message for non-API routes
 	app.get('*', (req, res) => {
-		res.sendFile(path.join(process.cwd(), 'build', 'client', 'index.html'));
+		res.json({ message: 'API server is running. Use /api endpoints.' });
 	});
 
 	return app;

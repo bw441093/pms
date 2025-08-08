@@ -107,6 +107,7 @@ async function seedSimpleData() {
 		location: 'jerusalem',
 		serviceType: 'hova',
 		updatedAt: new Date(),
+		approvedBy: null,
 	});
 
 	console.log(`  ✅ Created user: ${userName} (${userEmail})`);
@@ -150,6 +151,7 @@ async function seedSimpleData() {
 			location: 'jerusalem',
 			serviceType: 'hova',
 			updatedAt: new Date(),
+			approvedBy: report.name === 'Alice Johnson' ? userId : null,
 		});
 
 		directReportIds.push(reportId);

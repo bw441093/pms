@@ -68,11 +68,13 @@ export async function postMoveStatus(
 export async function updateReportStatus(
 	userId: string,
 	status: string,
-	location: string
+	location: string,
+	reporterId: string
 ) {
 	const response = await apiClient.put(`/users/${userId}/status`, {
 		status,
 		location,
+		reporterId
 	});
 
 	return response.data;

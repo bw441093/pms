@@ -85,7 +85,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 		}
 	}, [formData.roles]);
 
-	const fetchManagers = async () => {
+  const fetchManagers = async () => {
 		try {
 			setLoading(true);
 			const response = await axios.get('/api/users/managers', {
@@ -93,7 +93,22 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					Authorization: `Bearer ${localStorage.getItem('login_token')}`,
 				},
 			});
-			setManagers(response.data);
+      // Deduplicate managers by a stable identifier
+      const unique = new Map<string, Manager>();
+      (response.data as any[]).forEach((raw) => {
+        const m = raw as Manager & { id?: string };
+        const key = m.userId || m.id || `${m.name}`;
+        if (!unique.has(key)) {
+          unique.set(key, {
+            userId: m.userId || (m.id as string),
+            name: m.name,
+            site: m.site,
+            groupName: m.groupName,
+            groupId: m.groupId,
+          });
+        }
+      });
+      setManagers(Array.from(unique.values()));
 		} catch (err) {
 			console.error('Error fetching managers:', err);
 			setError('Failed to load managers');
@@ -252,30 +267,33 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 	const hasSiteManagerRole = formData.roles.includes('siteManager');
 	const hasPersonnelManagerRole = formData.roles.includes('personnelManager');
 
-	return (
-		<Modal open={open} onClose={onClose}>
-			<Box
-				sx={{
-					position: 'absolute',
-					top: '50%',
-					left: '50%',
-					transform: 'translate(-50%, -50%)',
-					width: { xs: '90%', sm: '80%', md: '60%', lg: '50%' },
-					bgcolor: 'background.paper',
-					border: '2px solid #000',
-					boxShadow: 24,
-					p: 4,
-					borderRadius: 2,
-					maxHeight: '90vh',
-					overflow: 'auto',
-				}}
-			>
-				<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-					<Typography variant="h6">הוספת משתמש חדש</Typography>
-					<IconButton onClick={onClose}>
-						<CloseIcon />
-					</IconButton>
-				</Box>
+  return (
+    <Modal open={open} onClose={onClose}>
+      <Box
+        dir="rtl"
+        sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: { xs: '90%', sm: '80%', md: '60%', lg: '50%' },
+          bgcolor: 'background.paper',
+          border: '2px solid #000',
+          boxShadow: 24,
+          p: 4,
+          borderRadius: 2,
+          maxHeight: '90vh',
+          overflow: 'auto',
+          direction: 'rtl',
+          textAlign: 'right',
+        }}
+      >
+        <Box dir="rtl" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6">הוספת משתמש חדש</Typography>
+          <IconButton onClick={onClose}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
 
 				<Stack spacing={3}>
 					{error && (
@@ -284,97 +302,101 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 						</Alert>
 					)}
 
-					<TextField
-						fullWidth
-						label="שם מלא"
-						variant="outlined"
-						value={formData.name}
-						onChange={(e) => handleInputChange('name', e.target.value)}
-						sx={{
-							'& .MuiInputLabel-root': { right: 14, left: 'auto', transformOrigin: 'top right' },
-							'& .MuiOutlinedInput-root': { textAlign: 'right' },
-						}}
-					/>
+          <TextField
+            fullWidth
+            placeholder="שם מלא"
+            variant="outlined"
+            value={formData.name}
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            inputProps={{ style: { textAlign: 'right' } }}
+          />
 
-					<TextField
-						fullWidth
-						label="אימייל"
-						type="email"
-						variant="outlined"
-						value={formData.email}
-						onChange={(e) => handleInputChange('email', e.target.value)}
-						sx={{
-							'& .MuiInputLabel-root': { right: 14, left: 'auto', transformOrigin: 'top right' },
-							'& .MuiOutlinedInput-root': { textAlign: 'right' },
-						}}
-					/>
+          <TextField
+            fullWidth
+            placeholder="אימייל"
+            type="email"
+            variant="outlined"
+            value={formData.email}
+            onChange={(e) => handleInputChange('email', e.target.value)}
+            inputProps={{ style: { textAlign: 'right' } }}
+          />
 
-					<FormControl fullWidth>
-						<InputLabel>(רשות) מפקד</InputLabel>
-						<Select
-							sx={{
-								'& .MuiSelect-select': {
-									textAlign: 'right',
-								},
-							}}
-							value={formData.commander}
-							label="(רשות) מפקד"
-							inputProps={{ style: { textAlign: 'right' } }}
-							onChange={(e) => handleInputChange('commander', e.target.value)}
-						>
-							<MenuItem value="">
-								<em>אין מפקד</em>
-							</MenuItem>
-							{managers.map((manager) => (
-								<MenuItem key={manager.userId} value={manager.userId}>
-									{manager.name} ({manager.site}) ({manager.groupName})
-								</MenuItem>
-							))}
-						</Select>
-					</FormControl>
+          <FormControl fullWidth>
+            <Select
+              displayEmpty
+              sx={{
+                '& .MuiSelect-select': {
+                  textAlign: 'right',
+                },
+                '& .MuiSelect-icon': { left: 8, right: 'auto' },
+              }}
+              value={formData.commander || ''}
+              inputProps={{ style: { textAlign: 'right' } }}
+              onChange={(e) => handleInputChange('commander', e.target.value)}
+              renderValue={(selected) => {
+                const value = selected as string;
+                if (!value) return (<span style={{ color: 'rgba(0,0,0,0.6)' }}>(רשות) מפקד</span>);
+                const mgr = managers.find(m => m.userId === value);
+                return mgr ? `${mgr.name} (${mgr.site}) (${mgr.groupName})` : value;
+              }}
+            >
+              {managers.map((manager) => (
+                <MenuItem key={manager.userId} value={manager.userId}>
+                  {manager.name} ({manager.site}) ({manager.groupName})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
 
-					<FormControl fullWidth variant="outlined">
-						<InputLabel sx={{ right: 14, left: 'auto', transformOrigin: 'top right' }}>
-							אתר
-						</InputLabel>
-						<Select
-							value={formData.site}
-							onChange={(e) => handleInputChange('site', e.target.value)}
-							label="אתר"
-							sx={{ textAlign: 'right' }}
-						>
-							{SITE_OPTIONS.map((site) => (
-								<MenuItem key={site} value={site}>
-									{hebrewSiteNames[site] ?? site.toUpperCase()}
-								</MenuItem>
-							))}
-						</Select>
-					</FormControl>
+          <FormControl fullWidth>
+            <Select
+              displayEmpty
+              sx={{
+                '& .MuiSelect-select': { textAlign: 'right' },
+                '& .MuiSelect-icon': { left: 8, right: 'auto' },
+              }}
+              value={formData.site || ''}
+              onChange={(e) => handleInputChange('site', e.target.value)}
+              renderValue={(selected) => {
+                const value = selected as keyof typeof hebrewSiteNames | '';
+                if (!value) return (<span style={{ color: 'rgba(0,0,0,0.6)' }}>אתר</span>);
+                return hebrewSiteNames[value];
+              }}
+            >
+              {SITE_OPTIONS.map((site) => (
+                <MenuItem key={site} value={site}>
+                  {hebrewSiteNames[site] ?? site.toUpperCase()}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-					<FormControl fullWidth variant="outlined">
-						<InputLabel sx={{ right: 14, left: 'auto', transformOrigin: 'top right' }}>
-							סוג שירות
-						</InputLabel>
-						<Select
-							value={formData.serviceType}
-							onChange={(e) => handleInputChange('serviceType', e.target.value)}
-							label="סוג שירות"
-							sx={{ textAlign: 'right' }}
-						>
-							{SERVICE_TYPE_OPTIONS.map((type) => (
-								<MenuItem key={type} value={type}>
-									{hebrewServiceTypeNames[type]}
-								</MenuItem>
-							))}
-						</Select>
-					</FormControl>
+          <FormControl fullWidth>
+            <Select
+              displayEmpty
+              sx={{ '& .MuiSelect-icon': { left: 8, right: 'auto' } }}
+              value={formData.serviceType || ''}
+              onChange={(e) => handleInputChange('serviceType', e.target.value)}
+              renderValue={(selected) => {
+                const value = selected as keyof typeof hebrewServiceTypeNames | '';
+                if (!value) return (<span style={{ color: 'rgba(0,0,0,0.6)' }}>סוג שירות</span>);
+                return hebrewServiceTypeNames[value];
+              }}
+            >
+              {SERVICE_TYPE_OPTIONS.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {hebrewServiceTypeNames[type]}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
 					<Box>
 						<Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'right' }}>
 							תפקידים
 						</Typography>
-						<FormGroup sx={{ alignItems: 'flex-end' }}>
+            <FormGroup sx={{ alignItems: 'flex-start' }}>
 							{SYSTEM_ROLE_OPTIONS.map((role) => (
 								<FormControlLabel
 									key={role}
@@ -386,7 +408,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 									}
 									label={hebrewSystemRoleNames[role] || 'תפקיד לא ידוע'}
 									sx={{
-										flexDirection: 'row-reverse',
+                    flexDirection: 'row',
 										marginLeft: 0,
 										marginRight: 0,
 										'& .MuiFormControlLabel-label': {
@@ -399,27 +421,28 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 					</Box>
 
 					{/* Site Manager Site Selection */}
-					{hasSiteManagerRole && (
-						<FormControl fullWidth variant="outlined">
-							<InputLabel sx={{ right: 14, left: 'auto', transformOrigin: 'top right' }}>
-								אתר לניהול
-							</InputLabel>
-							<Select
-								value={formData.siteManagerSite}
-								onChange={(e) =>
-									handleInputChange('siteManagerSite', e.target.value)
-								}
-								label="אתר לניהול"
-								sx={{ textAlign: 'right' }}
-							>
-								{SITE_MANAGER_OPTIONS.map((site) => (
-									<MenuItem key={site} value={site}>
-										{hebrewSiteNames[site] ?? site.toUpperCase()}
-									</MenuItem>
-								))}
-							</Select>
-						</FormControl>
-					)}
+          {hasSiteManagerRole && (
+            <FormControl fullWidth>
+              <Select
+                displayEmpty
+                sx={{ '& .MuiSelect-icon': { left: 8, right: 'auto' } }}
+                value={formData.siteManagerSite || ''}
+                onChange={(e) => handleInputChange('siteManagerSite', e.target.value)}
+                renderValue={(selected) => {
+                  const value = selected as keyof typeof hebrewSiteNames | '';
+                  if (!value) return (<span style={{ color: 'rgba(0,0,0,0.6)' }}>אתר לניהול</span>);
+                  return hebrewSiteNames[value];
+                }}
+              >
+                <MenuItem value="" disabled><em>אתר לניהול</em></MenuItem>
+                {SITE_MANAGER_OPTIONS.map((site) => (
+                  <MenuItem key={site} value={site}>
+                    {hebrewSiteNames[site] ?? site.toUpperCase()}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
 					{/* Personnel Manager Group Selection */}
 					{hasPersonnelManagerRole && (
@@ -428,71 +451,65 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({
 								בחירת קבוצה למנהל כוח אדם
 							</Typography>
 							
-							<FormControl fullWidth variant="outlined">
-								<InputLabel sx={{ right: 14, left: 'auto', transformOrigin: 'top right' }}>
-									קבוצה קיימת
-								</InputLabel>
-								<Select
-									value={formData.selectedGroupId}
-									onChange={(e) => {
-										handleInputChange('selectedGroupId', e.target.value);
-										// Clear new group name when selecting existing group
-										if (e.target.value) {
-											handleInputChange('newGroupName', '');
-										}
-									}}
-									label="קבוצה קיימת"
-									sx={{ textAlign: 'right' }}
-								>
-									<MenuItem value="">
-										<em>בחר קבוצה קיימת</em>
-									</MenuItem>
-									{formData.availableGroups.map((group) => (
-										<MenuItem key={group.groupId} value={group.groupId}>
-											{group.name}
-										</MenuItem>
-									))}
-								</Select>
-							</FormControl>
+              <FormControl fullWidth>
+                <Select
+                  displayEmpty
+                  sx={{ '& .MuiSelect-icon': { left: 8, right: 'auto' } }}
+                  value={formData.selectedGroupId || ''}
+                  onChange={(e) => {
+                    handleInputChange('selectedGroupId', e.target.value);
+                    if (e.target.value) {
+                      handleInputChange('newGroupName', '');
+                    }
+                  }}
+                  renderValue={(selected) => {
+                    const value = selected as string;
+                    if (!value) return (<span style={{ color: 'rgba(0,0,0,0.6)' }}>קבוצה קיימת</span>);
+                    const grp = formData.availableGroups.find(g => g.groupId === value);
+                    return grp ? grp.name : value;
+                  }}
+                >
+                  <MenuItem value="" disabled>
+                    <em>קבוצה קיימת</em>
+                  </MenuItem>
+                  {formData.availableGroups.map((group) => (
+                    <MenuItem key={group.groupId} value={group.groupId}>
+                      {group.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
 							<Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary' }}>
 								או
 							</Typography>
 
-							<TextField
-								fullWidth
-								label="שם קבוצה חדשה"
-								variant="outlined"
-								value={formData.newGroupName}
-								onChange={(e) => {
-									handleInputChange('newGroupName', e.target.value);
-									// Clear selected group when entering new group name
-									if (e.target.value) {
-										handleInputChange('selectedGroupId', '');
-									}
-								}}
-								sx={{
-									'& .MuiInputLabel-root': { right: 14, left: 'auto', transformOrigin: 'top right' },
-									'& .MuiOutlinedInput-root': { textAlign: 'right' },
-								}}
-								helperText="הזן שם לקבוצה חדשה (אופציונלי)"
-								FormHelperTextProps={{ sx: { textAlign: 'right' } }}
-							/>
+              <TextField
+                fullWidth
+                placeholder="שם קבוצה חדשה"
+                variant="outlined"
+                value={formData.newGroupName}
+                onChange={(e) => {
+                  handleInputChange('newGroupName', e.target.value);
+                  if (e.target.value) {
+                    handleInputChange('selectedGroupId', '');
+                  }
+                }}
+                inputProps={{ style: { textAlign: 'right' } }}
+                helperText="הזן שם לקבוצה חדשה (אופציונלי)"
+                FormHelperTextProps={{ sx: { textAlign: 'right' } }}
+              />
 						</>
 					)}
 
-					<Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
-						<Button variant="outlined" onClick={handleCancel}>
-							ביטול
-						</Button>
-						<Button
-							variant="contained"
-							onClick={handleSubmit}
-							disabled={loading}
-						>
-							{loading ? 'מוסיף...' : 'הוסף משתמש'}
-						</Button>
-					</Box>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 3, gap: 2, flexDirection: 'row-reverse' }}>
+            <Button variant="contained" onClick={handleSubmit} disabled={loading}>
+              {loading ? 'מוסיף...' : 'הוסף משתמש'}
+            </Button>
+            <Button variant="outlined" onClick={handleCancel}>
+              ביטול
+            </Button>
+          </Box>
 				</Stack>
 			</Box>
 		</Modal>

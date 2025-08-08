@@ -5,7 +5,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router';
 import { getSnapshotDates, getSnapshotByDate } from '../../../clients/snapshotClient';
 
-import PersonCard from '../whereYouAt/components/PersonCard';
+import PersonCard from '../whereYouAt/components/PersonCard/PersonCard';
 import axios from 'axios';
 import { Dayjs } from 'dayjs';
 

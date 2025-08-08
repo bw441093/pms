@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getEventsByEntityId, createEvent, updateEvent, deleteEvent } from '../db/events';
+import { getEventsByEntityId, getEventsByGroupIds, createEvent, updateEvent, deleteEvent } from '../db/events';
 
 export const getEventsByEntityIdHandler = async (req: Request, res: Response) => {
   try {
@@ -13,6 +13,23 @@ export const getEventsByEntityIdHandler = async (req: Request, res: Response) =>
     res.json(events);
   } catch (error) {
     console.error('Error getting events:', error);
+    res.status(500).json({ error: 'Failed to get events' });
+  }
+};
+
+export const getEventsByGroupIdsHandler = async (req: Request, res: Response) => {
+  try {
+    const { groupIds } = req.query;
+    if (!groupIds || typeof groupIds !== 'string') {
+      res.status(400).json({ error: 'groupIds parameter is required' });
+      return;
+    }
+    
+    const groupIdsArray = groupIds.split(',').filter(id => id.trim() !== '');
+    const events = await getEventsByGroupIds(groupIdsArray);
+    res.json(events);
+  } catch (error) {
+    console.error('Error getting events by group IDs:', error);
     res.status(500).json({ error: 'Failed to get events' });
   }
 };

@@ -135,14 +135,31 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 		}
 	}, [person.manager]);
 
-	const fetchManagers = async () => {
+    const fetchManagers = async () => {
 		try {
 			const response = await axios.get('/api/users/managers', {
 				headers: {
 					Authorization: `Bearer ${localStorage.getItem('login_token')}`,
 				},
 			});
-			setManagers(response.data);
+            // Deduplicate managers by a stable identifier (userId or id)
+            const uniqueManagersMap = new Map<string, Manager>();
+            (response.data as any[]).forEach((raw) => {
+                const m = raw as Manager & { id?: string };
+                const key = m.userId || m.id || `${m.name}`;
+                if (!uniqueManagersMap.has(key)) {
+                    // Normalize to ensure userId is present for rendering/selection
+                    const normalized: Manager = {
+                        userId: m.userId || (m.id as string),
+                        name: m.name,
+                        site: m.site,
+                        groupName: m.groupName,
+                        groupId: m.groupId,
+                    };
+                    uniqueManagersMap.set(key, normalized);
+                }
+            });
+            setManagers(Array.from(uniqueManagersMap.values()));
 		} catch (err) {
 			console.error('Error fetching managers:', err);
 			setError('Failed to load managers');
@@ -480,6 +497,7 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 	return (
 		<Box sx={{ width: '100%' }}>
 			<Box
+				dir="rtl"
 				sx={{
 					display: 'flex',
 					justifyContent: 'space-between',
@@ -487,12 +505,12 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 					mb: 3,
 				}}
 			>
-				<IconButton onClick={handleClose}>
-					<CloseIcon />
-				</IconButton>
 				<Typography variant="h6" component="h2" sx={{ textAlign: 'right' }}>
 					{person.name} - עדכון פרטים
 				</Typography>
+				<IconButton onClick={handleClose}>
+					<CloseIcon />
+				</IconButton>
 			</Box>
 			{error && (
 				<Alert severity="error" sx={{ mb: 2 }}>
@@ -502,86 +520,106 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 			<Stack spacing={3}>
 				{canModifyPersonDetails() && (
 					<Box>
-						<Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'right' }}>
-							פרטי משתמש
-						</Typography>
-						<Stack spacing={2}>
-							<TextField
-								label="שם"
-								value={personDetails.name}
-								onChange={(e) => setPersonDetails(prev => ({ ...prev, name: e.target.value }))}
-								fullWidth
-								required
-							/>
+                        <Stack spacing={2}>
+                            <TextField
+                                sx={{ direction: 'rtl' }}
+                                placeholder="שם מלא"
+                                value={personDetails.name}
+                                onChange={(e) => setPersonDetails(prev => ({ ...prev, name: e.target.value }))}
+                                fullWidth
+                                required
+                                inputProps={{ style: { textAlign: 'right' } }}
+                            />
 
-							<TextField
-								label="אימייל"
-								value={personDetails.email}
-								onChange={(e) => setPersonDetails(prev => ({ ...prev, email: e.target.value }))}
-								fullWidth
-							/>
+                            <TextField
+                                sx={{ direction: 'rtl' }}
+                                placeholder="אימייל"
+                                value={personDetails.email}
+                                onChange={(e) => setPersonDetails(prev => ({ ...prev, email: e.target.value }))}
+                                fullWidth
+                                inputProps={{ style: { textAlign: 'right' } }}
+                            />
 
-							<FormControl fullWidth>
-								<InputLabel>(רשות) מפקד</InputLabel>
-								<Select
-									sx={{
-										'& .MuiSelect-select': {
-											textAlign: 'right',
-										},
-									}}
-									value={commander}
-									label="(רשות) מפקד"
-									inputProps={{ style: { textAlign: 'right' } }}
-									onChange={(e) => setCommander(e.target.value)}
-								>
-									<MenuItem value="">
-										<em>אין מפקד</em>
-									</MenuItem>
-									{managers.map((manager) => (
-										<MenuItem key={manager.userId} value={manager.userId}>
-											{manager.name} ({manager.site}) ({manager.groupName})
-										</MenuItem>
-									))}
-								</Select>
-							</FormControl>
+                            <FormControl fullWidth>
+                                <Select
+                                    displayEmpty
+                                    sx={{
+                                        '& .MuiSelect-select': {
+                                            textAlign: 'right',
+                                        },
+                                        '& .MuiSelect-icon': { left: 8, right: 'auto' },
+                                    }}
+                                    value={commander || ''}
+                                    inputProps={{ style: { textAlign: 'right' } }}
+                                    onChange={(e) => setCommander(e.target.value)}
+                                    renderValue={(selected) => {
+                                        const value = selected as string;
+                                        if (!value) return (<span style={{ color: 'rgba(0,0,0,0.6)' }}>(רשות) מפקד</span>);
+                                        const mgr = managers.find(m => m.userId === value);
+                                        return mgr ? `${mgr.name} (${mgr.site}) (${mgr.groupName})` : value;
+                                    }}
+                                >
+                                    <MenuItem value="" disabled>
+                                        <em>(רשות) מפקד</em>
+                                    </MenuItem>
+                                    {managers.map((manager) => (
+                                        <MenuItem key={manager.userId} value={manager.userId}>
+                                            {manager.name} ({manager.site}) ({manager.groupName})
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
 
-							<FormControl fullWidth>
-								<InputLabel>אתר</InputLabel>
-								<Select
-									sx={{
-										'& .MuiSelect-select': {
-											textAlign: 'right',
-										},
-									}}
-									value={personDetails.site}
-									label="אתר"
-									onChange={(e) => setPersonDetails(prev => ({ ...prev, site: e.target.value }))}
-								>
-									{SITE_OPTIONS.map((site) => (
-										<MenuItem
-											key={site}
-											value={site}
-											style={{ textAlign: 'right' }}
-										>
-											{hebrewSiteNames[site]}
-										</MenuItem>
-									))}
-								</Select>
-							</FormControl>
+                            <FormControl fullWidth>
+                                <Select
+                                    displayEmpty
+                                    sx={{
+                                        '& .MuiSelect-select': {
+                                            textAlign: 'right',
+                                        },
+                                        '& .MuiSelect-icon': { left: 8, right: 'auto' },
+                                    }}
+                                    value={personDetails.site || ''}
+                                    onChange={(e) => setPersonDetails(prev => ({ ...prev, site: e.target.value }))}
+                                    renderValue={(selected) => {
+                                        const value = selected as keyof typeof hebrewSiteNames | '';
+                                        if (!value) return (<span style={{ color: 'rgba(0,0,0,0.6)' }}>אתר</span>);
+                                        return hebrewSiteNames[value];
+                                    }}
+                                >
+                                    <MenuItem value="" disabled><em>אתר</em></MenuItem>
+                                    {SITE_OPTIONS.map((site) => (
+                                        <MenuItem
+                                            key={site}
+                                            value={site}
+                                            style={{ textAlign: 'right' }}
+                                        >
+                                            {hebrewSiteNames[site]}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
 
-							<FormControl fullWidth>
-								<InputLabel>סוג שירות</InputLabel>
-								<Select
-									value={personDetails.serviceType}
-									onChange={(e) => setPersonDetails(prev => ({ ...prev, serviceType: e.target.value }))}
-								>
-									{SERVICE_TYPE_OPTIONS.map((serviceType) => (
-										<MenuItem key={serviceType} value={serviceType}>
-											{hebrewServiceTypeNames[serviceType]}
-										</MenuItem>
-									))}
-								</Select>
-							</FormControl>
+                            <FormControl fullWidth>
+                                <Select
+                                    displayEmpty
+                                    sx={{ '& .MuiSelect-icon': { left: 8, right: 'auto' } }}
+                                    value={personDetails.serviceType || ''}
+                                    onChange={(e) => setPersonDetails(prev => ({ ...prev, serviceType: e.target.value }))}
+                                    renderValue={(selected) => {
+                                        const value = selected as keyof typeof hebrewServiceTypeNames | '';
+                                        if (!value) return (<span style={{ color: 'rgba(0,0,0,0.6)' }}>סוג שירות</span>);
+                                        return hebrewServiceTypeNames[value];
+                                    }}
+                                >
+                                    <MenuItem value="" disabled><em>סוג שירות</em></MenuItem>
+                                    {SERVICE_TYPE_OPTIONS.map((serviceType) => (
+                                        <MenuItem key={serviceType} value={serviceType}>
+                                            {hebrewServiceTypeNames[serviceType]}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
 							
 						</Stack>
 					</Box>
@@ -591,20 +629,20 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 					<Typography variant="subtitle1" sx={{ mb: 2, textAlign: 'right' }}>
 						תפקידים
 					</Typography>
-					<FormGroup sx={{ alignItems: 'flex-end' }}>
+                    <FormGroup sx={{ alignItems: 'flex-start' }}>
 						{SYSTEM_ROLE_OPTIONS.map((role) => (
 							<FormControlLabel
 								key={role}
 								control={
-									<Checkbox
+                                    <Checkbox
 										checked={selectedRoles.includes(role)}
 										onChange={() => handleRoleChange(role)}
 										disabled={!canModifyRole()}
 									/>
 								}
 								label={hebrewSystemRoleNames[role] || 'תפקיד לא ידוע'}
-								sx={{
-									flexDirection: 'row-reverse',
+                                sx={{
+                                    flexDirection: 'row',
 									marginLeft: 0,
 									marginRight: 0,
 									'& .MuiFormControlLabel-label': {
@@ -634,8 +672,8 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 										/>
 									}
 									label={hebrewSiteNames[site] ?? site.toUpperCase()}
-									sx={{
-										flexDirection: 'row-reverse',
+                                    sx={{
+                                        flexDirection: 'row',
 										marginLeft: 0,
 										marginRight: 0,
 										'& .MuiFormControlLabel-label': {
@@ -657,34 +695,39 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 						<Stack spacing={2}>
 							{/* Show group selection dropdown only if no new group name is entered */}
 							{!newGroupName && (
-								<FormControl fullWidth required>
-									<InputLabel>בחר קבוצה קיימת</InputLabel>
-									<Select
-										sx={{
-											'& .MuiSelect-select': {
-												textAlign: 'right',
-											},
-										}}
-										value={selectedGroupId}
-										label="בחר קבוצה קיימת"
-										onChange={(e) => {
-											setSelectedGroupId(e.target.value);
-											// Clear new group name when selecting existing group
-											if (e.target.value) {
-												setNewGroupName('');
-											}
-										}}
-									>
-										<MenuItem value="">
-											<em>בחר קבוצה או הזן שם חדש למטה</em>
-										</MenuItem>
-										{availableGroups.map((group) => (
-											<MenuItem key={group.groupId} value={group.groupId}>
-												{group.name}
-											</MenuItem>
-										))}
-									</Select>
-								</FormControl>
+                                <FormControl fullWidth required>
+                                    <Select
+                                        displayEmpty
+                                        sx={{
+                                            '& .MuiSelect-select': {
+                                                textAlign: 'right',
+                                            },
+                                            '& .MuiSelect-icon': { left: 8, right: 'auto' },
+                                        }}
+                                        value={selectedGroupId || ''}
+                                        onChange={(e) => {
+                                            setSelectedGroupId(e.target.value);
+                                            if (e.target.value) {
+                                                setNewGroupName('');
+                                            }
+                                        }}
+                                        renderValue={(selected) => {
+                                            const value = selected as string;
+                                            if (!value) return (<span style={{ color: 'rgba(0,0,0,0.6)' }}>בחר קבוצה קיימת</span>);
+                                            const grp = availableGroups.find(g => g.groupId === value);
+                                            return grp ? grp.name : value;
+                                        }}
+                                    >
+                                        <MenuItem value="" disabled>
+                                            <em>בחר קבוצה קיימת</em>
+                                        </MenuItem>
+                                        {availableGroups.map((group) => (
+                                            <MenuItem key={group.groupId} value={group.groupId}>
+                                                {group.name}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
 							)}
 
 							{/* Show new group name field only if no existing group is selected */}
@@ -702,6 +745,8 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 									fullWidth
 									required
 									placeholder="הזן שם לקבוצה חדשה או בחר קבוצה קיימת למעלה"
+									inputProps={{ style: { textAlign: 'right' } }}
+									InputLabelProps={{ sx: { left: 'auto', right: 14, transformOrigin: 'top right' } }}
 								/>
 							)}
 
@@ -722,26 +767,30 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 							אתה כרגע מפקד של קבוצות הפיקוד הבאות. חובה לבחור מחליף לכל קבוצה לפני שינוי התפקיד.
 						</Typography>
 						<Stack spacing={2}>
-							{currentCommandGroups.map((group) => (
+					{currentCommandGroups.map((group) => (
 								<Box key={group.groupId}>
 									<Typography variant="body2" sx={{ mb: 1, textAlign: 'right', fontWeight: 'bold' }}>
 										קבוצה: {group.name}
 									</Typography>
 									<FormControl fullWidth required>
-										<InputLabel>בחר מחליף</InputLabel>
-										<Select
+                                        <Select
+                                        displayEmpty
 											sx={{
 												'& .MuiSelect-select': {
 													textAlign: 'right',
 												},
+										'& .MuiSelect-icon': { left: 8, right: 'auto' },
 											}}
-											value={replacementAdmins[group.groupId] || ''}
-											label="בחר מחליף"
+                                         value={replacementAdmins[group.groupId] || ''}
 											onChange={(e) => handleReplacementChange(group.groupId, e.target.value)}
-										>
-											<MenuItem value="">
-												<em>בחר מחליף</em>
-											</MenuItem>
+                                        renderValue={(selected) => {
+                                            const value = selected as string;
+                                            if (!value) return (<span style={{ color: 'rgba(0,0,0,0.6)' }}>בחר מחליף</span>);
+                                            const rep = availableReplacements.find(r => r.id === value);
+                                            return rep ? `${rep.name} (${rep.site})` : value;
+                                        }}
+                                        >
+                                        <MenuItem value="" disabled><em>בחר מחליף</em></MenuItem>
 											{availableReplacements.map((replacement) => (
 												<MenuItem key={replacement.id} value={replacement.id}>
 													{replacement.name} ({replacement.site})
@@ -754,7 +803,7 @@ const SystemRoleAction: React.FC<SystemRoleActionProps> = ({
 						</Stack>
 					</Box>
 				)}
-				<Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-start', flexDirection: 'row-reverse' }}>
 					<Button variant="contained" onClick={handleSubmit} disabled={loading}>
 						{loading ? 'מעדכן...' : 'עדכן פרטים ותפקידים'}
 					</Button>

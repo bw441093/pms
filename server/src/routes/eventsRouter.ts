@@ -1,11 +1,17 @@
 import { Router } from 'express';
-import { getEventsByEntityIdHandler, createEventHandler, updateEventHandler, deleteEventHandler } from '../handlers/events';
+import { getEventsByEntityIdHandler, getEventsByGroupIdsHandler, createEventHandler, updateEventHandler, deleteEventHandler } from '../handlers/events';
 
 const router = Router();
 
 router.get('/', async (req, res) => {
   try {
-    await getEventsByEntityIdHandler(req, res);
+    // Check if groupIds parameter is present for multiple group query
+    if (req.query.groupIds) {
+      await getEventsByGroupIdsHandler(req, res);
+    } else {
+      // If no groupIds provided, return empty array
+      res.json([]);
+    }
   } catch (error) {
     console.error('Error getting events:', error);
     res.status(500).json({ error: 'Failed to get events' });

@@ -128,7 +128,7 @@ const AppDrawer: React.FC<AppDrawerProps> = ({ open, onClose }) => {
 
   return (
     <MuiDrawer
-      anchor="left"
+      anchor="right"
       open={open}
       onClose={onClose}
       PaperProps={{

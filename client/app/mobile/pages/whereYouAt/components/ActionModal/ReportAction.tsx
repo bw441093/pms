@@ -33,7 +33,7 @@ const ReportAction = ({
 		const location = site !== 'other' ? site : locationReport;
 
 		updateReportStatusMutation.mutate(
-			{ userId: id, status, location },
+			{ userId: id, status, location, reporterId: localStorage.getItem('login_token') || '' },
 			{
 				onSuccess: () => {
 					onClose();
@@ -47,63 +47,53 @@ const ReportAction = ({
 		setter(value);
 	};
 
-	return (
-		<Stack spacing={3} sx={{ minWidth: 300 }}>
-			<Typography
-				variant="h6"
-				component="h2"
-				sx={{ textAlign: 'right' }}
-				gutterBottom
-			>
-				דווח מיקום / סטטוס
-			</Typography>
-			<Stack spacing={2}>
-				<TextField
-					inputProps={{ style: { textAlign: 'right' } }}
-					label="מיקום"
-					fullWidth
-					disabled={site !== 'other'}
-					value={locationReport}
-					onChange={(e: ChangeEvent<HTMLInputElement>) =>
-						handleChange(e, setLocationReport)
-					}
-				/>
-			</Stack>
-			<FormControl fullWidth>
-				<InputLabel id="status-select-label">סטטוס</InputLabel>
-				<Select
-					labelId="status-select-label"
-					id="status-select"
-					value={reportStatusReport}
-					label="סטטוס"
-					sx={{
-						'& .MuiSelect-select': {
-							textAlign: 'right',
-						},
-					}}
-					onChange={(e) => setReportStatusReport(e.target.value)}
-				>
-					{LOCATION_STATUSES.map((option) => (
-						<MenuItem key={option} value={option}>
-							{hebrewLocationNames[option]}
-						</MenuItem>
-					))}
-				</Select>
-			</FormControl>
-			<Stack direction="row" spacing={2} justifyContent="flex-end">
-				<Button variant="outlined" onClick={onClose}>
-					ביטול
-				</Button>
-				<Button
-					variant="contained"
-					onClick={handleButtonClick}
-					disabled={updateReportStatusMutation.isPending}
-				>
-					שליחה
-				</Button>
-			</Stack>
-		</Stack>
-	);
+  return (
+    <Stack spacing={3} sx={{ minWidth: 300 }}>
+      <Typography variant="h6" component="h2" sx={{ textAlign: 'right' }} gutterBottom>
+        דווח מיקום / סטטוס
+      </Typography>
+      <Stack spacing={2}>
+        <TextField
+          inputProps={{ style: { textAlign: 'right' } }}
+          placeholder="מיקום"
+          fullWidth
+          disabled={site !== 'other'}
+          value={locationReport}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => handleChange(e, setLocationReport)}
+        />
+      </Stack>
+      <FormControl fullWidth>
+        <Select
+          displayEmpty
+          value={reportStatusReport || ''}
+          sx={{
+            '& .MuiSelect-select': { textAlign: 'right' },
+            '& .MuiSelect-icon': { left: 8, right: 'auto' },
+          }}
+          onChange={(e) => setReportStatusReport(e.target.value as any)}
+          renderValue={(selected) => {
+            const value = selected as keyof typeof hebrewLocationNames | '';
+            if (!value) return (<span style={{ color: 'rgba(0,0,0,0.6)' }}>סטטוס</span>);
+            return hebrewLocationNames[value];
+          }}
+        >
+          {LOCATION_STATUSES.map((option) => (
+            <MenuItem key={option} value={option}>
+              {hebrewLocationNames[option]}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+      <Stack direction="row" spacing={2} justifyContent="flex-start" sx={{ flexDirection: 'row-reverse' }}>
+        <Button variant="contained" onClick={handleButtonClick} disabled={updateReportStatusMutation.isPending}>
+          שליחה
+        </Button>
+        <Button variant="outlined" onClick={onClose}>
+          ביטול
+        </Button>
+      </Stack>
+    </Stack>
+  );
 };
 
 export default ReportAction;

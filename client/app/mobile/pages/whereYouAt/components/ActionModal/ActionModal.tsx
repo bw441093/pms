@@ -18,28 +18,32 @@ const ActionModal = ({
 	onClose: () => void;
 }) => {
 	return (
-		<Modal
-			open={openModal}
-			onClose={onClose}
-			sx={{
-				display: 'flex',
-				alignItems: 'center',
-				justifyContent: 'center',
-				bgcolor: 'rgba(0, 0, 0, 0.5)',
-			}}
-		>
-			<Box
-				sx={{
-					bgcolor: 'background.paper',
-					borderRadius: 2,
-					boxShadow: 24,
-					p: 4,
-					maxWidth: 400,
-					width: '90%',
-					maxHeight: '90vh',
-					overflow: 'auto',
-				}}
-			>
+    		<Modal
+    			open={openModal}
+    			onClose={onClose}
+    			sx={{
+    				display: 'flex',
+    				alignItems: 'center',
+    				justifyContent: 'center',
+    				bgcolor: 'rgba(0, 0, 0, 0.5)',
+    				direction: 'rtl',
+    			}}
+    		>
+    			<Box
+    				dir="rtl"
+    				sx={{
+    					bgcolor: 'background.paper',
+    					borderRadius: 2,
+    					boxShadow: 24,
+    					p: 4,
+    					maxWidth: 400,
+    					width: '90%',
+    					maxHeight: '90vh',
+    					overflow: 'auto',
+    					direction: 'rtl',
+    					textAlign: 'right',
+    				}}
+    			>
 				{action === 'Alert' && (
 					<AlertAction person={person} onClose={onClose} />
 				)}

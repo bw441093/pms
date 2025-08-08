@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useUserDataWithManager } from '../../../../hooks/useQueries';
-import type { Person } from '../../../../types';
 
 export const useProfileData = () => {
   const userId = useMemo(() => localStorage.getItem('login_token') || '', []);
